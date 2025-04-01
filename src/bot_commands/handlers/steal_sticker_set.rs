@@ -170,12 +170,11 @@ where
                 .iter()
                 .take(limit_sticker_set_length)
                 .map(|sticker| {
-                    let sticker_is: InputSticker = InputSticker::new(
+                    let istick: InputSticker = InputSticker::new(
                         InputFile::id(sticker.file_id.as_ref()),
                         sticker_format(sticker),
                     );
-
-                    sticker_is.emoji_list(sticker.emoji.clone())
+                    istick.emoji_list(sticker.emoji.clone())
                 }),
         ))
         .await

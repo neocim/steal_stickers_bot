@@ -1,7 +1,6 @@
 use std::process;
 
-use application::common::traits::uow::UoWFactory as _;
-use infrastructure::database::uow::UoWFactory;
+use clap::Parser as _;
 use sqlx::Postgres;
 use telers::{
     client::Reqwest,
@@ -15,12 +14,12 @@ use telers::{
     Bot, Dispatcher, Router,
 };
 
-use clap::{Parser, Subcommand};
 use tracing::{debug, error};
 use tracing_subscriber::{fmt, layer::SubscriberExt as _, util::SubscriberInitExt as _, EnvFilter};
 
 pub mod application;
 pub mod bot_commands;
+mod cli_run;
 pub mod config;
 pub mod core;
 pub mod domain;
@@ -28,12 +27,15 @@ pub mod infrastructure;
 pub mod middlewares;
 mod telegram_application;
 
+use application::common::traits::uow::UoWFactory as _;
 use bot_commands::{
-    add_stickers_command, cancel_command, my_stickers, process_non_command, process_non_sticker,
-    source_command, start_command, steal_sticker_set_command,
+    add_stickers_command, cancel_command, deleted_sets_upd, my_stickers, process_non_command,
+    process_non_sticker, source_command, start_command, steal_sticker_set_command,
 };
+use cli_run::{Cli, Commands};
 use config::ConfigToml;
 use core::texts;
+use infrastructure::database::uow::UoWFactory;
 use middlewares::{
     ClientApplicationMiddleware, CreateUserMiddleware, DatabaseMiddleware, DeletedSetsMiddleware,
 };
@@ -57,21 +59,6 @@ async fn set_commands(bot: Bot) -> Result<(), HandlerError> {
         .await?;
 
     Ok(())
-}
-
-#[derive(Parser)]
-#[command(version, about, long_about = None)]
-struct Cli {
-    #[command(subcommand)]
-    command: Commands,
-}
-
-#[derive(Subcommand, PartialEq)]
-enum Commands {
-    /// Authorize client and exit
-    Auth,
-    /// Run programm (exit if client not authorized)
-    Run,
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -179,19 +166,8 @@ async fn main() {
         .register(ClientApplicationMiddleware::new(client, api_id, api_hash));
 
     private_router
-        .update
-        .outer_middlewares
-        .register(CreateUserMiddleware::new(
-            UoWFactory::new(pool.clone()).create_uow(),
-        ));
-
-    private_router
-        .update
-        .outer_middlewares
-        .register(DeletedSetsMiddleware::new(
-            UoWFactory::new(pool).create_uow(),
-            bot.clone(),
-        ));
+        .startup
+        .register(deleted_sets_upd, (pool.clone(), bot.clone()));
 
     process_non_command(
         &mut private_router,
@@ -208,17 +184,11 @@ async fn main() {
     .await;
 
     start_command(&mut private_router, &["start", "help"]).await;
-
     source_command(&mut private_router, &["src", "source"]).await;
-
     cancel_command(&mut private_router, &["cancel"]).await;
-
     add_stickers_command::<Postgres>(&mut private_router, "addstickers", "done").await;
-
     steal_sticker_set_command::<Postgres>(&mut private_router, "stealpack").await;
-
     my_stickers::<Postgres>(&mut private_router, "mystickers").await;
-
     process_non_sticker(&mut private_router, ContentTypeEnum::Sticker).await;
 
     main_router.include(private_router);

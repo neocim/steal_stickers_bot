@@ -2,6 +2,7 @@
 pub mod add_stickers;
 pub mod cancel;
 pub mod common;
+pub mod deleted_sets_upd;
 pub mod my_stickers;
 pub mod source;
 pub mod start;
@@ -14,6 +15,7 @@ pub use add_stickers::{
 };
 pub use cancel::cancel_handler;
 pub use common::{add_stickers, process_non_sticker};
+pub use deleted_sets_upd::deleted_sets_upd;
 pub use my_stickers::{my_stickers_handler, process_button};
 pub use source::source_handler;
 pub use start::start_handler;

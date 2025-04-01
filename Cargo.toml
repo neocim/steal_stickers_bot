@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 # main crates
 telers = {version = "1.0.0-alpha.23", features = ["memory-storage"]}
+# telers = { git = "https://github.com/Desiders/telers", rev = "fa2f923d4ad5472dab92baf16024d40446875fe5", features = ["memory-storage", "default_signal"]}
 tokio = { version = "1.36", features = ["macros"]}
 
 sea-query = "0.31"
