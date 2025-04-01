@@ -4,8 +4,7 @@ use telers::{
     errors::{EventErrorKind, MiddlewareError},
     event::EventReturn,
     middlewares::{outer::MiddlewareResponse, OuterMiddleware},
-    router::Request,
-    FromContext,
+    FromContext, Request,
 };
 
 use async_trait::async_trait;
@@ -49,7 +48,7 @@ impl ClientApplicationMiddleware {
 
 #[async_trait]
 impl OuterMiddleware for ClientApplicationMiddleware {
-    async fn call(&self, request: Request) -> Result<MiddlewareResponse, EventErrorKind> {
+    async fn call(&self, mut request: Request) -> Result<MiddlewareResponse, EventErrorKind> {
         let mut lock = self.last_update_time.lock().await;
 
         let now = Utc::now().time();
@@ -66,11 +65,11 @@ impl OuterMiddleware for ClientApplicationMiddleware {
             let mut lock = self.client.lock().await;
             *lock = client.clone();
 
-            request.context.insert(self.key, Box::new(client));
+            request.context.insert(self.key, client);
         } else {
             let client = (*self.client.lock().await).clone();
 
-            request.context.insert(self.key, Box::new(client));
+            request.context.insert(self.key, client);
         }
 
         Ok((request, EventReturn::default()))

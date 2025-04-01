@@ -8,7 +8,7 @@ use telers::{
 };
 use tracing::error;
 
-use crate::core::common::sticker_format;
+use crate::core::stickers_helpers::common::sticker_format;
 
 #[derive(Debug, Clone, thiserror::Error)]
 #[error("Error occurded while adding stickers: {message}")]

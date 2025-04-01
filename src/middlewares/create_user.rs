@@ -5,7 +5,7 @@ use telers::{
     errors::{EventErrorKind, MiddlewareError},
     event::EventReturn,
     middlewares::{outer::MiddlewareResponse, OuterMiddleware},
-    router::Request,
+    Request,
 };
 
 use async_trait::async_trait;

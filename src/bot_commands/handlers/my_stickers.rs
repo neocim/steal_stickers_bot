@@ -23,7 +23,7 @@ use crate::{
         set::{dto::get_by_tg_id::GetByTgID as GetSetByTgID, traits::SetRepo as _},
     },
     bot_commands::states::MyStickersState,
-    core::stickers::constants::STICKER_SETS_NUMBER_PER_PAGE,
+    core::stickers_helpers::constants::STICKER_SETS_NUMBER_PER_PAGE,
     domain::entities::set::Set,
     texts::current_page_message,
 };

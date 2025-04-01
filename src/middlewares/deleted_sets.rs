@@ -8,8 +8,7 @@ use telers::{
     event::EventReturn,
     methods::GetStickerSet,
     middlewares::{outer::MiddlewareResponse, OuterMiddleware},
-    router::Request,
-    Bot,
+    Bot, Request,
 };
 
 use async_trait::async_trait;

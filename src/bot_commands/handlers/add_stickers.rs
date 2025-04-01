@@ -19,7 +19,7 @@ use crate::{
         set::dto::create::Create as CreateSet,
     },
     bot_commands::{handlers::add_stickers, states::AddStickerState},
-    core::{common::set_created_by, stickers::constants::MAX_STICKER_SET_LENGTH},
+    core::stickers_helpers::{common::set_created_by, constants::MAX_STICKER_SET_LENGTH},
     middlewares::Client,
     telegram_application::get_sticker_set_user_id,
 };

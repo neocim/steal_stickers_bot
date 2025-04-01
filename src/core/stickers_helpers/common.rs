@@ -1,7 +1,7 @@
 use random_string::generate;
 use telers::types::Sticker;
 
-use crate::core::stickers::constants::TELEGRAM_STICKER_SET_URL;
+use super::constants::TELEGRAM_STICKER_SET_URL;
 
 /// Return sticker format for each sticker.
 pub fn sticker_format(sticker: &Sticker) -> String {

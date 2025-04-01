@@ -16,10 +16,10 @@ use crate::{
         set::dto::create::Create as CreateSet,
     },
     bot_commands::states::StealStickerSetState,
-    core::stickers::constants::CREATE_SET_IN_ONE_GO_LENGTH_LIMIT,
+    core::stickers_helpers::constants::CREATE_SET_IN_ONE_GO_LENGTH_LIMIT,
 };
 use crate::{
-    common::{generate_sticker_set_name_and_link, sticker_format},
+    core::stickers_helpers::common::{generate_sticker_set_name_and_link, sticker_format},
     texts::sticker_set_message,
 };
 

@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 # main crates
-telers = {version = "1.0.0-alpha", features = ["memory-storage"]}
+telers = {version = "1.0.0-alpha.23", features = ["memory-storage"]}
 tokio = { version = "1.36", features = ["macros"]}
 
 sea-query = "0.31"

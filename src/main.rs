@@ -33,7 +33,7 @@ use bot_commands::{
     source_command, start_command, steal_sticker_set_command,
 };
 use config::ConfigToml;
-use core::{common, texts};
+use core::texts;
 use middlewares::{
     ClientApplicationMiddleware, CreateUserMiddleware, DatabaseMiddleware, DeletedSetsMiddleware,
 };

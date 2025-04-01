@@ -2,7 +2,7 @@ use telers::{
     errors::EventErrorKind,
     event::EventReturn,
     middlewares::{outer::MiddlewareResponse, OuterMiddleware},
-    router::Request,
+    Request,
 };
 
 use async_trait::async_trait;
@@ -25,7 +25,7 @@ impl<UoWFactory> OuterMiddleware for DatabaseMiddleware<UoWFactory>
 where
     UoWFactory: Send + Sync + UoWFactoryTrait + Clone + 'static,
 {
-    async fn call(&self, request: Request) -> Result<MiddlewareResponse, EventErrorKind> {
+    async fn call(&self, mut request: Request) -> Result<MiddlewareResponse, EventErrorKind> {
         request
             .context
             .insert("uow_factory", Box::new(self.uow_factory.clone()));
