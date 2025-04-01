@@ -161,10 +161,6 @@ where
             (steal_stickers_from_sticker_set.len(), false)
         };
 
-    let mut sticker_formats = steal_stickers_from_sticker_set
-        .iter()
-        .map(|sticker| sticker_format(sticker));
-
     while let Err(err) = bot
         .send(CreateNewStickerSet::new(
             user_id,
@@ -176,7 +172,7 @@ where
                 .map(|sticker| {
                     let sticker_is: InputSticker = InputSticker::new(
                         InputFile::id(sticker.file_id.as_ref()),
-                        sticker_formats.next().unwrap(),
+                        sticker_format(sticker),
                     );
 
                     sticker_is.emoji_list(sticker.emoji.clone())
