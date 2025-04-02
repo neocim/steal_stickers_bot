@@ -3,19 +3,17 @@ use std::process;
 use clap::Parser as _;
 use sqlx::Postgres;
 use telers::{
-    client::Reqwest,
+    Bot, Dispatcher, Router,
     enums::ContentType as ContentTypeEnum,
     errors::HandlerError,
-    event::ToServiceProvider as _,
     fsm::{MemoryStorage, Strategy},
     methods::SetMyCommands,
     middlewares::outer::FSMContext,
     types::{BotCommand, BotCommandScopeAllPrivateChats},
-    Bot, Dispatcher, Router,
 };
 
 use tracing::{debug, error};
-use tracing_subscriber::{fmt, layer::SubscriberExt as _, util::SubscriberInitExt as _, EnvFilter};
+use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt as _, util::SubscriberInitExt as _};
 
 pub mod application;
 pub mod bot_commands;
@@ -27,7 +25,6 @@ pub mod infrastructure;
 pub mod middlewares;
 mod telegram_application;
 
-use application::common::traits::uow::UoWFactory as _;
 use bot_commands::{
     add_stickers_command, cancel_command, deleted_sets_upd, my_stickers, process_non_command,
     process_non_sticker, source_command, start_command, steal_sticker_set_command,
@@ -36,9 +33,7 @@ use cli_run::{Cli, Commands};
 use config::ConfigToml;
 use core::texts;
 use infrastructure::database::uow::UoWFactory;
-use middlewares::{
-    ClientApplicationMiddleware, CreateUserMiddleware, DatabaseMiddleware, DeletedSetsMiddleware,
-};
+use middlewares::{ClientApplicationMiddleware, CreateUserMiddleware, DatabaseMiddleware};
 use telegram_application::{client_authorize, client_connect};
 
 async fn set_commands(bot: Bot) -> Result<(), HandlerError> {
@@ -120,7 +115,9 @@ async fn main() {
             process::exit(1);
         };
 
-        debug!("Client sucessfully authorized! Now run programm using command:\njust compose-run OR just compose-run-build");
+        debug!(
+            "Client sucessfully authorized! Now run programm using command:\njust compose-run OR just compose-run-build"
+        );
 
         process::exit(0);
     }
@@ -145,7 +142,7 @@ async fn main() {
 
     let bot = Bot::new(config.bot.bot_token);
 
-    let mut main_router: Router<Reqwest> = Router::new("main");
+    let mut main_router = Router::new("main");
     let mut private_router = Router::new("private");
 
     let storage = MemoryStorage::new();
@@ -164,6 +161,13 @@ async fn main() {
         .update
         .outer_middlewares
         .register(ClientApplicationMiddleware::new(client, api_id, api_hash));
+
+    private_router
+        .update
+        .outer_middlewares
+        .register(CreateUserMiddleware::new(
+            UoWFactory::new(pool.clone()).create_uow(),
+        ));
 
     private_router
         .startup
@@ -193,19 +197,13 @@ async fn main() {
 
     main_router.include(private_router);
     main_router.startup.register(set_commands, (bot.clone(),));
-
     let dispatcher = Dispatcher::builder()
+        .main_router(main_router.clone().configure_default())
         .bot(bot)
         .allowed_updates(main_router.resolve_used_update_types())
-        .router(main_router)
         .build();
 
-    match dispatcher
-        .to_service_provider_default()
-        .expect("error occurded while convert the service factory to the service")
-        .run_polling()
-        .await
-    {
+    match dispatcher.run_polling().await {
         Ok(()) => debug!("Bot stopped"),
         Err(err) => debug!("Bot stopped with error: {err}"),
     }

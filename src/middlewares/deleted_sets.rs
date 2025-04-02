@@ -1,17 +1,15 @@
-use chrono::{NaiveTime, Utc};
-use std::{ops::DerefMut, time::Duration};
-use tokio::sync::{Mutex, RwLock};
-use tracing::debug;
-
-use telers::{
-    errors::{session::ErrorKind, EventErrorKind, MiddlewareError, TelegramErrorKind},
-    event::EventReturn,
-    methods::GetStickerSet,
-    middlewares::{outer::MiddlewareResponse, OuterMiddleware},
-    Bot, Request,
-};
+use std::{sync::Arc, time::Duration};
 
 use async_trait::async_trait;
+use chrono::{NaiveTime, Utc};
+use telers::{
+    Bot, Request,
+    errors::{EventErrorKind, MiddlewareError, TelegramErrorKind, session::ErrorKind},
+    event::EventReturn,
+    methods::GetStickerSet,
+    middlewares::{OuterMiddleware, outer::MiddlewareResponse},
+};
+use tracing::debug;
 
 use crate::application::{
     commands::set_deleted_col::set_deleted_col,
@@ -22,11 +20,11 @@ use crate::application::{
     },
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DeletedSetsMiddleware<UoW> {
-    bot: Mutex<Bot>,
-    uow: RwLock<UoW>,
-    last_update_time: Mutex<NaiveTime>,
+    bot: Arc<Bot>,
+    uow: UoW,
+    last_update_time: Arc<NaiveTime>,
 }
 
 impl<UoW> DeletedSetsMiddleware<UoW>
@@ -35,9 +33,9 @@ where
 {
     pub fn new(uow: UoW, bot: Bot) -> Self {
         Self {
-            uow: RwLock::new(uow),
-            last_update_time: Mutex::new(Utc::now().time()),
-            bot: Mutex::new(bot),
+            uow: uow,
+            last_update_time: Arc::new(Utc::now().time()),
+            bot: Arc::new(bot),
         }
     }
 }
@@ -45,19 +43,14 @@ where
 #[async_trait]
 impl<UoW> OuterMiddleware for DeletedSetsMiddleware<UoW>
 where
-    UoW: UoWTrait + Send + Sync,
+    UoW: UoWTrait + Send + Sync + Clone + 'static,
     for<'a> UoW::SetRepo<'a>: Send + Sync,
 {
-    async fn call(&self, request: Request) -> Result<MiddlewareResponse, EventErrorKind> {
-        let mut uow = self.uow.write().await;
-
-        let mut last_upd_time_lock = self.last_update_time.lock().await;
+    async fn call(&mut self, request: Request) -> Result<MiddlewareResponse, EventErrorKind> {
         let now = Utc::now().time();
 
-        let bot = self.bot.lock().await;
-
-        if (now - *last_upd_time_lock).num_hours() >= 2 {
-            *last_upd_time_lock = now;
+        if (now - *self.last_update_time).num_hours() >= 2 {
+            self.last_update_time = Arc::new(now);
 
             let user_id = match request.update.from_id() {
                 Some(id) => id,
@@ -67,10 +60,8 @@ where
             };
 
             debug!(user_id, "Update database deleted sticker sets by user id:");
-
-            let uow = uow.deref_mut();
-
-            let sets = uow
+            let sets = self
+                .uow
                 .set_repo()
                 .await
                 .map_err(MiddlewareError::new)?
@@ -79,7 +70,8 @@ where
                 .map_err(MiddlewareError::new)?;
 
             for (i, sticker) in sets.into_iter().enumerate() {
-                if let Err(err) = bot
+                if let Err(err) = &self
+                    .bot
                     .send(GetStickerSet::new(sticker.short_name.as_str()))
                     .await
                 {
@@ -87,7 +79,7 @@ where
                     == "Bad Request: STICKERSET_INVALID")
                     {
                         set_deleted_col(
-                            uow,
+                            &mut self.uow,
                             SetDeletedColByShortName::new(sticker.short_name.as_str(), true),
                         )
                         .await
