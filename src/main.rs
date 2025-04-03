@@ -27,11 +27,9 @@ mod telegram_application;
 use cli_run::{Cli, Commands};
 use config::ConfigToml;
 use handlers::{
-    commands::{
-        add_stickers_command, cancel_command, my_stickers, process_non_command,
-        process_non_sticker, source_command, start_command, steal_sticker_set_command,
-    },
-    deleted_sets_upd::deleted_sets_upd,
+    add_stickers_command, cancel_command, deleted_sets_upd::deleted_sets_upd, my_stickers,
+    process_non_command, process_non_sticker, source_command, start_command,
+    steal_sticker_set_command,
 };
 use infrastructure::database::uow::UoWFactory;
 use middlewares::{ClientApplicationMiddleware, CreateUserMiddleware, DatabaseMiddleware};
