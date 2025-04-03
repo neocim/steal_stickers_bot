@@ -11,27 +11,28 @@ use telers::{
     middlewares::outer::FSMContext,
     types::{BotCommand, BotCommandScopeAllPrivateChats},
 };
-
 use tracing::{debug, error};
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt as _, util::SubscriberInitExt as _};
 
 pub mod application;
-pub mod bot_commands;
 mod cli_run;
 pub mod config;
 pub mod core;
 pub mod domain;
+pub mod handlers;
 pub mod infrastructure;
 pub mod middlewares;
 mod telegram_application;
 
-use bot_commands::{
-    add_stickers_command, cancel_command, deleted_sets_upd, my_stickers, process_non_command,
-    process_non_sticker, source_command, start_command, steal_sticker_set_command,
-};
 use cli_run::{Cli, Commands};
 use config::ConfigToml;
-use core::texts;
+use handlers::{
+    commands::{
+        add_stickers_command, cancel_command, my_stickers, process_non_command,
+        process_non_sticker, source_command, start_command, steal_sticker_set_command,
+    },
+    deleted_sets_upd::deleted_sets_upd,
+};
 use infrastructure::database::uow::UoWFactory;
 use middlewares::{ClientApplicationMiddleware, CreateUserMiddleware, DatabaseMiddleware};
 use telegram_application::{client_authorize, client_connect};
@@ -165,9 +166,7 @@ async fn main() {
     private_router
         .update
         .outer_middlewares
-        .register(CreateUserMiddleware::new(
-            UoWFactory::new(pool.clone()).create_uow(),
-        ));
+        .register(CreateUserMiddleware::new(UoWFactory::new(pool.clone())));
 
     private_router
         .startup

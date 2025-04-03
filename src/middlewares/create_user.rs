@@ -7,29 +7,31 @@ use telers::{
 };
 
 use crate::application::{
-    commands::create_user::create_user, common::traits::uow::UoW as UoWTrait,
+    commands::create_user::create_user,
+    common::traits::uow::{UoW as UoWTrait, UoWFactory},
     user::dto::create::Create,
 };
 
 #[derive(Debug, Clone)]
-pub struct CreateUserMiddleware<UoW> {
-    uow: UoW,
+pub struct CreateUserMiddleware<UoWF> {
+    uowf: UoWF,
 }
 
-impl<UoW> CreateUserMiddleware<UoW>
+impl<UoWF> CreateUserMiddleware<UoWF>
 where
-    UoW: UoWTrait,
+    UoWF: UoWFactory,
 {
-    pub fn new(uow: UoW) -> Self {
-        Self { uow: uow }
+    pub const fn new(uowf: UoWF) -> Self {
+        Self { uowf }
     }
 }
 
 #[async_trait]
-impl<UoW> OuterMiddleware for CreateUserMiddleware<UoW>
+impl<UoWF> OuterMiddleware for CreateUserMiddleware<UoWF>
 where
-    UoW: UoWTrait + Send + Sync + 'static + Clone,
-    for<'a> UoW::UserRepo<'a>: Send + Sync,
+    UoWF: UoWFactory + Send + Sync + 'static + Clone,
+    for<'a> UoWF::UoW: Send + Sync,
+    for<'a> <UoWF::UoW as UoWTrait>::UserRepo<'a>: Send + Sync,
 {
     async fn call(&mut self, request: Request) -> Result<MiddlewareResponse, EventErrorKind> {
         let user_id = match request.update.from_id() {
@@ -39,7 +41,7 @@ where
             }
         };
 
-        create_user(&mut self.uow, Create::new(user_id))
+        create_user(&mut self.uowf.create_uow(), Create::new(user_id))
             .await
             .map_err(MiddlewareError::new)?;
 

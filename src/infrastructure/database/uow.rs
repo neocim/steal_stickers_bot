@@ -82,9 +82,7 @@ where
     for<'a> SetRepoImpl<&'a mut DB::Connection>: SetRepo,
 {
     type Connection<'a> = &'a mut DB::Connection;
-
     type UserRepo<'a> = UserRepoImpl<Self::Connection<'a>>;
-
     type SetRepo<'a> = SetRepoImpl<Self::Connection<'a>>;
 
     async fn connect(&mut self) -> Result<Self::Connection<'_>, BeginError> {

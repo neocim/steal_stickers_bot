@@ -1,11 +1,11 @@
 use telers::{
+    Bot,
     enums::ParseMode,
-    event::{telegram::HandlerResult, EventReturn},
+    event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
     methods::SendMessage,
     types::MessageText,
     utils::text::html_text_link,
-    Bot,
 };
 
 pub async fn source_handler<S: Storage>(

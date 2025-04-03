@@ -1,9 +1,9 @@
 use telers::{
-    event::{telegram::HandlerResult, EventReturn},
+    Bot,
+    event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
     methods::SendMessage,
     types::MessageText,
-    Bot,
 };
 
 pub async fn cancel_handler<S: Storage>(

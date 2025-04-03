@@ -1,5 +1,5 @@
 use sqlx::{Database, Pool};
-use telers::{event::simple::HandlerResult, Bot};
+use telers::{Bot, event::simple::HandlerResult};
 
 use crate::application::{
     common::traits::uow::UoWFactory as UoWFactoryTrait, set::traits::SetRepo,

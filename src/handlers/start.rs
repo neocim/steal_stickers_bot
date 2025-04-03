@@ -1,12 +1,12 @@
 use telers::{
-    event::{telegram::HandlerResult, EventReturn},
+    Bot,
+    event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
     methods::SendMessage,
     types::Message,
-    Bot,
 };
 
-use crate::texts::start_message;
+use crate::core::texts::start_message;
 
 pub async fn start_handler<S: Storage>(
     bot: Bot,
