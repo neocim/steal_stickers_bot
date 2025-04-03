@@ -29,7 +29,8 @@ pub enum Commands {
 pub async fn launch() {
     let config = get_config_toml();
     let pg_url = get_postgres_url(&config);
-    let bot = Bot::new(config.bot.bot_token.clone());
+    // FIXME!: perhaps there is another, more profitable way to create a variable that lives the entire program.
+    let bot = Box::leak(Box::new(Bot::new(config.bot.bot_token.clone())));
     let (api_id, api_hash) = (config.tg_app.api_id, config.tg_app.api_hash.clone());
     init_tracing_subscriber_from_config(&config);
 
@@ -45,7 +46,7 @@ pub async fn launch() {
     debug!("Client connected!");
 
     debug!("Trying to authorize..");
-    run_or_auth(&client, &config.auth.phone_number, &config.auth.password);
+    run_or_auth(&client, &config.auth.phone_number, &config.auth.password).await;
 
     debug!("Connecting to the database..");
     let pool = match sqlx::PgPool::connect(&pg_url).await {
@@ -58,7 +59,7 @@ pub async fn launch() {
     };
     debug!("Connected the database!");
 
-    start_bot(&bot, pool, client, api_id, api_hash);
+    start_bot(bot, pool, client, api_id, api_hash).await;
 }
 
 async fn run_or_auth(client: &Client, ph_num: &str, pswd: &str) {

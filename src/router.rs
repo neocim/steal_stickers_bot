@@ -14,7 +14,7 @@ use crate::{
 };
 
 pub async fn start_bot(
-    bot: &Bot,
+    bot: &'static Bot,
     pool: Pool<Postgres>,
     client: Client,
     api_id: i32,
@@ -36,7 +36,7 @@ pub async fn start_bot(
 }
 
 fn init_router(
-    bot: &Bot,
+    bot: &'static Bot,
     pool: Pool<Postgres>,
     client: Client,
     api_id: i32,
@@ -70,7 +70,7 @@ fn init_router(
         .register(deleted_sets_upd, (pool.clone(), bot.clone()));
 
     main_router.include(private_router);
-    main_router.startup.register(set_commands, (&bot.clone(),));
+    main_router.startup.register(set_commands, (bot,));
 
     main_router
 }
