@@ -14,7 +14,7 @@ use telers::{
 };
 use tracing::error;
 
-use super::AddStickersError;
+use super::{AddStickersError, states::add_stickers::AddStickerState};
 use crate::{
     application::{
         commands::create_set::create_set, common::traits::uow::UoWFactory as UoWFactoryTrait,
@@ -24,7 +24,6 @@ use crate::{
         common::{set_created_by, sticker_format},
         constants::MAX_STICKER_SET_LENGTH,
     },
-    handlers::states::AddStickerState,
     middlewares::Client,
     telegram_application::get_sticker_set_user_id,
 };

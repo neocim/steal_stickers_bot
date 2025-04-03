@@ -25,8 +25,9 @@ use crate::{
     core::stickers_helpers::constants::STICKER_SETS_NUMBER_PER_PAGE,
     core::texts::current_page_message,
     domain::entities::set::Set,
-    handlers::states::MyStickersState,
 };
+
+use super::states::my_stickers::MyStickersState;
 
 impl From<BeginError> for HandlerError {
     fn from(value: BeginError) -> Self {
