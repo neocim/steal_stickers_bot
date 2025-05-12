@@ -72,7 +72,7 @@ async fn run_or_auth(client: &Client, ph_num: &str, pswd: &str) {
             process::exit(1);
         };
         debug!(
-            "Client sucessfully authorized! Now run programm using command:\njust compose-run OR just compose-run-build"
+            "Client sucessfully authorized! Now run programm using command:\njust compose-run OR just compose-build"
         );
 
         process::exit(0);

@@ -17,7 +17,7 @@ run:
 compose-run:
     docker compose up
 
-compose-run-build:
+compose-build:
     docker compose up --build
 
 # This is just my template to run databse without `just compose-run`. If you want to override it, then use this template:
