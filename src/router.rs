@@ -65,9 +65,9 @@ fn init_router(
         .outer_middlewares
         .register(CreateUserMiddleware::new(UoWFactory::new(pool.clone())));
 
-    private_router
-        .startup
-        .register(deleted_sets_upd, (pool.clone(), bot.clone()));
+    // private_router
+    //     .startup
+    //     .register(deleted_sets_upd, (pool.clone(), bot.clone()));
 
     main_router.include(private_router);
     main_router.startup.register(set_commands, (bot,));

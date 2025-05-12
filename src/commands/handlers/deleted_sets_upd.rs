@@ -5,7 +5,7 @@ use sqlx::{Database, Pool};
 use telers::errors::{SessionErrorKind, TelegramErrorKind};
 use telers::methods::GetStickerSet;
 use telers::{Bot, event::simple::HandlerResult};
-use tracing::error;
+use tracing::{debug, error};
 
 use crate::application::common::traits::uow::UoW as _;
 use crate::application::interactors::set_deleted_col::set_deleted_col;
@@ -30,11 +30,15 @@ where
         let uow_factory = UoWFactory::new(pool.clone());
         let mut last_upd_time = Utc::now();
 
+        debug!("Start checking for deleted sets.");
+
         loop {
-            if Utc::now() - last_upd_time >= Duration::hours(12) {
+            if Utc::now() - last_upd_time < Duration::hours(12) {
                 tokio::time::sleep(tokio::time::Duration::from_secs(3600)).await;
                 continue;
             }
+
+            debug!("Start changing the `deleted` columns for sticker sets that have already been deleted. Current time: `{:?}`", Utc::now());
 
             let mut uow = uow_factory.create_uow();
             let result = uow.set_repo().await;
@@ -71,13 +75,12 @@ where
                         });
                     }
                 }
-
                 if i % 5 == 0 {
                     tokio::time::sleep(tokio::time::Duration::from_millis(1010)).await;
                 }
             }
-
             last_upd_time = Utc::now();
+            debug!("Finish changing the `deleted` columns. Current time: `{:?}`", last_upd_time);
         }
     })
     .await.unwrap();

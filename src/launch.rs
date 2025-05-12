@@ -45,10 +45,11 @@ pub async fn launch() {
     };
     debug!("Client connected!");
 
-    debug!("Trying to authorize..");
+    debug!("Trying to log in..");
     run_or_auth(&client, &config.auth.phone_number, &config.auth.password).await;
+    debug!("Successfully logged in!");
 
-    debug!("Connecting to the database..");
+    debug!("Connecting to the database.. {pg_url}");
     let pool = match sqlx::PgPool::connect(&pg_url).await {
         Ok(pool) => pool,
         Err(err) => {
