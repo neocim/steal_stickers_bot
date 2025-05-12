@@ -25,10 +25,6 @@ pub fn init_tracing_subscriber_from_config(config: &ConfigToml) {
         .init();
 }
 
-pub fn get_postgres_url(config: &ConfigToml) -> String {
-    config.get_postgres_url()
-}
-
 pub fn get_config_toml() -> ConfigToml {
     let config = std::fs::read_to_string("configs/config.toml")
         .expect("error occurded while reading config file");

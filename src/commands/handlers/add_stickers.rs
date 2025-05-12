@@ -17,7 +17,7 @@ use tracing::error;
 use super::{AddStickersError, states::add_stickers::AddStickerState};
 use crate::{
     application::{
-        commands::create_set::create_set, common::traits::uow::UoWFactory as UoWFactoryTrait,
+        common::traits::uow::UoWFactory as UoWFactoryTrait, interactors::create_set::create_set,
         set::dto::create::Create as CreateSet,
     },
     core::stickers_helpers::{

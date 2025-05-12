@@ -7,8 +7,8 @@ use telers::{
 };
 
 use crate::application::{
-    commands::create_user::create_user,
     common::traits::uow::{UoW as UoWTrait, UoWFactory},
+    interactors::create_user::create_user,
     user::dto::create::Create,
 };
 

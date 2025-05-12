@@ -6,7 +6,7 @@ use telers::Bot;
 use tracing::{debug, error};
 
 use crate::{
-    config::{get_config_toml, get_postgres_url, init_tracing_subscriber_from_config},
+    config::{get_config_toml, init_tracing_subscriber_from_config},
     router::start_bot,
     telegram_application::{client_authorize, client_connect},
 };
@@ -28,7 +28,7 @@ pub enum Commands {
 
 pub async fn launch() {
     let config = get_config_toml();
-    let pg_url = get_postgres_url(&config);
+    let pg_url = config.get_postgres_url();
     // FIXME!: perhaps there is another, more profitable way to create a variable that lives the entire program.
     let bot = Box::leak(Box::new(Bot::new(config.bot.bot_token.clone())));
     let (api_id, api_hash) = (config.tg_app.api_id, config.tg_app.api_hash.clone());

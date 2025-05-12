@@ -23,7 +23,7 @@ pub trait SetRepo {
     ) -> Result<(), RepoKind<SetShortNameNotExist>>;
 
     async fn get_by_tg_id(&mut self, set: GetByTgID)
-        -> Result<Vec<Set>, RepoKind<SetTgIdNotExist>>;
+    -> Result<Vec<Set>, RepoKind<SetTgIdNotExist>>;
 
     async fn get_one_by_short_name<'a>(
         &'a mut self,

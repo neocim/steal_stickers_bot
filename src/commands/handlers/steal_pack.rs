@@ -13,7 +13,7 @@ use tracing::error;
 use super::{add_stickers::add_stickers, states::steal_sticker_set::StealStickerSetState};
 use crate::{
     application::{
-        commands::create_set::create_set, common::traits::uow::UoWFactory as UoWFactoryTrait,
+        common::traits::uow::UoWFactory as UoWFactoryTrait, interactors::create_set::create_set,
         set::dto::create::Create as CreateSet,
     },
     core::stickers_helpers::constants::CREATE_SET_IN_ONE_GO_LENGTH_LIMIT,
