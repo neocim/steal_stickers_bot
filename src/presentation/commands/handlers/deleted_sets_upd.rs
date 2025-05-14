@@ -33,8 +33,12 @@ where
         debug!("Start checking for deleted sets.");
 
         loop {
-            if Utc::now() - last_upd_time < Duration::hours(12) {
-                tokio::time::sleep(tokio::time::Duration::from_secs(3600)).await;
+            // if Utc::now() - last_upd_time < Duration::hours(12) {
+            //     tokio::time::sleep(tokio::time::Duration::from_secs(3600)).await;
+            //     continue;
+            // }
+            if Utc::now() - last_upd_time < Duration::seconds(10) {
+                tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
                 continue;
             }
 
@@ -65,6 +69,10 @@ where
                     if matches!(err,  SessionErrorKind::Telegram(TelegramErrorKind::BadRequest { message })
                         if message.as_ref() == "Bad Request: STICKERSET_INVALID")
                     {
+                        debug!(
+                            "Trying to set `deleted` column to `true` for sticker set `{}`..",
+                            set.short_name.as_str()
+                        );
                         set_deleted_col(
                             &mut uow,
                             SetDeletedColByShortName::new(set.short_name.as_str(), true),

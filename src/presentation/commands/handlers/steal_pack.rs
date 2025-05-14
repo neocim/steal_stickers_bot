@@ -137,7 +137,7 @@ where
         .username
         .expect("bot without username :/");
 
-    // only panic if bot using in channels, but i'm using private filter in main function
+    // only panic if bot using in channels, but i'm using private filter in launch function
     let user_id = message.from.expect("user without id").id;
 
     // prepare name for new sticker set and link to use it in message later
@@ -151,7 +151,7 @@ where
             containing more than {CREATE_SET_IN_ONE_GO_LENGTH_LIMIT} stickers can take up to a several minutes due to some internal limitations)",
             title = html_code(html_quote(&new_set_title))
         ),
-    ))
+    ).parse_mode(ParseMode::HTML))
     .await?;
 
     let (limit_sticker_set_length, more_than_limit) =
