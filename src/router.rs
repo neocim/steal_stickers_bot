@@ -15,7 +15,7 @@ use crate::{
 };
 
 pub async fn start_bot(bot: &'static Bot, pool: Pool<Postgres>, client: Client) {
-    let mut router = init_router(bot, pool.clone());
+    let router = init_router(bot, pool.clone());
 
     let dispatcher = Dispatcher::builder()
         .main_router(router.clone().configure_default())
