@@ -60,7 +60,7 @@ pub async fn launch() {
     };
     debug!("Connected the database!");
 
-    start_bot(bot, pool, client, api_id, api_hash).await;
+    start_bot(bot, pool, client).await;
 }
 
 async fn run_or_auth(client: &Client, ph_num: &str, pswd: &str) {

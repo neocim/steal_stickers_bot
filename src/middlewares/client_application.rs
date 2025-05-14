@@ -13,8 +13,7 @@ use tracing::debug;
 
 use crate::telegram_application::client_connect;
 
-#[derive(Debug, Clone, FromContext)]
-#[context(key = "client", from = ClientGrammers)]
+#[derive(Debug, Clone)]
 pub struct Client(pub ClientGrammers);
 
 impl From<ClientGrammers> for Client {

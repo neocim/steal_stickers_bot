@@ -1,5 +1,5 @@
 use telers::{
-    Bot,
+    Bot, Extension,
     enums::ParseMode,
     errors::{HandlerError, TelegramErrorKind, session::ErrorKind},
     event::{EventReturn, telegram::HandlerResult},
@@ -84,7 +84,7 @@ pub async fn create_new_sticker_set<S, UoWFactory>(
     bot: Bot,
     message: MessageText,
     fsm: Context<S>,
-    uow_factory: UoWFactory,
+    Extension(uow_factory): Extension<UoWFactory>,
 ) -> HandlerResult
 where
     UoWFactory: UoWFactoryTrait,

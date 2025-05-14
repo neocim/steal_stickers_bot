@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use telers::{
-    Bot,
+    Bot, Extension,
     enums::ParseMode,
     errors::HandlerError,
     event::{EventReturn, telegram::HandlerResult},
@@ -53,7 +53,7 @@ pub async fn my_stickers_handler<S, UoWFactory>(
     bot: Bot,
     message: MessageText,
     fsm: FSMContext<S>,
-    uow_factory: UoWFactory,
+    Extension(uow_factory): Extension<UoWFactory>,
 ) -> HandlerResult
 where
     UoWFactory: UoWFactoryTrait,
@@ -135,7 +135,7 @@ pub async fn process_button<S, UoWFactory>(
     bot: Bot,
     callback_query: CallbackQuery,
     fsm: FSMContext<S>,
-    uow_factory: UoWFactory,
+    Extension(uow_factory): Extension<UoWFactory>,
 ) -> HandlerResult
 where
     UoWFactory: UoWFactoryTrait,

@@ -1,15 +1,16 @@
 use std::time::Duration;
 
+use grammers_client::Client;
 use telers::{
-    Bot,
+    Bot, Extension,
     enums::ParseMode,
     errors::HandlerError,
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
-    methods::AddStickerToSet,
-    methods::{DeleteMessage, GetMe, GetStickerSet, SendMessage},
-    types::{InputFile, InputSticker, Message},
-    types::{MessageSticker, MessageText, ReplyParameters, Sticker},
+    methods::{AddStickerToSet, DeleteMessage, GetMe, GetStickerSet, SendMessage},
+    types::{
+        InputFile, InputSticker, Message, MessageSticker, MessageText, ReplyParameters, Sticker,
+    },
     utils::text::{html_bold, html_text_link},
 };
 use tracing::error;
@@ -24,7 +25,6 @@ use crate::{
         common::{set_created_by, sticker_format},
         constants::MAX_STICKER_SET_LENGTH,
     },
-    middlewares::Client,
     telegram_application::get_sticker_set_user_id,
 };
 
@@ -64,8 +64,8 @@ pub async fn get_stolen_sticker_set<S, UoWFactory>(
     bot: Bot,
     message: MessageSticker,
     fsm: Context<S>,
-    Client(client): Client,
-    uow_factory: UoWFactory,
+    Extension(client): Extension<Client>,
+    Extension(uow_factory): Extension<UoWFactory>,
 ) -> HandlerResult
 where
     UoWFactory: UoWFactoryTrait,
@@ -261,8 +261,8 @@ where
 pub async fn get_stickers_to_add<S, UoWFactory>(
     bot: Bot,
     message: MessageSticker,
-    Client(client): Client,
-    uow_factory: UoWFactory,
+    Extension(client): Extension<Client>,
+    Extension(uow_factory): Extension<UoWFactory>,
     fsm: Context<S>,
 ) -> HandlerResult
 where
