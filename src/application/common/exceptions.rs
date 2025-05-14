@@ -4,7 +4,7 @@ pub trait ApplicationException {}
 pub trait UnexpectedError {}
 
 #[derive(Debug, thiserror::Error)]
-#[error("repository error: {message}")]
+#[error("Repository error: {message}")]
 pub struct RepoError {
     message: Cow<'static, str>,
 }

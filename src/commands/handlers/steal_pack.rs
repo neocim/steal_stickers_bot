@@ -1,29 +1,27 @@
 use telers::{
+    Bot, Extension,
     enums::ParseMode,
-    errors::{session::ErrorKind, HandlerError, TelegramErrorKind},
-    event::{telegram::HandlerResult, EventReturn},
+    errors::{HandlerError, TelegramErrorKind, session::ErrorKind},
+    event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
     methods::{CreateNewStickerSet, DeleteMessage, GetMe, GetStickerSet, SendMessage},
     types::{InputFile, InputSticker, MessageSticker, MessageText},
     utils::text::{html_bold, html_code, html_text_link},
-    Bot,
 };
 use tracing::error;
 
+use super::{add_stickers::add_stickers, states::steal_sticker_set::StealStickerSetState};
 use crate::{
     application::{
-        commands::create_set::create_set, common::traits::uow::UoWFactory as UoWFactoryTrait,
+        common::traits::uow::UoWFactory as UoWFactoryTrait, interactors::create_set::create_set,
         set::dto::create::Create as CreateSet,
     },
-    bot_commands::states::StealStickerSetState,
     core::stickers_helpers::constants::CREATE_SET_IN_ONE_GO_LENGTH_LIMIT,
 };
 use crate::{
     core::stickers_helpers::common::{generate_sticker_set_name_and_link, sticker_format},
-    texts::sticker_set_message,
+    core::texts::sticker_set_message,
 };
-
-use super::common::add_stickers;
 
 pub async fn steal_sticker_set_handler<S: Storage>(
     bot: Bot,
@@ -86,7 +84,7 @@ pub async fn create_new_sticker_set<S, UoWFactory>(
     bot: Bot,
     message: MessageText,
     fsm: Context<S>,
-    uow_factory: UoWFactory,
+    Extension(uow_factory): Extension<UoWFactory>,
 ) -> HandlerResult
 where
     UoWFactory: UoWFactoryTrait,

@@ -82,9 +82,7 @@ where
     for<'a> SetRepoImpl<&'a mut DB::Connection>: SetRepo,
 {
     type Connection<'a> = &'a mut DB::Connection;
-
     type UserRepo<'a> = UserRepoImpl<Self::Connection<'a>>;
-
     type SetRepo<'a> = SetRepoImpl<Self::Connection<'a>>;
 
     async fn connect(&mut self) -> Result<Self::Connection<'_>, BeginError> {
@@ -117,11 +115,11 @@ where
     }
 
     async fn rollback(&mut self) -> Result<(), RollbackError> {
-        if let Some(transaction) = self.transaction.take() {
+        match self.transaction.take() { Some(transaction) => {
             transaction.rollback().await.map_err(Into::into)
-        } else {
+        } _ => {
             Ok(())
-        }
+        }}
     }
 
     async fn set_repo(&mut self) -> Result<Self::SetRepo<'_>, BeginError> {

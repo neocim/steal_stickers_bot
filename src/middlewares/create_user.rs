@@ -1,45 +1,39 @@
-use std::ops::DerefMut;
-use tokio::sync::RwLock;
-
+use async_trait::async_trait;
 use telers::{
+    Request,
     errors::{EventErrorKind, MiddlewareError},
     event::EventReturn,
-    middlewares::{outer::MiddlewareResponse, OuterMiddleware},
-    Request,
+    middlewares::{OuterMiddleware, outer::MiddlewareResponse},
 };
 
-use async_trait::async_trait;
-
 use crate::application::{
-    commands::create_user::create_user, common::traits::uow::UoW as UoWTrait,
+    common::traits::uow::{UoW as UoWTrait, UoWFactory},
+    interactors::create_user::create_user,
     user::dto::create::Create,
 };
 
-#[derive(Debug)]
-pub struct CreateUserMiddleware<UoW> {
-    uow: RwLock<UoW>,
+#[derive(Debug, Clone)]
+pub struct CreateUserMiddleware<UoWF> {
+    uowf: UoWF,
 }
 
-impl<UoW> CreateUserMiddleware<UoW>
+impl<UoWF> CreateUserMiddleware<UoWF>
 where
-    UoW: UoWTrait,
+    UoWF: UoWFactory,
 {
-    pub fn new(uow: UoW) -> Self {
-        Self {
-            uow: RwLock::new(uow),
-        }
+    pub const fn new(uowf: UoWF) -> Self {
+        Self { uowf }
     }
 }
 
 #[async_trait]
-impl<UoW> OuterMiddleware for CreateUserMiddleware<UoW>
+impl<UoWF> OuterMiddleware for CreateUserMiddleware<UoWF>
 where
-    UoW: UoWTrait + Send + Sync,
-    for<'a> UoW::UserRepo<'a>: Send + Sync,
+    UoWF: UoWFactory + Send + Sync + 'static + Clone,
+    for<'a> UoWF::UoW: Send + Sync,
+    for<'a> <UoWF::UoW as UoWTrait>::UserRepo<'a>: Send + Sync,
 {
-    async fn call(&self, request: Request) -> Result<MiddlewareResponse, EventErrorKind> {
-        let mut uow = self.uow.write().await;
-
+    async fn call(&mut self, request: Request) -> Result<MiddlewareResponse, EventErrorKind> {
         let user_id = match request.update.from_id() {
             Some(id) => id,
             None => {
@@ -47,9 +41,7 @@ where
             }
         };
 
-        let uow = uow.deref_mut();
-
-        create_user(uow, Create::new(user_id))
+        create_user(&mut self.uowf.create_uow(), Create::new(user_id))
             .await
             .map_err(MiddlewareError::new)?;
 

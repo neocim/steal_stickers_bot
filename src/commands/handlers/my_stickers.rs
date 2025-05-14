@@ -1,16 +1,16 @@
 use std::borrow::Cow;
 
 use telers::{
+    Bot, Extension,
     enums::ParseMode,
     errors::HandlerError,
-    event::{telegram::HandlerResult, EventReturn},
+    event::{EventReturn, telegram::HandlerResult},
     fsm::{Context as FSMContext, Storage},
     methods::{EditMessageText, SendMessage},
     types::{
         CallbackQuery, ChatIdKind, InlineKeyboardButton, InlineKeyboardMarkup, Message,
         MessageText, ReplyMarkup,
     },
-    Bot,
 };
 use tracing::error;
 
@@ -22,11 +22,12 @@ use crate::{
         },
         set::{dto::get_by_tg_id::GetByTgID as GetSetByTgID, traits::SetRepo as _},
     },
-    bot_commands::states::MyStickersState,
     core::stickers_helpers::constants::STICKER_SETS_NUMBER_PER_PAGE,
+    core::texts::current_page_message,
     domain::entities::set::Set,
-    texts::current_page_message,
 };
+
+use super::states::my_stickers::MyStickersState;
 
 impl From<BeginError> for HandlerError {
     fn from(value: BeginError) -> Self {
@@ -52,7 +53,7 @@ pub async fn my_stickers_handler<S, UoWFactory>(
     bot: Bot,
     message: MessageText,
     fsm: FSMContext<S>,
-    uow_factory: UoWFactory,
+    Extension(uow_factory): Extension<UoWFactory>,
 ) -> HandlerResult
 where
     UoWFactory: UoWFactoryTrait,
@@ -134,7 +135,7 @@ pub async fn process_button<S, UoWFactory>(
     bot: Bot,
     callback_query: CallbackQuery,
     fsm: FSMContext<S>,
-    uow_factory: UoWFactory,
+    Extension(uow_factory): Extension<UoWFactory>,
 ) -> HandlerResult
 where
     UoWFactory: UoWFactoryTrait,
@@ -256,10 +257,10 @@ fn get_buttons(
                     page_count += 1;
                     current_row_index += 1;
 
-                    buttons.push(vec![InlineKeyboardButton::new(format!(
-                        "page {page_count}",
-                    ))
-                    .callback_data(format!("{page_count}",))])
+                    buttons.push(vec![
+                        InlineKeyboardButton::new(format!("page {page_count}",))
+                            .callback_data(format!("{page_count}",)),
+                    ])
                 // else push button into current row
                 } else {
                     page_count += 1;

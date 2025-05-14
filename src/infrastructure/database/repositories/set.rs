@@ -6,10 +6,10 @@ use tracing::debug;
 
 use crate::{
     application::{
-        common::exceptions::RepoKind,
+        common::exceptions::{RepoError, RepoKind},
         set::{
             dto::{
-                create::Create, delete_by_short_name::DeleteByShortName,
+                create::Create, delete_by_short_name::DeleteByShortName, get_all::GetAll,
                 get_by_short_name::GetByShortName, get_by_tg_id::GetByTgID,
                 set_deleted_col_by_short_name::SetDeletedColByShortName,
             },
@@ -205,5 +205,41 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
 
                 RepoKind::unexpected(err)
             })
+    }
+
+    async fn get_all(&mut self, set: GetAll) -> Result<Vec<Set>, RepoError> {
+        let (sql_query, values) = if set.get_deleted().is_some() {
+            Query::select()
+                .columns([
+                    Alias::new("tg_id"),
+                    Alias::new("short_name"),
+                    Alias::new("title"),
+                    Alias::new("deleted"),
+                ])
+                .from(Alias::new("sets"))
+                .and_where(
+                    Expr::col(Alias::new("deleted"))
+                        .eq(set.get_deleted().expect("`get_deleted` is None")),
+                )
+                .build_sqlx(PostgresQueryBuilder)
+        } else {
+            Query::select()
+                .columns([
+                    Alias::new("tg_id"),
+                    Alias::new("short_name"),
+                    Alias::new("title"),
+                    Alias::new("deleted"),
+                ])
+                .from(Alias::new("sets"))
+                .build_sqlx(PostgresQueryBuilder)
+        };
+
+        debug!("Postgres query: {sql_query};\nValues for query: {values:?}");
+
+        sqlx::query_as_with(&sql_query, values)
+            .fetch_all(&mut *self.conn)
+            .await
+            .map(|set_model: Vec<SetModel>| set_model.into_iter().map(Into::into).collect())
+            .map_err(|err| RepoError::new(err.to_string()))
     }
 }

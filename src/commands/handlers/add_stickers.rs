@@ -1,28 +1,42 @@
 use std::time::Duration;
 
+use grammers_client::Client;
 use telers::{
+    Bot, Extension,
     enums::ParseMode,
     errors::HandlerError,
-    event::{telegram::HandlerResult, EventReturn},
+    event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
-    methods::{DeleteMessage, GetMe, GetStickerSet, SendMessage},
-    types::{MessageSticker, MessageText, ReplyParameters, Sticker},
+    methods::{AddStickerToSet, DeleteMessage, GetMe, GetStickerSet, SendMessage},
+    types::{
+        InputFile, InputSticker, Message, MessageSticker, MessageText, ReplyParameters, Sticker,
+    },
     utils::text::{html_bold, html_text_link},
-    Bot,
 };
-
 use tracing::error;
 
+use super::{AddStickersError, states::add_stickers::AddStickerState};
 use crate::{
     application::{
-        commands::create_set::create_set, common::traits::uow::UoWFactory as UoWFactoryTrait,
+        common::traits::uow::UoWFactory as UoWFactoryTrait, interactors::create_set::create_set,
         set::dto::create::Create as CreateSet,
     },
-    bot_commands::{handlers::add_stickers, states::AddStickerState},
-    core::stickers_helpers::{common::set_created_by, constants::MAX_STICKER_SET_LENGTH},
-    middlewares::Client,
+    core::stickers_helpers::{
+        common::{set_created_by, sticker_format},
+        constants::MAX_STICKER_SET_LENGTH,
+    },
     telegram_application::get_sticker_set_user_id,
 };
+
+pub async fn process_non_sticker(bot: Bot, message: Message) -> HandlerResult {
+    bot.send(SendMessage::new(
+        message.chat().id(),
+        "Please, send me a sticker.",
+    ))
+    .await?;
+
+    Ok(EventReturn::Finish)
+}
 
 pub async fn add_stickers_handler<S: Storage>(
     bot: Bot,
@@ -50,8 +64,8 @@ pub async fn get_stolen_sticker_set<S, UoWFactory>(
     bot: Bot,
     message: MessageSticker,
     fsm: Context<S>,
-    Client(client): Client,
-    uow_factory: UoWFactory,
+    Extension(client): Extension<Client>,
+    Extension(uow_factory): Extension<UoWFactory>,
 ) -> HandlerResult
 where
     UoWFactory: UoWFactoryTrait,
@@ -247,8 +261,8 @@ where
 pub async fn get_stickers_to_add<S, UoWFactory>(
     bot: Bot,
     message: MessageSticker,
-    Client(client): Client,
-    uow_factory: UoWFactory,
+    Extension(client): Extension<Client>,
+    Extension(uow_factory): Extension<UoWFactory>,
     fsm: Context<S>,
 ) -> HandlerResult
 where
@@ -497,4 +511,43 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
     .await?;
 
     Ok(EventReturn::Finish)
+}
+
+pub async fn add_stickers(
+    bot: &Bot,
+    user_id: i64,
+    set_name: &str,
+    sticker_list: &[Sticker],
+) -> Result<bool, AddStickersError> {
+    if sticker_list.is_empty() {
+        return Err(AddStickersError::new("list is empty"));
+    }
+
+    let mut all_stickers_was_stolen = true;
+
+    let mut sticker_formats = sticker_list.iter().map(|sticker| sticker_format(sticker));
+
+    for sticker in sticker_list {
+        if let Err(err) = bot
+            .send(AddStickerToSet::new(user_id, set_name, {
+                let sticker_is = InputSticker::new(
+                    InputFile::id(sticker.file_id.as_ref()),
+                    sticker_formats.next().unwrap(),
+                );
+
+                sticker_is.emoji_list(sticker.clone().emoji)
+            }))
+            .await
+        {
+            error!(?err, "error occureded while adding sticker to sticker set:");
+            error!(set_name, "sticker set name:");
+
+            all_stickers_was_stolen = false;
+        }
+
+        // sleep because you can’t send telegram api requests more often than per second
+        tokio::time::sleep(Duration::from_millis(1001)).await;
+    }
+
+    Ok(all_stickers_was_stolen)
 }
