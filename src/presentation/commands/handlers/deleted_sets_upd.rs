@@ -62,7 +62,7 @@ where
             let sets = result.unwrap();
             for (i, set) in sets.into_iter().enumerate() {
                 if let Err(err) = bot.send(GetStickerSet::new(set.short_name.as_str())).await {
-                    if matches!(err,  SessionErrorKind::Telegram(TelegramErrorKind::BadRequest { message })
+                    if matches!(err,  SessionErrorKind::Telegram(TelegramErrorKind::BadRequest { ref message })
                         if message.as_ref() == "Bad Request: STICKERSET_INVALID")
                     {
                         debug!(
@@ -80,6 +80,12 @@ where
                                 set.short_name, err
                             );
                         });
+                    } else {
+                        error!(
+                            "Failed to get sticker set `{}`: {:?}",
+                            set.short_name.as_str(),
+                            err
+                        );
                     }
                 }
                 if i % 5 == 0 {
