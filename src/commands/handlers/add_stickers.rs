@@ -11,7 +11,7 @@ use telers::{
     types::{
         InputFile, InputSticker, Message, MessageSticker, MessageText, ReplyParameters, Sticker,
     },
-    utils::text::{html_bold, html_text_link},
+    utils::text::{html_bold, html_quote, html_text_link},
 };
 use tracing::error;
 
@@ -492,9 +492,9 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
         SendMessage::new(
             message.chat.id(),
             format!(
-                "This sticker(s) was added into {set}!",
+                "Sticker(s) have been added into {set}!",
                 set = html_text_link(
-                    sticker_set_title,
+                    html_quote(sticker_set_title),
                     format!("t.me/addstickers/{}", sticker_set_name)
                 )
             ),
