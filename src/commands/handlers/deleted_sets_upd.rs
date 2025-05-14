@@ -62,8 +62,8 @@ where
             let sets = result.unwrap();
             for (i, set) in sets.into_iter().enumerate() {
                 if let Err(err) = bot.send(GetStickerSet::new(set.short_name.as_str())).await {
-                    if matches!(err,  SessionErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if message.as_ref()
-                    == "TelegramBadRequest: STICKERSET_INVALID")
+                    if matches!(err,  SessionErrorKind::Telegram(TelegramErrorKind::BadRequest { message })
+                        if message.as_ref() == "Bad Request: STICKERSET_INVALID")
                     {
                         set_deleted_col(
                             &mut uow,

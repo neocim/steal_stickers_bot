@@ -49,7 +49,7 @@ pub async fn launch() {
     run_or_auth(&client, &config.auth.phone_number, &config.auth.password).await;
     debug!("Successfully logged in!");
 
-    debug!("Connecting to the database.. {pg_url}");
+    debug!("Connecting to the database with url `{pg_url}`..");
     let pool = match sqlx::PgPool::connect(&pg_url).await {
         Ok(pool) => pool,
         Err(err) => {
