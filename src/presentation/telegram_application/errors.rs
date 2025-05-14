@@ -1,6 +1,6 @@
 use grammers_client::{
-    client::bots::{AuthorizationError, InvocationError},
     SignInError,
+    client::bots::{AuthorizationError, InvocationError},
 };
 use thiserror::Error;
 

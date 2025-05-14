@@ -6,7 +6,6 @@ pub mod cancel;
 pub mod deleted_sets_upd;
 pub mod my_stickers;
 pub mod start;
-pub mod states;
 pub mod steal_pack;
 
 #[derive(Debug, Clone, thiserror::Error)]

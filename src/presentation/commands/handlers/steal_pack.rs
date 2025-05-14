@@ -10,13 +10,14 @@ use telers::{
 };
 use tracing::error;
 
-use super::{add_stickers::add_stickers, states::steal_sticker_set::StealStickerSetState};
+use super::add_stickers::add_stickers;
 use crate::{
     application::{
         common::traits::uow::UoWFactory as UoWFactoryTrait, interactors::create_set::create_set,
         set::dto::create::Create as CreateSet,
     },
     core::stickers_helpers::constants::CREATE_SET_IN_ONE_GO_LENGTH_LIMIT,
+    presentation::commands::states::steal_sticker_set::StealStickerSetState,
 };
 use crate::{
     core::stickers_helpers::common::{generate_sticker_set_name_and_link, sticker_format},

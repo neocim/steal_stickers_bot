@@ -1,13 +1,10 @@
 pub mod application;
-mod commands;
 pub mod config;
 pub mod core;
 pub mod domain;
 pub mod infrastructure;
 mod launch;
-pub mod middlewares;
-pub mod router;
-mod telegram_application;
+mod presentation;
 
 use crate::launch::launch;
 

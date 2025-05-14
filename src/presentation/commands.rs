@@ -11,6 +11,7 @@ use telers::{
 };
 
 mod handlers;
+mod states;
 
 use crate::{
     application::{set::traits::SetRepo, user::traits::UserRepo},
@@ -29,11 +30,11 @@ use handlers::{
     cancel::cancel_handler,
     my_stickers::{my_stickers_handler, process_button},
     start::start_handler,
-    states::{
-        add_stickers::AddStickerState, my_stickers::MyStickersState,
-        steal_sticker_set::StealStickerSetState,
-    },
     steal_pack::{create_new_sticker_set, get_sticker_set_name, steal_sticker_set_handler},
+};
+use states::{
+    add_stickers::AddStickerState, my_stickers::MyStickersState,
+    steal_sticker_set::StealStickerSetState,
 };
 
 pub async fn set_commands(bot: &Bot) -> Result<(), HandlerError> {

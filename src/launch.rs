@@ -7,8 +7,10 @@ use tracing::{debug, error};
 
 use crate::{
     config::{get_config_toml, init_tracing_subscriber_from_config},
-    router::start_bot,
-    telegram_application::{client_authorize, client_connect},
+    presentation::{
+        router::start_bot,
+        telegram_application::{client_authorize, client_connect},
+    },
 };
 
 #[derive(Parser)]

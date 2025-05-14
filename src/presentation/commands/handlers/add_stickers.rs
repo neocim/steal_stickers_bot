@@ -15,7 +15,7 @@ use telers::{
 };
 use tracing::error;
 
-use super::{AddStickersError, states::add_stickers::AddStickerState};
+use super::AddStickersError;
 use crate::{
     application::{
         common::traits::uow::UoWFactory as UoWFactoryTrait, interactors::create_set::create_set,
@@ -25,7 +25,10 @@ use crate::{
         common::{set_created_by, sticker_format},
         constants::MAX_STICKER_SET_LENGTH,
     },
-    telegram_application::get_sticker_set_user_id,
+    presentation::{
+        commands::states::add_stickers::AddStickerState,
+        telegram_application::get_sticker_set_user_id,
+    },
 };
 
 pub async fn process_non_sticker(bot: Bot, message: Message) -> HandlerResult {

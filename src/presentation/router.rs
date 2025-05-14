@@ -9,9 +9,11 @@ use telers::{
 use tracing::debug;
 
 use crate::{
-    commands::{deleted_sets_upd, init_commands, set_commands},
     infrastructure::database::uow::UoWFactory,
-    middlewares::CreateUserMiddleware,
+    presentation::{
+        commands::{deleted_sets_upd, init_commands, set_commands},
+        middlewares::CreateUserMiddleware,
+    },
 };
 
 pub async fn start_bot(bot: &'static Bot, pool: Pool<Postgres>, client: Client) {
