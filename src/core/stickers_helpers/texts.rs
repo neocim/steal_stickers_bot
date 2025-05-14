@@ -1,4 +1,4 @@
-use telers::utils::text::{html_code, html_text_link};
+use telers::utils::text::{html_code, html_quote, html_text_link};
 
 use crate::domain::entities::set::Set;
 
@@ -19,8 +19,8 @@ pub fn sticker_set_message(
         bot @Stickers, which does an excellent job of managing sticker packs. \
         (the name of your new sticker pack to handle it in @Stickers bot: {sticker_set_name})
         ",
-        new_ss_url = html_text_link(sticker_set_title, sticker_set_link),
-        steal_ss_url = html_text_link(other_sticker_set_title, other_sticker_set_link,),
+        new_ss_url = html_text_link(html_quote(sticker_set_title), sticker_set_link),
+        steal_ss_url = html_text_link(html_quote(other_sticker_set_title), other_sticker_set_link,),
         sticker_set_name = html_code(sticker_set_name)
     )
 }
@@ -56,7 +56,7 @@ pub fn current_page_message(
 
         let sticker_set_link = format!("{TELEGRAM_STICKER_SET_URL}{sticker_set_name}");
 
-        let sticker_set = html_text_link(sticker_set_title, sticker_set_link);
+        let sticker_set = html_text_link(html_quote(sticker_set_title), sticker_set_link);
 
         sticker_sets_page.push_str(&sticker_set);
 

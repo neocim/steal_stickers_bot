@@ -6,7 +6,7 @@ use telers::{
     fsm::{Context, Storage},
     methods::{CreateNewStickerSet, DeleteMessage, GetMe, GetStickerSet, SendMessage},
     types::{InputFile, InputSticker, MessageSticker, MessageText},
-    utils::text::{html_bold, html_code, html_text_link},
+    utils::text::{html_bold, html_code, html_quote, html_text_link},
 };
 use tracing::error;
 
@@ -146,8 +146,9 @@ where
     let message_delete = bot.send(SendMessage::new(
         message.chat.id(),
         format!(
-            "Stealing sticker pack with name `{new_set_title}` for you..\n(stealing sticker packs \
+            "Stealing sticker pack with name `{title}` for you..\n(stealing sticker packs \
             containing more than {CREATE_SET_IN_ONE_GO_LENGTH_LIMIT} stickers can take up to a several minutes due to some internal limitations)",
+            title = html_code(html_quote(&new_set_title))
         ),
     ))
     .await?;
@@ -244,10 +245,10 @@ where
                     Due to an error, not all stickers have been stolen :( \
                     (you can delete this sticker pack if you want using the /delpack command in official Telegram bot @Stickers. \
                     Name of this sticker pack: {copy_set_name})",
-                    created_pack = html_text_link(new_set_title, new_set_link),
-                    original_set = html_text_link(steal_sticker_set_title, steal_sticker_set_link),
+                    created_pack = html_text_link(html_quote(new_set_title), new_set_link),
+                    original_set = html_text_link(html_quote(steal_sticker_set_title), steal_sticker_set_link),
                     but_created = html_bold("but sticker pack was created"),
-                    copy_set_name = html_code(new_set_name.as_str())
+                    copy_set_name = html_code(new_set_name)
                 ),
             ).parse_mode(ParseMode::HTML))
             .await?;
