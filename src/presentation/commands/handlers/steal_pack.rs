@@ -5,7 +5,7 @@ use telers::{
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
     methods::{CreateNewStickerSet, DeleteMessage, GetMe, GetStickerSet, SendMessage},
-    types::{InputFile, InputSticker, MessageSticker, MessageText},
+    types::{InputFile, InputSticker, Message, MessageSticker, MessageText},
     utils::text::{html_bold, html_code, html_quote, html_text_link},
 };
 use tracing::error;
@@ -24,6 +24,16 @@ use crate::{
     core::texts::sticker_set_message,
 };
 
+pub async fn process_non_text(bot: Bot, message: Message) -> HandlerResult {
+    bot.send(SendMessage::new(
+        message.chat().id(),
+        "Please, send me a text message:",
+    ))
+    .await?;
+
+    Ok(EventReturn::Finish)
+}
+
 pub async fn steal_sticker_set_handler<S: Storage>(
     bot: Bot,
     message: MessageText,
@@ -37,7 +47,7 @@ pub async fn steal_sticker_set_handler<S: Storage>(
 
     bot.send(SendMessage::new(
         message.chat.id(),
-        "Send me a sticker and i will steal this sticker pack for you!",
+        "Send me a sticker and I will steal this sticker pack for you:",
     ))
     .await?;
 
@@ -72,7 +82,7 @@ pub async fn get_sticker_set_name<S: Storage>(
 
     bot.send(SendMessage::new(
         message.chat.id(),
-        "Now enter name for your new sticker pack (1-64 characters).",
+        "Now enter name for your new sticker pack (1-64 characters):",
     ))
     .await?;
 
@@ -95,7 +105,7 @@ where
     let new_set_title = if message.text.len() > 64 {
         bot.send(SendMessage::new(
             message.chat.id(),
-            "Too long name for sticker pack! Try enter a name up to 64 characters long.",
+            "Too long name for sticker pack! Please, enter a name up to 64 characters long:",
         ))
         .await?;
 
@@ -103,7 +113,7 @@ where
     } else if message.text.len() < 1 {
         bot.send(SendMessage::new(
             message.chat.id(),
-            "Too short name! Try enter a name between 1 and 64 characters long.",
+            "Too short name! Please, enter a name between 1 and 64 characters long:",
         ))
         .await?;
 

@@ -30,7 +30,10 @@ use handlers::{
     cancel::cancel_handler,
     my_stickers::{my_stickers_handler, process_button},
     start::start_handler,
-    steal_pack::{create_new_sticker_set, get_sticker_set_name, steal_sticker_set_handler},
+    steal_pack::{
+        create_new_sticker_set, get_sticker_set_name, process_non_text as process_non_text_handler,
+        steal_sticker_set_handler,
+    },
 };
 use states::{
     add_stickers::AddStickerState, my_stickers::MyStickersState,
@@ -83,7 +86,8 @@ pub fn init_commands(router: &mut Router<Reqwest>) {
     add_stickers_command::<sqlx::Postgres>(router, "addstickers", "done");
     steal_sticker_set_command::<sqlx::Postgres>(router, "stealpack");
     my_stickers::<sqlx::Postgres>(router, "mystickers");
-    process_non_sticker(router, ContentTypeEnum::Sticker);
+    process_non_sticker(router);
+    process_non_text(router);
 }
 
 /// If the user simply writes to the bot without calling any commands, the bot will call specified function
@@ -209,17 +213,24 @@ where
         ));
 }
 
-/// If user enter wrong content type, but the request type is <content_type>, this handler will process it
-fn process_non_sticker(router: &mut Router<Reqwest>, content_type: ContentTypeEnum) {
+fn process_non_sticker(router: &mut Router<Reqwest>) {
     router
         .message
         .filter(ChatType::one(ChatTypeEnum::Private))
         .register(process_non_sticker_handler)
-        .filter(ContentType::one(content_type).invert())
+        .filter(ContentType::one(ContentTypeEnum::Sticker).invert())
         .filter(
             StateFilter::one(StealStickerSetState::StealStickerSetName).or(StateFilter::many([
                 AddStickerState::GetStolenStickerSet,
                 AddStickerState::GetStickersToAdd,
             ])),
         );
+}
+
+fn process_non_text(router: &mut Router<Reqwest>) {
+    router
+        .message
+        .register(process_non_text_handler)
+        .filter(ContentType::one(ContentTypeEnum::Text).invert())
+        .filter(StateFilter::one(StealStickerSetState::CreateNewStickerSet));
 }

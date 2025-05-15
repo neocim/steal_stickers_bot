@@ -1,6 +1,6 @@
-use std::{io, time::Duration};
+use std::io;
 
-use grammers_client::{Client, Config, FixedReconnect, InitParams, SignInError};
+use grammers_client::{Client, Config, InitParams, SignInError};
 use grammers_session::Session;
 use grammers_tl_types::{
     enums::{self, InputStickerSet},
@@ -12,12 +12,7 @@ use tracing::error;
 
 mod constants;
 mod errors;
-use constants::SESSION_FILE;
-
-static RECONNECT_POLICY: FixedReconnect = FixedReconnect {
-    attempts: 3,
-    delay: Duration::from_millis(100),
-};
+use constants::{RECONNECT_POLICY, SESSION_FILE};
 
 pub async fn client_connect(api_id: i32, api_hash: String) -> Result<Client, errors::Error> {
     Ok(Client::connect(Config {

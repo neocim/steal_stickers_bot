@@ -34,7 +34,7 @@ use crate::{
 pub async fn process_non_sticker(bot: Bot, message: Message) -> HandlerResult {
     bot.send(SendMessage::new(
         message.chat().id(),
-        "Please, send me a sticker.",
+        "Please, send me a sticker:",
     ))
     .await?;
 
@@ -140,7 +140,7 @@ where
                 Err(err) => {
                     error!(
                         ?err,
-                        "error occurded while trying to get sticker set user id:"
+                        "Error occurded while trying to get sticker set user id:"
                     );
 
                     error_count += 1;
@@ -152,7 +152,7 @@ where
     {
         Ok(Ok(set_id)) => set_id,
         Ok(Err(err)) => {
-            error!(%err, "failed to get sticker set user id:");
+            error!(%err, "Failed to get sticker set user id:");
 
             bot.send(
                 SendMessage::new(message.chat.id(), "Sorry, an error occurded. Try again :(")
@@ -163,7 +163,7 @@ where
             return Ok(EventReturn::Finish);
         }
         Err(err) => {
-            error!(%err, "too long time to get sticker set user id:");
+            error!(%err, "Too long time to get sticker set user id:");
 
             bot.send(
                 SendMessage::new(message.chat.id(), "Sorry, an error occurded. Try again :(")

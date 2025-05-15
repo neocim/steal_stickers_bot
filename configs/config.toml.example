@@ -4,19 +4,24 @@
 # (in the original bot in .gitignore this line is written by default)
 
 # If you dont know, where you should get required data, read 
-# [README.md -> Preparing](https://github.com/Nnenty/steal_stickers_bot?tab=readme-ov-file#preparing).
+# [README.md -> Preparing](https://github.com/neocim/steal_stickers_bot?tab=readme-ov-file#preparing).
 
 [bot]
+# should be a string
 bot_token = ""
 
 [tg_app]
-# should be integer number
+# should be an integer number
 api_id = 
-# should be string
+# should be a string
 api_hash = ""
 
+# DON'T BE AFRAID THAT AUTHENTICATION IS REQUIRED HERE!
+# It is needed in order to connect the Telegram client and it was
+# possible to do things that cannot be done without authentication 
+# (for example, to receive the ID of the owner of the sticker pack).
 [auth]
-# enter number without '+'. Example: phone_number = "491721234567"
+# enter number without '+'. Example: `phone_number = "491721234567"`
 phone_number = ""
 # enter only if you have two-step verification enabled
 password = ""
@@ -27,9 +32,9 @@ log_level = "debug"
 
 [postgres]
 # full URL will looks like: "postgres://{username}:{password}@{host}:{port}/{db}"
-username = ""
-password = ""
-# default
+# default and must be changed
+username = "admin"
+password = "admin"
 host = "steal_stickers.postgres"
 port = "5432"
 db = "db"
