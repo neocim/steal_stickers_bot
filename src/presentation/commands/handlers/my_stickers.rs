@@ -257,7 +257,7 @@ fn get_buttons(
                     current_row_index += 1;
 
                     buttons.push(vec![
-                        InlineKeyboardButton::new(format!("page {page_count}",))
+                        InlineKeyboardButton::new(format!("Page {page_count}",))
                             .callback_data(format!("{page_count}",)),
                     ])
                 // else push button into current row

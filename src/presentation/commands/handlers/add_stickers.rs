@@ -54,9 +54,10 @@ pub async fn add_stickers_handler<S: Storage>(
 
     bot.send(SendMessage::new(
             message.chat.id(),
-            format!("Send me {your} sticker pack, in which you want to add stickers. You can see all your \
-            stolen stickers, using command /mystickers (if you don't have the sticker packs stolen by this bot, first use the command /stealpack).",
-            your = html_bold("your stolen")),
+            format!(
+                "Send me your stolen sticker pack, in which you want to add sticker(s). You can see all your \
+                stolen sticker packs, using command /mystickers."
+            ),
         ).parse_mode(ParseMode::HTML))
         .await?;
 
@@ -97,7 +98,7 @@ where
         Err(err) => {
             error!(
                 ?err,
-                "error occurded while getting sticker set to add stickers into it:"
+                "Error occurded while getting sticker set to add stickers into it:"
             );
 
             bot.send(SendMessage::new(
@@ -121,7 +122,7 @@ where
     if !set_created_by(sticker_set_name.as_ref(), bot_username.as_ref()) {
         bot.send(SendMessage::new(
             message.chat.id(),
-            "This sticker pack wasnt stolen by this bot, which means i cant add stickers to it according to Telegram rules! \
+            "This sticker pack wasnt stolen by me, which means I cant add stickers to it according to Telegram rules. \
             You can see your stolen sticker pack using command /mystickers or steal this sticker pack using command /stealpack.",
         ))
         .await?;
@@ -155,8 +156,11 @@ where
             error!(%err, "Failed to get sticker set user id:");
 
             bot.send(
-                SendMessage::new(message.chat.id(), "Sorry, an error occurded. Try again :(")
-                    .reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())),
+                SendMessage::new(
+                    message.chat.id(),
+                    "Sorry, an error occurded :( Please, try again in few minutes.",
+                )
+                .reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())),
             )
             .await?;
 
@@ -166,8 +170,11 @@ where
             error!(%err, "Too long time to get sticker set user id:");
 
             bot.send(
-                SendMessage::new(message.chat.id(), "Sorry, an error occurded. Try again :(")
-                    .reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())),
+                SendMessage::new(
+                    message.chat.id(),
+                    "Sorry, an error occurded :( Please, try again in few minutes.",
+                )
+                .reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())),
             )
             .await?;
 
@@ -330,10 +337,11 @@ where
                 error!(%err, "failed to get sticker set user id:");
 
                 bot.send(
-                    SendMessage::new(message.chat.id(), "Sorry, an error occurded. Try again :(")
-                        .reply_parameters(
-                            ReplyParameters::new(message.id).chat_id(message.chat.id()),
-                        ),
+                    SendMessage::new(
+                        message.chat.id(),
+                        "Sorry, an error occurded :( Please, try again in few minutes.",
+                    )
+                    .reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())),
                 )
                 .await?;
 
@@ -343,10 +351,11 @@ where
                 error!(%err, "too long time to get sticker set user id:");
 
                 bot.send(
-                    SendMessage::new(message.chat.id(), "Sorry, an error occurded. Try again :(")
-                        .reply_parameters(
-                            ReplyParameters::new(message.id).chat_id(message.chat.id()),
-                        ),
+                    SendMessage::new(
+                        message.chat.id(),
+                        "Sorry, an error occurded :( Please, try again in few minutes.",
+                    )
+                    .reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())),
                 )
                 .await?;
 
