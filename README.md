@@ -27,7 +27,7 @@ cargo test
 10. Copy [config.toml.example](./configs/config.toml.example), remove `.example` from name of file and fill it required information.
 11. Copy [.env.example](./.env.example), remove `.example` from name of file and fill it ***the same*** required information as in your file `config.toml`.
 
-<h3>Run bot</h3>
+<h3>Running</h3>
 
 1. First, we need to authorize the client. Do this using:
 ```
