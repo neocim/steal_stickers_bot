@@ -8,18 +8,15 @@ pub fn sticker_set_message(
     sticker_set_title: &str,
     sticker_set_name: &str,
     sticker_set_link: &str,
-    other_sticker_set_title: &str,
-    other_sticker_set_link: &str,
 ) -> String {
     format!(
         "
-        Now you have your own sticker pack {new_ss_url} (original: {steal_ss_url})! \
-        If you want, you can add any sticker(s) to this pack using command /addstickers! \
-        Also you can manage your new sticker pack using official Telegram bot @Stickers, and to do it, \
+        Now you have your own sticker pack {new_ss_url}. \
+        If you want, you can add any sticker(s) to this pack using command /addstickers. \
+        Also you can manage your new sticker pack, using official Telegram bot @Stickers, and to do it, \
         you should use this internal name of your sticker pack: {sticker_set_name}
         ",
         new_ss_url = html_text_link(html_quote(sticker_set_title), sticker_set_link),
-        steal_ss_url = html_text_link(html_quote(other_sticker_set_title), other_sticker_set_link,),
         sticker_set_name = html_code(sticker_set_name)
     )
 }

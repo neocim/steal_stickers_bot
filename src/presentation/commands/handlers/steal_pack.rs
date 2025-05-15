@@ -157,8 +157,8 @@ where
     let message_delete = bot.send(SendMessage::new(
         message.chat.id(),
         format!(
-            "Stealing sticker pack with name `{title}` for you..\n(stealing sticker packs \
-            containing more than {CREATE_SET_IN_ONE_GO_LENGTH_LIMIT} stickers can take up to a several minutes due to some internal limitations)",
+            "Stealing sticker pack with name {title} for you.. It may take up to a several minutes, if this sticker pack \
+            containing more than {CREATE_SET_IN_ONE_GO_LENGTH_LIMIT} stickers.",
             title = html_code(html_quote(&new_set_title))
         ),
     ).parse_mode(ParseMode::HTML))
@@ -271,13 +271,7 @@ where
     bot.send(
         SendMessage::new(
             message.chat.id(),
-            sticker_set_message(
-                &new_set_title,
-                &new_set_name,
-                &new_set_link,
-                &steal_sticker_set_title,
-                &steal_sticker_set_link,
-            ),
+            sticker_set_message(&new_set_title, &new_set_name, &new_set_link),
         )
         .parse_mode(ParseMode::HTML),
     )

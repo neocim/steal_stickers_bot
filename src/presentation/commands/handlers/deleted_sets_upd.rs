@@ -89,7 +89,7 @@ where
                     }
                 }
                 if i % 5 == 0 {
-                    tokio::time::sleep(tokio::time::Duration::from_millis(1010)).await;
+                    tokio::time::sleep(tokio::time::Duration::from_millis(1100)).await;
                 }
             }
             last_upd_time = Utc::now();

@@ -252,8 +252,8 @@ where
 
     bot.send(SendMessage::new(
         message.chat.id(),
-        "Now send me stickers you want to add in stolen sticker pack. \
-        When youre ready, use /done command (or /cancel, if you want to cancel the last command).",
+        "Now send me the sticker(s), you want to add in your sticker pack. \
+        When you're ready, use /done command to add all selected stickers into sticker pack.",
     ))
     .await?;
 
@@ -456,7 +456,7 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
         None => {
             bot.send(SendMessage::new(
                 message.chat.id(),
-                "You haven't sent a single sticker! Send the stickers, and only then use the /done command.",
+                "You haven't sent a single sticker! Send the sticker(s), and only then use the /done command.",
             ))
             .await?;
 
@@ -472,8 +472,8 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
     let message_delete = bot
         .send(SendMessage::new(
             message.chat.id(),
-            "Done! Trying to add that sticker(s) to your sticker pack..\n\
-        (if you have sent a lot of stickers, it may take up to a few minutes to add them)",
+            "Done! Trying to add that sticker(s) to your sticker pack.. \
+            It may take up to a several minutes, if you have selected a lot of stickers to add.",
         ))
         .await?;
 
@@ -558,7 +558,7 @@ pub async fn add_stickers(
         }
 
         // sleep because you can’t send telegram api requests more often than per second
-        tokio::time::sleep(Duration::from_millis(1001)).await;
+        tokio::time::sleep(Duration::from_millis(1100)).await;
     }
 
     Ok(all_stickers_was_stolen)
