@@ -29,7 +29,7 @@ cargo test
 
 <h3>Running</h3>
 
-1. First, we need to authorize the client. Do this using:
+1. First, we need to authorize the client. Do it, using:
 ```
 just auth
 ```
