@@ -1,6 +1,6 @@
 # DO NOT SHOW THIS FILE TO ANYONE! IF YOU ARE GOING TO POST
 # YOUR VERSION OF THIS BOT ANYWHERE (like GitHub), MAKE SURE 
-# THAT THERE IS A `cargo.toml` line IN THE `.gitignore` FILE!
+# THAT THERE IS A `config.toml` line IN THE `.gitignore` FILE!
 # (in the original bot in .gitignore this line is written by default)
 
 # If you dont know, where you should get required data, read 
@@ -16,9 +16,8 @@ api_id =
 # should be a string
 api_hash = ""
 
-# DON'T BE AFRAID THAT AUTHENTICATION IS REQUIRED HERE!
-# It is needed in order to connect the Telegram client and it was
-# possible to do things that cannot be done without authentication 
+# Authentication is needed in order to connect the Telegram client and it was
+# possible to do things that cannot be done without it
 # (for example, to receive the ID of the owner of the sticker pack).
 [auth]
 # enter number without '+'. Example: `phone_number = "491721234567"`
