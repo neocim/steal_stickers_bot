@@ -15,10 +15,19 @@ run:
         run
 
 compose-run:
-    docker compose up
+    docker compose up && \
 
 compose-build:
     docker compose up --build
+
+migrate-run username=env("POSTGRES_USER") \
+            password=env("POSTGRES_PASSWORD") \
+            host="0.0.0.0" \
+            port=env("POSTGRES_PORT") \
+            db=env("POSTGRES_DB"):
+    sqlx migrate run \
+    --source ./src/infrastructure/database/migrations \
+    --database-url="postgres://{{username}}:{{password}}@{{host}}:{{port}}/{{db}}"
 
 # This is just my template to run databse without `just compose-run`. If you want to override it, then use this template:
 # docker run --rm --name {NAME} -p {PORT}:5432 -e POSTGRES_PASSWORD={PASSWORD} -e POSTGRES_USER={USER} -e POSTGRES_DB={DATABASE_NAME} postgres:17-alpine

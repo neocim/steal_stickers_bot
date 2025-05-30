@@ -470,11 +470,16 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
     let user_id = message.from.expect("error while parsing user").id;
 
     let message_delete = bot
-        .send(SendMessage::new(
-            message.chat.id(),
-            "Done! Trying to add that sticker(s) to your sticker pack.. \
-            It may take up to a several minutes, if you have selected a lot of stickers to add.",
-        ))
+        .send(
+            SendMessage::new(
+                message.chat.id(),
+                format!(
+                "Done! Trying to add that sticker(s) into {your} sticker pack.. \
+                It may take up to a several minutes, if you have selected a lot of stickers to add.",
+                your = html_text_link("your", &sticker_set_name)),
+            )
+            .parse_mode(ParseMode::HTML),
+        )
         .await?;
 
     let all_stickers_was_added = add_stickers(
