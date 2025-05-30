@@ -23,7 +23,7 @@ services:
     networks:
       - steal_stickers.postgres.network
     ports:
-      - "${POSTGRES_HOST}:${POSTGRES_PORT}:5432"
+      - "127.0.0.1:${POSTGRES_PORT}:5432"
     volumes:
       - steal_stickers.postgres.data:/var/lib/postgresql/data/:rw
     logging:
