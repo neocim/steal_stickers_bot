@@ -22,7 +22,7 @@ compose-build:
 
 migrate-run username=env("POSTGRES_USER") \
             password=env("POSTGRES_PASSWORD") \
-            host="0.0.0.0" \
+            host=env("POSTGRES_HOST") \
             port=env("POSTGRES_PORT") \
             db=env("POSTGRES_DB"):
     sqlx migrate run \
