@@ -15,12 +15,10 @@ pub async fn start_handler<S: Storage>(
 ) -> HandlerResult {
     fsm.finish().await.map_err(Into::into)?;
 
-    // only can panic if messages uses in channels, but i'm using private filter in main function
-    let user_first_name = &message.from().expect("error while parsing user").first_name;
-
     bot.send(SendMessage::new(
         message.chat().id(),
-        start_message(user_first_name),
+        // only can panic if messages uses in channels, but i'm using private filter in main function
+        start_message(&message.from().expect("error while parsing user").first_name),
     ))
     .await?;
 
