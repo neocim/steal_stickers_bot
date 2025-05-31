@@ -9,7 +9,7 @@ use telers::{
     methods::{AnswerCallbackQuery, EditMessageText, SendMessage},
     types::{CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, MessageText, ReplyMarkup},
 };
-use tracing::error;
+use tracing::{error, warn};
 
 use crate::{
     application::{
@@ -19,9 +19,11 @@ use crate::{
         },
         set::{dto::get_by_tg_id::GetByTgID as GetSetByTgID, repository::SetRepo as _},
     },
-    core::stickers_helpers::constants::STICKER_SETS_NUMBER_PER_PAGE,
-    core::texts::current_page_message,
+    core::{
+        stickers_helpers::constants::STICKER_SETS_NUMBER_PER_PAGE, texts::current_page_message,
+    },
     domain::entities::set::Set,
+    presentation::commands::states::callback_data::CallbackData,
 };
 
 impl From<BeginError> for HandlerError {
@@ -81,9 +83,7 @@ where
             }
         };
 
-    let inline_keyboard_markup = InlineKeyboardMarkup::new(buttons);
-    let reply_markup = ReplyMarkup::InlineKeyboard(inline_keyboard_markup.clone());
-
+    let reply_markup = ReplyMarkup::InlineKeyboard(InlineKeyboardMarkup::new(buttons));
     bot.send(
         SendMessage::new(
             chat_id,
@@ -119,8 +119,11 @@ where
         _ => return Ok(EventReturn::Finish),
     };
 
-    let message_data = match &callback_query.data {
-        Some(message_data) => message_data,
+    bot.send(AnswerCallbackQuery::new(callback_query.id))
+        .await?;
+
+    let mut message_data = match &callback_query.data {
+        Some(message_data) => message_data.chars(),
         None => {
             error!(
                 "None value occurded while processed callback query from inline keyboard button!"
@@ -131,12 +134,14 @@ where
         }
     };
 
-    let current_page_number = message_data
-        .parse::<usize>()
-        .expect("fail to convert `message_data` string into usize");
+    message_data
+        .nth(CallbackData::MyStickers.as_str().len() - 1)
+        .expect("Failed to eat callback data prefix");
 
-    bot.send(AnswerCallbackQuery::new(callback_query.id))
-        .await?;
+    let current_page_number = match message_data.as_str().parse::<usize>() {
+        Ok(page_number) => page_number,
+        Err(_) => return Ok(EventReturn::Finish),
+    };
 
     // process if user click to one button several times in a row
     match fsm
@@ -144,9 +149,9 @@ where
         .await
         .map_err(Into::into)?
     {
-        Some(msg_data) if msg_data == *message_data => return Ok(EventReturn::Finish),
+        Some(msg_data) if &*msg_data == message_data.as_str() => return Ok(EventReturn::Finish),
         _ => {
-            fsm.set_value("previous_callback_query", Some(message_data.as_ref()))
+            fsm.set_value("previous_callback_query", Some(message_data.as_str()))
                 .await
                 .map_err(Into::into)?;
         }
@@ -160,7 +165,7 @@ where
         .await
         .map_err(HandlerError::new)?;
 
-    let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+    let mut buttons = Vec::new();
     let number_of_pages =
         match get_buttons(&sticker_sets, STICKER_SETS_NUMBER_PER_PAGE, &mut buttons) {
             Ok(pages) => pages,
@@ -210,16 +215,24 @@ fn get_buttons(
                     current_row_index += 1;
 
                     buttons.push(vec![
-                        InlineKeyboardButton::new(format!("Page {page_count}",))
-                            .callback_data(format!("{page_count}",)),
+                        InlineKeyboardButton::new(format!("Page {page_count}",)).callback_data(
+                            format!(
+                                "{prefix}{page_count}",
+                                prefix = CallbackData::MyStickers.as_str()
+                            ),
+                        ),
                     ])
                 // else push button into current row
                 } else {
                     page_count += 1;
 
                     buttons[current_row_index - 1].push(
-                        InlineKeyboardButton::new(format!("Page {page_count}",))
-                            .callback_data(format!("{page_count}",)),
+                        InlineKeyboardButton::new(format!("Page {page_count}",)).callback_data(
+                            format!(
+                                "{prefix}{page_count}",
+                                prefix = CallbackData::MyStickers.as_str()
+                            ),
+                        ),
                     );
                 }
             })

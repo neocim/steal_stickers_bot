@@ -252,10 +252,9 @@ where
             bot.send(SendMessage::new(
                 message.chat.id(),
                 format!(
-                    "Error occurded while creating new sticker pack {created_pack} (original {original_set}), {but_created}! \n\
+                    "Error occurded while creating new sticker pack {created_pack} (original {original_set}), {but_created}! \
                     Due to an error, not all stickers have been stolen :( \
-                    (you can delete this sticker pack if you want using the /delpack command in official Telegram bot @Stickers. \
-                    Name of this sticker pack: {copy_set_name})",
+                    Internal name of this sticker pack: {copy_set_name}",
                     created_pack = html_text_link(html_quote(new_set_title), new_set_link),
                     original_set = html_text_link(html_quote(steal_sticker_set_title), steal_sticker_set_link),
                     but_created = html_bold("but sticker pack was created"),

@@ -4,7 +4,7 @@ use telers::{
     client::Reqwest,
     enums::ContentType as ContentTypeEnum,
     errors::HandlerError,
-    filters::{Command, ContentType, State as StateFilter},
+    filters::{Command, ContentType, State as StateFilter, Text},
     fsm::MemoryStorage,
     methods::SetMyCommands,
     types::{BotCommand, BotCommandScopeAllPrivateChats},
@@ -19,7 +19,7 @@ use crate::{
         repositories::{set::SetRepoImpl, user::UserRepoImpl},
         uow::UoWFactory,
     },
-    presentation::commands::handlers::stats::stats_handler,
+    presentation::commands::{handlers::stats::stats_handler, states::callback_data::CallbackData},
 };
 pub use handlers::deleted_sets_upd::deleted_sets_upd;
 use handlers::{
@@ -219,7 +219,8 @@ where
 
     router
         .callback_query
-        .register(process_button::<MemoryStorage, UoWFactory<DB>>);
+        .register(process_button::<MemoryStorage, UoWFactory<DB>>)
+        .filter(Text::starts_with_single(CallbackData::MyStickers.as_str()));
 }
 
 fn process_non_sticker(router: &mut Router<Reqwest>) {
