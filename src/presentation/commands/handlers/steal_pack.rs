@@ -196,19 +196,19 @@ where
                 {
                     error!(
                         ?err,
-                        "file to create new sticker set; trying to generate sticker set name again:"
+                        "Failed to create new sticker set; trying to generate sticker set name again:"
                     );
-                    error!(new_set_name, "sticker set name:");
+                    error!(new_set_name, "Sticker set name:");
 
                     (new_set_name, new_set_link) =
                         generate_sticker_set_name_and_link(11, &bot_username);
                 } else {
-                    error!(?err, "error occureded while creating new sticker set:");
+                    error!(?err, "Error occureded while creating new sticker set:");
                     error!(new_set_name, "sticker set name:");
 
                     bot.send(SendMessage::new(
                         message.chat.id(),
-                        "Error occurded while creating new sticker pack :(",
+                        "Sorry, an error occurded while creating new sticker pack. Try again :(",
                     ))
                     .await?;
 
@@ -216,7 +216,7 @@ where
                 }
             }
             err => {
-                error!(?err, "error occureded while creating new sticker set:");
+                error!(?err, "Error occureded while creating new sticker set:");
 
                 bot.send(SendMessage::new(
                     message.chat.id(),
@@ -243,7 +243,7 @@ where
             &bot,
             user_id,
             new_set_name.as_ref(),
-            steal_stickers_from_sticker_set[limit_sticker_set_length..].as_ref(),
+            steal_stickers_from_sticker_set[limit_sticker_set_length..].into(),
         )
         .await
         .expect("empty stickers list");
