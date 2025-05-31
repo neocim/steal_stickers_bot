@@ -18,6 +18,8 @@ where
     UoWFactory: UoWFactoryTrait,
 {
     fsm.finish().await.map_err(Into::into)?;
+    bot.send(SendMessage::new(message.chat().id(), "IN DEVELOPMENT"))
+        .await?;
 
     Ok(EventReturn::Finish)
 }

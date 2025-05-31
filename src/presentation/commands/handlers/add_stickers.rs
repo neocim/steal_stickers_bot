@@ -23,7 +23,7 @@ use crate::{
     },
     core::stickers_helpers::{
         common::{set_created_by, sticker_format},
-        constants::MAX_STICKER_SET_LENGTH,
+        constants::{MAX_STICKER_SET_LENGTH, TELEGRAM_STICKER_SET_URL},
     },
     presentation::{
         commands::states::add_stickers::AddStickerState,
@@ -323,7 +323,7 @@ where
                     Err(err) => {
                         error!(
                             ?err,
-                            "error occurded while trying to get sticker set user id:"
+                            "Error number `{error_count}` occurded while trying to get sticker set user id:"
                         );
 
                         error_count += 1;
@@ -335,7 +335,7 @@ where
         {
             Ok(Ok(set_id)) => set_id,
             Ok(Err(err)) => {
-                error!(%err, "failed to get sticker set user id:");
+                error!(%err, "Failed to get sticker set user id:");
 
                 bot.send(
                     SendMessage::new(
@@ -349,7 +349,7 @@ where
                 return Ok(EventReturn::Finish);
             }
             Err(err) => {
-                error!(%err, "too long time to get sticker set user id:");
+                error!(%err, "Too long time to get sticker set user id:");
 
                 bot.send(
                     SendMessage::new(
@@ -401,10 +401,8 @@ where
             if sticker_set_length + sticker_vec_len >= MAX_STICKER_SET_LENGTH {
                 bot.send(SendMessage::new(
                     message.chat.id(),
-                    format!("Please, use command /done to add stickers (or /cancel if for some reason you change your \
-                    mind about adding them), because the sum of the current stickers in the sticker pack \
-                    and the stickers you want to add to it has reached {MAX_STICKER_SET_LENGTH}! All next stickers (if you continue sending) \
-                    will be ignored!"),
+                    format!("Please, use /done to add stickers, because the amount of stickers has reached \
+                    {MAX_STICKER_SET_LENGTH}. All next stickers (if you'll continue sending) will be ignored."),
                 ))
                 .await?;
 
@@ -448,7 +446,7 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
         // only panic if i'm forget call fsm.set_value() in function get_stolen_sticker_set()
         .expect("Sticker set name for sticker set should be set");
 
-    let stickers_to_add_vec: Vec<Sticker> = match fsm
+    let stickers: Vec<Sticker> = match fsm
         .get_value("get_stickers_to_add")
         .await
         .map_err(Into::into)?
@@ -468,7 +466,7 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
     fsm.finish().await.map_err(Into::into)?;
 
     // only panic if messages uses in channels, but i'm using private filter in main function
-    let user_id = message.from.expect("error while parsing user").id;
+    let user_id = message.from.expect("Error while parsing user").id;
 
     let message_delete = bot
         .send(
@@ -483,49 +481,39 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
         )
         .await?;
 
-    let all_stickers_was_added = add_stickers(
-        &bot,
-        user_id,
-        sticker_set_name.as_ref(),
-        stickers_to_add_vec.as_ref(),
-    )
-    .await
-    .expect("empty stickers list");
-
-    if !all_stickers_was_added {
-        bot.send(
-            SendMessage::new(
-                message.chat.id(),
-                format!(
-                    "Error occurded while adding stickers, {but_added}! Due to an error, not all stickers have been added :(",
-                    but_added = html_bold("but some stickers was added"),
-                ),
-            )
-            .parse_mode(ParseMode::HTML),
-        )
-        .await?;
-    }
-
-    bot.send(
-        SendMessage::new(
-            message.chat.id(),
-            format!(
-                "Sticker(s) have been added into {set}!",
-                set = html_text_link(
-                    html_quote(sticker_set_title),
-                    format!("t.me/addstickers/{}", sticker_set_name)
-                )
-            ),
-        )
-        .parse_mode(ParseMode::HTML),
-    )
-    .await?;
+    let all_stickers_was_added = add_stickers(&bot, user_id, sticker_set_name.as_ref(), stickers)
+        .await
+        // cant panic because we checked above that we're have at least 1 sticker in this list
+        .expect("empty stickers list");
 
     // delete unnecessary message
     bot.send(DeleteMessage::new(
         message_delete.chat().id(),
         message_delete.id(),
     ))
+    .await?;
+
+    let stickers_was_added_msg = if all_stickers_was_added {
+        format!(
+            "Sticker(s) have been added into {set}!",
+            set = html_text_link(
+                html_quote(sticker_set_title),
+                format!("{TELEGRAM_STICKER_SET_URL}{}", sticker_set_name)
+            )
+        )
+    } else {
+        format!(
+            "Error occurded while adding stickers. Due to an error, not all specified stickers have been added into {set} :(",
+            set = html_text_link(
+                html_quote(sticker_set_title),
+                format!("{TELEGRAM_STICKER_SET_URL}{}", sticker_set_name)
+            )
+        )
+    };
+
+    bot.send(
+        SendMessage::new(message.chat.id(), stickers_was_added_msg).parse_mode(ParseMode::HTML),
+    )
     .await?;
 
     Ok(EventReturn::Finish)
@@ -535,30 +523,27 @@ pub async fn add_stickers(
     bot: &Bot,
     user_id: i64,
     set_name: &str,
-    sticker_list: &[Sticker],
+    stickers: Vec<Sticker>,
 ) -> Result<bool, AddStickersError> {
-    if sticker_list.is_empty() {
+    if stickers.is_empty() {
         return Err(AddStickersError::new("list is empty"));
     }
 
     let mut all_stickers_was_stolen = true;
-
-    let mut sticker_formats = sticker_list.iter().map(|sticker| sticker_format(sticker));
-
-    for sticker in sticker_list {
+    for sticker in stickers {
         if let Err(err) = bot
             .send(AddStickerToSet::new(user_id, set_name, {
                 let sticker_is = InputSticker::new(
                     InputFile::id(sticker.file_id.as_ref()),
-                    sticker_formats.next().unwrap(),
+                    sticker_format(&sticker),
                 );
 
-                sticker_is.emoji_list(sticker.clone().emoji)
+                sticker_is.emoji_list(sticker.emoji)
             }))
             .await
         {
-            error!(?err, "error occureded while adding sticker to sticker set:");
-            error!(set_name, "sticker set name:");
+            error!(?err, "Error occureded while adding sticker to sticker set:");
+            error!(set_name, "Sticker set name:");
 
             all_stickers_was_stolen = false;
         }
