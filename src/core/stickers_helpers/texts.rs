@@ -32,7 +32,7 @@ pub fn start_message(username: &str) -> String {
     /stealpack - Steal sticker pack\n\
     /addstickers - Add sticker to a sticker pack stolen by this bot\n\
     /mystickers - List of your stolen stickers\n\
-    /myrank - See your rank in sticker theft\n\
+    /stats - See the bot statistics\n\
         ",
     )
 }

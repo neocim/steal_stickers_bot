@@ -8,8 +8,8 @@ use crate::application::{
         exceptions::{BeginError, CommitError, RollbackError},
         traits::uow::{UoW as UnitOfWork, UoWFactory as UoWFactoryTrait},
     },
-    set::traits::SetRepo,
-    user::traits::UserRepo,
+    set::repository::SetRepo,
+    user::repository::UserRepo,
 };
 
 impl From<sqlx::Error> for BeginError {

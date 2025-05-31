@@ -3,7 +3,7 @@ use crate::application::{
         exceptions::{RepoKind, TransactionKind},
         traits::uow::UoW as UoWTrait,
     },
-    set::{dto::set_deleted_col_by_short_name::SetDeletedColByShortName, traits::SetRepo as _},
+    set::{dto::set_deleted_col_by_short_name::SetDeletedColByShortName, repository::SetRepo as _},
 };
 
 pub async fn set_deleted_col<UoW>(

@@ -2,8 +2,8 @@ use async_trait::async_trait;
 
 use crate::application::{
     common::exceptions::{BeginError, CommitError, RollbackError},
-    set::traits::SetRepo,
-    user::traits::UserRepo,
+    set::repository::SetRepo,
+    user::repository::UserRepo,
 };
 
 #[async_trait]

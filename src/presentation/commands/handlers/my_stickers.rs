@@ -17,7 +17,7 @@ use crate::{
             exceptions::BeginError,
             traits::uow::{UoW as _, UoWFactory as UoWFactoryTrait},
         },
-        set::{dto::get_by_tg_id::GetByTgID as GetSetByTgID, traits::SetRepo as _},
+        set::{dto::get_by_tg_id::GetByTgID as GetSetByTgID, repository::SetRepo as _},
     },
     core::stickers_helpers::constants::STICKER_SETS_NUMBER_PER_PAGE,
     core::texts::current_page_message,
@@ -30,8 +30,7 @@ impl From<BeginError> for HandlerError {
     }
 }
 
-#[derive(Debug, Clone, thiserror::Error)]
-#[error("Error occurded while getting buttons: {message}")]
+#[derive(Debug, Clone)]
 struct GetButtonsError {
     message: Cow<'static, str>,
 }

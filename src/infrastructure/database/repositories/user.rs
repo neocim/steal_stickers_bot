@@ -10,7 +10,7 @@ use crate::{
         user::{
             dto::{create::Create, get_by_tg_id::GetByTgID},
             exceptions::{UserTgIdAlreadyExists, UserTgIdNotExist},
-            traits::UserRepo,
+            repository::UserRepo,
         },
     },
     domain::entities::user::User,

@@ -12,8 +12,8 @@ use crate::application::interactors::set_deleted_col::set_deleted_col;
 use crate::application::set::dto::get_all::GetAll;
 use crate::application::set::dto::set_deleted_col_by_short_name::SetDeletedColByShortName;
 use crate::application::{
-    common::traits::uow::UoWFactory as UoWFactoryTrait, set::traits::SetRepo,
-    user::traits::UserRepo,
+    common::traits::uow::UoWFactory as UoWFactoryTrait, set::repository::SetRepo,
+    user::repository::UserRepo,
 };
 use crate::infrastructure::database::{
     repositories::{set::SetRepoImpl, user::UserRepoImpl},

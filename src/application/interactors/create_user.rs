@@ -3,7 +3,7 @@ use crate::application::{
         exceptions::{RepoKind, TransactionKind},
         traits::uow::UoW as UoWTrait,
     },
-    user::{dto::create::Create, traits::UserRepo as _},
+    user::{dto::create::Create, repository::UserRepo as _},
 };
 
 pub async fn create_user<UoW>(uow: &mut UoW, user: Create) -> Result<(), TransactionKind>

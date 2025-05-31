@@ -13,9 +13,11 @@ impl<'a> SetDeletedColByShortName<'a> {
             deleted,
         }
     }
+
     pub const fn short_name(&self) -> &'a str {
         self.short_name
     }
+
     pub const fn deleted(&self) -> bool {
         self.deleted
     }

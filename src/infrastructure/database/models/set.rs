@@ -9,6 +9,9 @@ pub struct Set {
     pub title: String,
 }
 
+#[derive(FromRow)]
+pub struct SetsCount(pub i64);
+
 impl From<Set> for SetEntitie {
     fn from(value: Set) -> Self {
         Self {

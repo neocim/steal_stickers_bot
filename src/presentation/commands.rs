@@ -14,12 +14,12 @@ mod handlers;
 mod states;
 
 use crate::{
-    application::{set::traits::SetRepo, user::traits::UserRepo},
+    application::{set::repository::SetRepo, user::repository::UserRepo},
     infrastructure::database::{
         repositories::{set::SetRepoImpl, user::UserRepoImpl},
         uow::UoWFactory,
     },
-    presentation::commands::handlers::my_rank::my_rank_handler,
+    presentation::commands::handlers::stats::stats_handler,
 };
 pub use handlers::deleted_sets_upd::deleted_sets_upd;
 use handlers::{
@@ -48,7 +48,7 @@ pub async fn set_commands(bot: &Bot) -> Result<(), HandlerError> {
         "Add stickers to a sticker pack stolen by this bot",
     );
     let my_stickers_cmd = BotCommand::new("mystickers", "List of your stolen stickers");
-    let myrank_cmd = BotCommand::new("myrank", "See your rank in sticker theft");
+    let stats_cmd = BotCommand::new("stats", "See the bot statistics");
     let cancel_cmd = BotCommand::new("cancel", "Cancel last command");
 
     let private_chats = [
@@ -58,7 +58,7 @@ pub async fn set_commands(bot: &Bot) -> Result<(), HandlerError> {
         steal_pack_cmd,
         steal_sticker_cmd,
         cancel_cmd,
-        myrank_cmd,
+        stats_cmd,
         my_stickers_cmd,
     ];
     bot.send(SetMyCommands::new(private_chats).scope(BotCommandScopeAllPrivateChats {}))
@@ -83,7 +83,7 @@ where
             "help",
             "cancel",
             "mystickers",
-            "myrank",
+            "stats",
         ],
     );
     start_command(router, &["start", "help"]);
@@ -91,13 +91,13 @@ where
     cancel_command(router, "cancel");
     add_stickers_command::<DB>(router, "addstickers", "done");
     steal_sticker_set_command::<DB>(router, "stealpack");
-    my_rank_command::<DB>(router, "myrank");
+    stats_command::<DB>(router, "stats");
     my_stickers_command::<DB>(router, "mystickers");
     process_non_sticker(router);
     process_non_text(router);
 }
 
-fn my_rank_command<DB>(router: &mut Router<Reqwest>, command: &'static str)
+fn stats_command<DB>(router: &mut Router<Reqwest>, command: &'static str)
 where
     DB: Database,
     for<'a> UserRepoImpl<&'a mut DB::Connection>: UserRepo,
@@ -105,7 +105,7 @@ where
 {
     router
         .message
-        .register(my_rank_handler::<MemoryStorage, UoWFactory<DB>>)
+        .register(stats_handler::<MemoryStorage, UoWFactory<DB>>)
         .filter(Command::one(command));
 }
 

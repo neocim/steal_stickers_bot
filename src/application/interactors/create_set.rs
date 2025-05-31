@@ -3,7 +3,7 @@ use crate::application::{
         exceptions::{RepoKind, TransactionKind},
         traits::uow::UoW as UoWTrait,
     },
-    set::{dto::create::Create, traits::SetRepo as _},
+    set::{dto::create::Create, repository::SetRepo as _},
 };
 
 pub async fn create_set<'a, UoW>(uow: &'a mut UoW, set: Create<'a>) -> Result<(), TransactionKind>

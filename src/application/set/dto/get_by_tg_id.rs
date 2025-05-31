@@ -13,9 +13,11 @@ impl GetByTgID {
     pub const fn new(tg_id: i64, get_deleted: Option<bool>) -> Self {
         Self { tg_id, get_deleted }
     }
+
     pub const fn tg_id(&self) -> i64 {
         self.tg_id
     }
+
     pub const fn get_deleted(&self) -> Option<bool> {
         self.get_deleted
     }
