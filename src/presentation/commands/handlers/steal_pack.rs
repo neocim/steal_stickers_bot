@@ -24,7 +24,7 @@ use crate::{
     core::texts::sticker_set_message,
 };
 
-pub async fn process_non_text(bot: Bot, message: Message) -> HandlerResult {
+pub async fn process_non_text_handler(bot: Bot, message: Message) -> HandlerResult {
     bot.send(SendMessage::new(
         message.chat().id(),
         "Please, send me a text message:",

@@ -6,11 +6,8 @@ use telers::{
     errors::HandlerError,
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context as FSMContext, Storage},
-    methods::{EditMessageText, SendMessage},
-    types::{
-        CallbackQuery, ChatIdKind, InlineKeyboardButton, InlineKeyboardMarkup, Message,
-        MessageText, ReplyMarkup,
-    },
+    methods::{AnswerCallbackQuery, EditMessageText, SendMessage},
+    types::{CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, MessageText, ReplyMarkup},
 };
 use tracing::error;
 
@@ -25,7 +22,6 @@ use crate::{
     core::stickers_helpers::constants::STICKER_SETS_NUMBER_PER_PAGE,
     core::texts::current_page_message,
     domain::entities::set::Set,
-    presentation::commands::states::my_stickers::MyStickersState,
 };
 
 impl From<BeginError> for HandlerError {
@@ -59,73 +55,50 @@ where
     S: Storage,
 {
     fsm.finish().await.map_err(Into::into)?;
-
     let mut uow = uow_factory.create_uow();
-
-    // only panic if messages uses in channels, but i'm using private filter in main function
-    let user_id = message.from.expect("user not specified").id;
+    let chat_id = message.chat.id();
 
     let sticker_sets = uow
         .set_repo()
         .await
         .map_err(HandlerError::new)?
-        .get_by_tg_id(GetSetByTgID::new(user_id, Some(false)))
+        .get_by_tg_id(GetSetByTgID::new(
+            // panics if using not in private chats, but i use filter
+            message.from.expect("Failed to get user id").id,
+            Some(false),
+        ))
         .await
         .map_err(HandlerError::new)?;
 
     let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+    let number_of_pages =
+        match get_buttons(&sticker_sets, STICKER_SETS_NUMBER_PER_PAGE, &mut buttons) {
+            Ok(pages) => pages,
+            Err(err) => {
+                bot.send(SendMessage::new(chat_id, err.message.to_string()))
+                    .await?;
 
-    let page_count = match get_buttons(
-        sticker_sets.as_ref(),
-        STICKER_SETS_NUMBER_PER_PAGE,
-        &mut buttons,
-    ) {
-        Ok(pages) => pages,
-        Err(err) => {
-            bot.send(SendMessage::new(message.chat.id(), err.message.to_string()))
-                .await?;
-
-            return Ok(EventReturn::Finish);
-        }
-    };
+                return Ok(EventReturn::Finish);
+            }
+        };
 
     let inline_keyboard_markup = InlineKeyboardMarkup::new(buttons);
-    let inline_keyboard = ReplyMarkup::InlineKeyboard(inline_keyboard_markup.clone());
+    let reply_markup = ReplyMarkup::InlineKeyboard(inline_keyboard_markup.clone());
 
-    let sticker_sets_list_message = bot
-        .send(
-            SendMessage::new(
-                message.chat.id(),
-                current_page_message(
-                    1,
-                    page_count,
-                    STICKER_SETS_NUMBER_PER_PAGE,
-                    sticker_sets.as_ref(),
-                ),
-            )
-            .parse_mode(ParseMode::HTML)
-            .reply_markup(inline_keyboard),
+    bot.send(
+        SendMessage::new(
+            chat_id,
+            current_page_message(
+                1,
+                number_of_pages,
+                STICKER_SETS_NUMBER_PER_PAGE,
+                sticker_sets.as_ref(),
+            ),
         )
-        .await?;
-
-    fsm.set_value("edit_sticker_sets_list_message", sticker_sets_list_message)
-        .await
-        .map_err(Into::into)?;
-
-    fsm.set_value(
-        "sticker_sets_list_inline_keyboard_markup",
-        inline_keyboard_markup,
+        .parse_mode(ParseMode::HTML)
+        .reply_markup(reply_markup.clone()),
     )
-    .await
-    .map_err(Into::into)?;
-
-    fsm.set_value("pages_number", page_count)
-        .await
-        .map_err(Into::into)?;
-
-    fsm.set_state(MyStickersState::EditStickerSetsListMessage)
-        .await
-        .map_err(Into::into)?;
+    .await?;
 
     Ok(EventReturn::Finish)
 }
@@ -142,22 +115,29 @@ where
 {
     let mut uow = uow_factory.create_uow();
 
-    let message_data = match callback_query.data {
+    let (chat_id, message_id) = match (callback_query.chat_id(), callback_query.message_id()) {
+        (Some(chat_id), Some(message_id)) => (chat_id, message_id),
+        _ => return Ok(EventReturn::Finish),
+    };
+
+    let message_data = match &callback_query.data {
         Some(message_data) => message_data,
         None => {
             error!(
                 "None value occurded while processed callback query from inline keyboard button!"
             );
-
-            bot.send(SendMessage::new(
-                callback_query.chat_id().expect("chat not found"),
-                "Sorry, an error occurded. Try again :(",
-            ))
-            .await?;
-
+            bot.send(SendMessage::new(chat_id, "Internal error"))
+                .await?;
             return Ok(EventReturn::Finish);
         }
     };
+
+    let current_page_number = message_data
+        .parse::<usize>()
+        .expect("fail to convert `message_data` string into usize");
+
+    bot.send(AnswerCallbackQuery::new(callback_query.id))
+        .await?;
 
     // process if user click to one button several times in a row
     match fsm
@@ -165,73 +145,47 @@ where
         .await
         .map_err(Into::into)?
     {
-        Some(msg_data) => {
-            if msg_data == message_data {
-                // do nothing
-                return Ok(EventReturn::Finish);
-            } else {
-                fsm.set_value("previous_callback_query", Some(message_data.as_ref()))
-                    .await
-                    .map_err(Into::into)?;
-            }
-        }
-        None => {
+        Some(msg_data) if msg_data == *message_data => return Ok(EventReturn::Finish),
+        _ => {
             fsm.set_value("previous_callback_query", Some(message_data.as_ref()))
                 .await
                 .map_err(Into::into)?;
         }
     };
 
-    let current_page = message_data
-        .parse::<usize>()
-        .expect("fail to convert `message_data` string into usize");
-
-    let pages_number: u32 = fsm
-        .get_value("pages_number")
-        .await
-        .map_err(Into::into)?
-        .expect("Number of pages should be set");
-
-    if pages_number == 1 {
-        return Ok(EventReturn::Finish);
-    }
-
-    let user_id = callback_query.from.id;
-
     let sticker_sets = uow
         .set_repo()
         .await
         .map_err(HandlerError::new)?
-        .get_by_tg_id(GetSetByTgID::new(user_id, Some(false)))
+        .get_by_tg_id(GetSetByTgID::new(callback_query.from.id, Some(false)))
         .await
         .map_err(HandlerError::new)?;
 
-    let sticker_sets_page = current_page_message(
-        current_page,
-        pages_number,
+    let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+    let number_of_pages =
+        match get_buttons(&sticker_sets, STICKER_SETS_NUMBER_PER_PAGE, &mut buttons) {
+            Ok(pages) => pages,
+            Err(err) => {
+                bot.send(SendMessage::new(chat_id, err.message.to_string()))
+                    .await?;
+
+                return Ok(EventReturn::Finish);
+            }
+        };
+    if number_of_pages == 1 {
+        return Ok(EventReturn::Finish);
+    }
+
+    let inline_keyboard_markup = InlineKeyboardMarkup::new(buttons);
+    let edit_message = EditMessageText::new(current_page_message(
+        current_page_number,
+        number_of_pages,
         STICKER_SETS_NUMBER_PER_PAGE,
         &sticker_sets,
-    );
-
-    let message_to_edit: Message = fsm
-        .get_value("edit_sticker_sets_list_message")
-        .await
-        .map_err(Into::into)?
-        .expect("Sticker sets list message should be set");
-
-    let message_to_edit_reply_markup: InlineKeyboardMarkup = fsm
-        .get_value("sticker_sets_list_inline_keyboard_markup")
-        .await
-        .map_err(Into::into)?
-        .expect("Inline keyboard for sticker sets list should be set");
-
-    let message_to_edit_chat_id = ChatIdKind::id(message_to_edit.chat().id());
-    let message_to_edit_id = message_to_edit.id();
-
-    let edit_message = EditMessageText::new(sticker_sets_page)
-        .chat_id(message_to_edit_chat_id)
-        .message_id(message_to_edit_id)
-        .reply_markup(message_to_edit_reply_markup);
+    ))
+    .chat_id(chat_id)
+    .message_id(message_id)
+    .reply_markup(inline_keyboard_markup);
 
     bot.send(edit_message.parse_mode(ParseMode::HTML)).await?;
 

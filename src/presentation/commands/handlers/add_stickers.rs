@@ -31,7 +31,7 @@ use crate::{
     },
 };
 
-pub async fn process_non_sticker(bot: Bot, message: Message) -> HandlerResult {
+pub async fn process_non_sticker_handler(bot: Bot, message: Message) -> HandlerResult {
     bot.send(SendMessage::new(
         message.chat().id(),
         "Please, send me a sticker:",

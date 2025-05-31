@@ -37,7 +37,7 @@ fn init_router(bot: &'static Bot, pool: Pool<Postgres>) -> Router {
     let mut main_router = Router::new("main");
     let mut private_router = Router::new("private");
 
-    init_commands(&mut private_router);
+    init_commands::<sqlx::Postgres>(&mut private_router);
 
     private_router
         .update

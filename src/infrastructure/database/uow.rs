@@ -115,11 +115,10 @@ where
     }
 
     async fn rollback(&mut self) -> Result<(), RollbackError> {
-        match self.transaction.take() { Some(transaction) => {
-            transaction.rollback().await.map_err(Into::into)
-        } _ => {
-            Ok(())
-        }}
+        match self.transaction.take() {
+            Some(transaction) => transaction.rollback().await.map_err(Into::into),
+            _ => Ok(()),
+        }
     }
 
     async fn set_repo(&mut self) -> Result<Self::SetRepo<'_>, BeginError> {

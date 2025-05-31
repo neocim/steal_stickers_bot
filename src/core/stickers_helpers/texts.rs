@@ -32,6 +32,7 @@ pub fn start_message(username: &str) -> String {
     /stealpack - Steal sticker pack\n\
     /addstickers - Add sticker to a sticker pack stolen by this bot\n\
     /mystickers - List of your stolen stickers\n\
+    /myrank - See your rank in sticker theft\n\
         ",
     )
 }
@@ -49,13 +50,10 @@ pub fn current_page_message(
     for set in list.iter().take(end_page_index).skip(begin_page_index) {
         let sticker_set_name = set.short_name.as_str();
         let sticker_set_title = set.title.as_str();
-
         let sticker_set_link = format!("{TELEGRAM_STICKER_SET_URL}{sticker_set_name}");
-
         let sticker_set = html_text_link(html_quote(sticker_set_title), sticker_set_link);
 
         sticker_sets_page.push_str(&sticker_set);
-
         sticker_sets_page.push_str(" | ");
     }
 
