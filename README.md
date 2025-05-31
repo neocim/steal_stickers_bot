@@ -40,11 +40,10 @@ just auth
 just compose-run
 ```
 
-3. After the previous step, bot will start working, but database will be without migrations. To solve it, run the command below with your database information (that you put into `.env` and `config.toml` files):
+3. After the previous step, bot will start working, but database will be without migrations. To solve it, run the command below (it uses information from [.env](./.env.example) file):
 ```
-sqlx migrate run --source ./src/infrastructure/database/migrations --database-url="postgres://{username}:{password}@{host}:{port}/{db}"
+just migrate-run
 ```
-> In most cases, the `host` is `0.0.0.0`
 
 <strong>If you encounter errors that are directly related to my code (docker errors, bot errors, etc.), please [open an Issue](https://github.com/neocim/steal_stickers_bot/issues/new). Thanks :)</strong>
 

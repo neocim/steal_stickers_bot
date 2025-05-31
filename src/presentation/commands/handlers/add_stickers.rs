@@ -52,14 +52,15 @@ pub async fn add_stickers_handler<S: Storage>(
         .await
         .map_err(Into::into)?;
 
-    bot.send(SendMessage::new(
+    bot.send(
+        SendMessage::new(
             message.chat.id(),
-            format!(
-                "Send me your stolen sticker pack, in which you want to add sticker(s). You can see all your \
-                stolen sticker packs, using command /mystickers."
-            ),
-        ).parse_mode(ParseMode::HTML))
-        .await?;
+            "Send me your stolen sticker pack, in which you want to add sticker(s). \
+                You can see all your stolen sticker packs, using command /mystickers.",
+        )
+        .parse_mode(ParseMode::HTML),
+    )
+    .await?;
 
     Ok(EventReturn::Finish)
 }

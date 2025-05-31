@@ -1,10 +1,10 @@
-FROM debian:bullseye AS base
+FROM debian:alpine AS base
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
 
-FROM rust:1.85.0-bullseye AS build
+FROM rust:1.87.0-alpine AS build
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libssl-dev \
     && apt-get install -y --no-install-recommends pkg-config \
