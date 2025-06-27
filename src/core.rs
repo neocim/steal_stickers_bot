@@ -1,2 +1,2 @@
-pub mod stickers_helpers;
-pub use stickers_helpers::texts;
+pub mod helpers;
+pub use helpers::texts;

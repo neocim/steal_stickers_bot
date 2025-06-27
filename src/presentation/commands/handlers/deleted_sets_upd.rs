@@ -33,8 +33,8 @@ where
         debug!("Start checking for deleted sets.");
 
         loop {
-            if Utc::now() - last_upd_time < Duration::hours(12) {
-                tokio::time::sleep(tokio::time::Duration::from_secs(3600)).await;
+            if Utc::now() - last_upd_time < Duration::seconds(10) {
+                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
                 continue;
             }
 
@@ -89,7 +89,7 @@ where
                     }
                 }
                 if i % 5 == 0 {
-                    tokio::time::sleep(tokio::time::Duration::from_millis(1100)).await;
+                    tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
                 }
             }
             last_upd_time = Utc::now();

@@ -21,7 +21,7 @@ use crate::{
         common::traits::uow::UoWFactory as UoWFactoryTrait, interactors::create_set::create_set,
         set::dto::create::Create as CreateSet,
     },
-    core::stickers_helpers::{
+    core::helpers::{
         common::{set_created_by, sticker_format},
         constants::{MAX_STICKER_SET_LENGTH, TELEGRAM_STICKER_SET_URL},
     },
@@ -549,7 +549,7 @@ pub async fn add_stickers(
         }
 
         // sleep because you can’t send telegram api requests more often than per second
-        tokio::time::sleep(Duration::from_millis(1100)).await;
+        tokio::time::sleep(Duration::from_millis(1500)).await;
     }
 
     Ok(all_stickers_was_stolen)

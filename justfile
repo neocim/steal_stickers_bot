@@ -9,7 +9,7 @@ compose-run:
 compose-build:
     docker compose up --build
 
-migrate-run username=env("POSTGRES_USER") \
+run-migrate username=env("POSTGRES_USER") \
             password=env("POSTGRES_PASSWORD") \
             host=env("POSTGRES_HOST") \
             port=env("POSTGRES_PORT") \
@@ -20,7 +20,7 @@ migrate-run username=env("POSTGRES_USER") \
 
 # This is just my template to run databse without `just compose-run`. If you want to override it, then use this template:
 # docker run --rm --name {NAME} -p {PORT}:5432 -e POSTGRES_PASSWORD={PASSWORD} -e POSTGRES_USER={USER} -e POSTGRES_DB={DATABASE_NAME} postgres:17-alpine
-db-run:
+run-db:
     docker run --rm --name steal_stickers_bot_db \
         -p 5432:5432 \
         -e POSTGRES_USER=admin \

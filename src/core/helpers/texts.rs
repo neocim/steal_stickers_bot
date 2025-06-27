@@ -1,8 +1,9 @@
-use telers::utils::text::{html_code, html_quote, html_text_link};
+//! Its bad to storing messages here, but i dont care
 
-use crate::domain::entities::set::Set;
+use telers::utils::text::{html_bold, html_code, html_quote, html_text_link};
 
 use super::{common::get_page_begin_and_end, constants::TELEGRAM_STICKER_SET_URL};
+use crate::domain::entities::set::Set;
 
 pub fn sticker_set_message(
     sticker_set_title: &str,
@@ -25,14 +26,14 @@ pub fn start_message(username: &str) -> String {
     format!(
         "
     Hello, {username}! This is bot to steal stickers!\n\
-    List of commands you can use:\n\
-    /help - Show this message\n\
-    /source or /src - Show source code of the bot\n\
-    /cancel - Cancel last command\n\
+    List of commands you can use:\n\n\
     /stealpack - Steal sticker pack\n\
     /addstickers - Add sticker to a sticker pack stolen by this bot\n\
     /mystickers - List of your stolen stickers\n\
-    /stats - See the bot statistics\n\
+    /stats - See the bot statistics\n\n\
+    /help - Show this message\n\
+    /cancel - Cancel last command\n\
+    /source or /src - Show source code of the bot\n\
         ",
     )
 }
@@ -54,10 +55,26 @@ pub fn current_page_message(
         let sticker_set = html_text_link(html_quote(sticker_set_title), sticker_set_link);
 
         sticker_sets_page.push_str(&sticker_set);
-        sticker_sets_page.push_str(" | ");
+        if list.len() != 1 {
+            sticker_sets_page.push_str(" | ");
+        }
     }
 
     sticker_sets_page
+}
+
+pub fn personal_stats_message(all_count: i64, not_deleted_count: i64) -> String {
+    format!(
+        "
+    {personal_statistics_text}\n\n\
+    The current number of stolen stickers: {not_deleted_count_code}\n\
+    Total number of stolen sticker packs (including {deleted_count_code} deleted ones): {all_count_code}
+        ",
+        personal_statistics_text = html_bold("Personal statistics"),
+        not_deleted_count_code = html_code(not_deleted_count.to_string()),
+        deleted_count_code = html_code((all_count - not_deleted_count).to_string()),
+        all_count_code = html_code(all_count.to_string())
+    )
 }
 
 #[test]

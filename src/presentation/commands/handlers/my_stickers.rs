@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use telers::{
     Bot, Extension,
     enums::ParseMode,
-    errors::HandlerError,
+    errors::{HandlerError, TelegramErrorKind, session::ErrorKind},
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context as FSMContext, Storage},
     methods::{AnswerCallbackQuery, EditMessageText, SendMessage},
@@ -19,9 +19,7 @@ use crate::{
         },
         set::{dto::get_by_tg_id::GetByTgID as GetSetByTgID, repository::SetRepo as _},
     },
-    core::{
-        stickers_helpers::constants::STICKER_SETS_NUMBER_PER_PAGE, texts::current_page_message,
-    },
+    core::{helpers::constants::STICKER_SETS_NUMBER_PER_PAGE, texts::current_page_message},
     domain::entities::set::Set,
     presentation::commands::states::callback_data::CallbackDataPrefix,
 };
@@ -56,6 +54,7 @@ where
     S: Storage,
 {
     fsm.finish().await.map_err(Into::into)?;
+
     let mut uow = uow_factory.create_uow();
     let chat_id = message.chat.id();
 
@@ -71,7 +70,7 @@ where
         .await
         .map_err(HandlerError::new)?;
 
-    let mut buttons: Vec<Vec<InlineKeyboardButton>> = Vec::new();
+    let mut buttons = Vec::new();
     let number_of_pages =
         match get_buttons(&sticker_sets, STICKER_SETS_NUMBER_PER_PAGE, &mut buttons) {
             Ok(pages) => pages,
@@ -102,15 +101,13 @@ where
     Ok(EventReturn::Finish)
 }
 
-pub async fn process_button<S, UoWFactory>(
+pub async fn process_buttons<UoWFactory>(
     bot: Bot,
     callback_query: CallbackQuery,
-    fsm: FSMContext<S>,
     Extension(uow_factory): Extension<UoWFactory>,
 ) -> HandlerResult
 where
     UoWFactory: UoWFactoryTrait,
-    S: Storage,
 {
     let mut uow = uow_factory.create_uow();
 
@@ -119,17 +116,16 @@ where
         _ => return Ok(EventReturn::Finish),
     };
 
-    bot.send(AnswerCallbackQuery::new(callback_query.id))
-        .await?;
-
     let mut message_data = match &callback_query.data {
         Some(message_data) => message_data.chars(),
         None => {
             error!(
                 "None value occurded while processed callback query from inline keyboard button!"
             );
+
             bot.send(SendMessage::new(chat_id, "Internal error"))
                 .await?;
+
             return Ok(EventReturn::Finish);
         }
     };
@@ -143,19 +139,8 @@ where
         Err(_) => return Ok(EventReturn::Finish),
     };
 
-    // process if user click to one button several times in a row
-    match fsm
-        .get_value::<_, Box<str>>("previous_callback_query")
-        .await
-        .map_err(Into::into)?
-    {
-        Some(msg_data) if &*msg_data == message_data.as_str() => return Ok(EventReturn::Finish),
-        _ => {
-            fsm.set_value("previous_callback_query", Some(message_data.as_str()))
-                .await
-                .map_err(Into::into)?;
-        }
-    };
+    bot.send(AnswerCallbackQuery::new(callback_query.id))
+        .await?;
 
     let sticker_sets = uow
         .set_repo()
@@ -191,7 +176,16 @@ where
     .message_id(message_id)
     .reply_markup(inline_keyboard_markup);
 
-    bot.send(edit_message.parse_mode(ParseMode::HTML)).await?;
+    if let Err(error) = bot.send(edit_message.parse_mode(ParseMode::HTML)).await {
+        match &error {
+            ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) => {
+                if !message.contains("message is not modified") {
+                    return Err(error.into());
+                }
+            }
+            _ => return Err(error.into()),
+        }
+    }
 
     Ok(EventReturn::Finish)
 }

@@ -19,10 +19,9 @@ use crate::{
         repositories::{set::SetRepoImpl, user::UserRepoImpl},
         uow::UoWFactory,
     },
-    presentation::commands::{
-        handlers::stats::stats_handler, states::callback_data::CallbackDataPrefix,
-    },
+    presentation::commands::states::callback_data::CallbackDataPrefix,
 };
+
 pub use handlers::deleted_sets_upd::deleted_sets_upd;
 use handlers::{
     add_stickers::{
@@ -31,8 +30,9 @@ use handlers::{
     },
     bot_src::source_handler,
     cancel::cancel_handler,
-    my_stickers::{my_stickers_handler, process_button},
+    my_stickers::{my_stickers_handler, process_buttons as process_my_stickers_buttons},
     start::start_handler,
+    stats::{process_buttons as process_stats_buttons, stats_handler},
     steal_pack::{
         create_new_sticker_set, get_sticker_set_name, process_non_text_handler,
         steal_sticker_set_handler,
@@ -45,7 +45,7 @@ pub async fn set_commands(bot: &Bot) -> Result<(), HandlerError> {
     let source_cmd = BotCommand::new("source", "Show the source of the bot");
     let src_cmd = BotCommand::new("src", "Show the source of the bot");
     let steal_pack_cmd = BotCommand::new("stealpack", "Steal sticker pack");
-    let steal_sticker_cmd = BotCommand::new(
+    let add_stickers_cmd = BotCommand::new(
         "addstickers",
         "Add stickers to a sticker pack stolen by this bot",
     );
@@ -54,14 +54,14 @@ pub async fn set_commands(bot: &Bot) -> Result<(), HandlerError> {
     let cancel_cmd = BotCommand::new("cancel", "Cancel last command");
 
     let private_chats = [
+        steal_pack_cmd,
+        add_stickers_cmd,
+        my_stickers_cmd,
+        stats_cmd,
         help_cmd,
+        cancel_cmd,
         source_cmd,
         src_cmd,
-        steal_pack_cmd,
-        steal_sticker_cmd,
-        cancel_cmd,
-        stats_cmd,
-        my_stickers_cmd,
     ];
     bot.send(SetMyCommands::new(private_chats).scope(BotCommandScopeAllPrivateChats {}))
         .await?;
@@ -109,6 +109,11 @@ where
         .message
         .register(stats_handler::<MemoryStorage, UoWFactory<DB>>)
         .filter(Command::one(command));
+
+    router
+        .callback_query
+        .register(process_stats_buttons::<MemoryStorage, UoWFactory<DB>>)
+        .filter(Text::starts_with_single(CallbackDataPrefix::Stats.as_str()));
 }
 
 /// If the user simply writes to the bot without calling any commands, the bot will call specified function
@@ -221,7 +226,7 @@ where
 
     router
         .callback_query
-        .register(process_button::<MemoryStorage, UoWFactory<DB>>)
+        .register(process_my_stickers_buttons::<UoWFactory<DB>>)
         .filter(Text::starts_with_single(
             CallbackDataPrefix::MyStickers.as_str(),
         ));

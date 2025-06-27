@@ -1,7 +1,10 @@
 use async_trait::async_trait;
 
 use crate::{
-    application::common::exceptions::{RepoError, RepoKind},
+    application::{
+        common::exceptions::{RepoError, RepoKind},
+        set::dto::count_by_tg_id::CountByTgID,
+    },
     domain::entities::set::Set,
 };
 
@@ -42,4 +45,6 @@ pub trait SetRepo {
     ) -> Result<(), RepoKind<SetShortNameNotExist>>;
 
     async fn get_all(&mut self, set: GetAll) -> Result<Vec<Set>, RepoError>;
+
+    async fn count_by_tg_id(&mut self, set: CountByTgID) -> Result<i64, RepoError>;
 }
