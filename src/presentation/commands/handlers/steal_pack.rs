@@ -21,7 +21,7 @@ use crate::{
 };
 use crate::{
     core::helpers::common::{generate_sticker_set_name_and_link, sticker_format},
-    core::texts::sticker_set_message,
+    core::helpers::texts::sticker_set_message,
 };
 
 pub async fn process_non_text_handler(bot: Bot, message: Message) -> HandlerResult {

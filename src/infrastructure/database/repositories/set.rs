@@ -278,7 +278,7 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
             .map_err(|err| RepoError::new(err.to_string()))
     }
 
-    async fn get_sets_count_for_all_users(&mut self, set: GetAll) -> Result<Vec<i64>, RepoError> {
+    async fn get_set_counts_for_all_users(&mut self, set: GetAll) -> Result<Vec<i64>, RepoError> {
         let (sql_query, values) = if set.get_deleted().is_some() {
             Query::select()
                 .expr(Func::count(1))

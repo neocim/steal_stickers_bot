@@ -27,7 +27,7 @@ pub trait SetRepo {
     async fn get_by_tg_id(&mut self, set: GetByTgID)
     -> Result<Vec<Set>, RepoKind<SetTgIdNotExist>>;
 
-    async fn get_sets_count_for_all_users(&mut self, set: GetAll) -> Result<Vec<i64>, RepoError>;
+    async fn get_set_counts_for_all_users(&mut self, set: GetAll) -> Result<Vec<i64>, RepoError>;
 
     async fn delete_by_short_name<'a>(
         &'a mut self,

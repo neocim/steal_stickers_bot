@@ -9,7 +9,6 @@ use telers::{
     methods::{AnswerCallbackQuery, EditMessageText, SendMessage},
     types::{CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, MessageText, ReplyMarkup},
 };
-use tracing::error;
 
 use crate::{
     application::{
@@ -19,7 +18,9 @@ use crate::{
         },
         set::{dto::get_by_tg_id::GetByTgID as GetSetByTgID, repository::SetRepo as _},
     },
-    core::{helpers::constants::STICKER_SETS_NUMBER_PER_PAGE, texts::current_page_message},
+    core::{
+        helpers::constants::STICKER_SETS_NUMBER_PER_PAGE, helpers::texts::current_page_message,
+    },
     domain::entities::set::Set,
     presentation::commands::states::callback_data::CallbackDataPrefix,
 };
@@ -116,19 +117,9 @@ where
         _ => return Ok(EventReturn::Finish),
     };
 
-    let mut message_data = match &callback_query.data {
-        Some(message_data) => message_data.chars(),
-        None => {
-            error!(
-                "None value occurded while processed callback query from inline keyboard button!"
-            );
-
-            bot.send(SendMessage::new(chat_id, "Internal error"))
-                .await?;
-
-            return Ok(EventReturn::Finish);
-        }
-    };
+    // i guarantee that there will be `Some()`
+    let message_data = callback_query.data.unwrap();
+    let mut message_data = message_data.chars();
 
     message_data
         .nth(CallbackDataPrefix::MyStickers.as_str().len() - 1)
@@ -138,9 +129,6 @@ where
         Ok(page_number) => page_number,
         Err(_) => return Ok(EventReturn::Finish),
     };
-
-    bot.send(AnswerCallbackQuery::new(callback_query.id))
-        .await?;
 
     let sticker_sets = uow
         .set_repo()
@@ -161,6 +149,10 @@ where
                 return Ok(EventReturn::Finish);
             }
         };
+
+    bot.send(AnswerCallbackQuery::new(callback_query.id))
+        .await?;
+
     if number_of_pages == 1 {
         return Ok(EventReturn::Finish);
     }
@@ -179,6 +171,7 @@ where
     if let Err(error) = bot.send(edit_message.parse_mode(ParseMode::HTML)).await {
         match &error {
             ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) => {
+                // we need to ignore this bad request error
                 if !message.contains("message is not modified") {
                     return Err(error.into());
                 }

@@ -6,7 +6,7 @@ use telers::{
     types::Message,
 };
 
-use crate::core::texts::start_message;
+use crate::core::helpers::texts::start_message;
 
 pub async fn start_handler<S: Storage>(
     bot: Bot,

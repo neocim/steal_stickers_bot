@@ -3,7 +3,10 @@
 use telers::utils::text::{html_bold, html_code, html_quote, html_text_link};
 
 use super::{common::get_page_begin_and_end, constants::TELEGRAM_STICKER_SET_URL};
-use crate::domain::entities::set::Set;
+use crate::{
+    core::helpers::stats::{GlobalStats, GreaterThan, PersonalStats},
+    domain::entities::set::Set,
+};
 
 pub fn sticker_set_message(
     sticker_set_title: &str,
@@ -48,32 +51,63 @@ pub fn current_page_message(
         get_page_begin_and_end(current_page, pages_number, list.len(), sets_number_per_page);
 
     let mut sticker_sets_page = format!("List of your stickers ({current_page} page):\n");
-    for set in list.iter().take(end_page_index).skip(begin_page_index) {
+    for (i, set) in list
+        .iter()
+        .enumerate()
+        .take(end_page_index)
+        .skip(begin_page_index)
+    {
+        if i != 0 {
+            sticker_sets_page.push_str(" | ");
+        }
         let sticker_set_name = set.short_name.as_str();
         let sticker_set_title = set.title.as_str();
         let sticker_set_link = format!("{TELEGRAM_STICKER_SET_URL}{sticker_set_name}");
         let sticker_set = html_text_link(html_quote(sticker_set_title), sticker_set_link);
 
         sticker_sets_page.push_str(&sticker_set);
-        if list.len() != 1 {
-            sticker_sets_page.push_str(" | ");
-        }
     }
 
     sticker_sets_page
 }
 
-pub fn personal_stats_message(all_count: i64, not_deleted_count: i64) -> String {
+pub fn personal_stats_message(personal_stats: PersonalStats) -> String {
     format!(
         "
     {personal_statistics_text}\n\n\
-    The current number of stolen stickers: {not_deleted_count_code}\n\
-    Total number of stolen sticker packs (including {deleted_count_code} deleted ones): {all_count_code}
+    The current number of stolen stickers: {not_deleted_count}\n\
+    Total number of stolen sticker packs (including {deleted_count} deleted ones): {total_count}
         ",
         personal_statistics_text = html_bold("Personal statistics"),
-        not_deleted_count_code = html_code(not_deleted_count.to_string()),
-        deleted_count_code = html_code((all_count - not_deleted_count).to_string()),
-        all_count_code = html_code(all_count.to_string())
+        not_deleted_count = html_code(personal_stats.not_deleted_user_sets_count.to_string()),
+        deleted_count = html_code(
+            (personal_stats.total_user_sets_count - personal_stats.not_deleted_user_sets_count)
+                .to_string()
+        ),
+        total_count = html_code(personal_stats.total_user_sets_count.to_string())
+    )
+}
+
+pub fn global_stats_message(global_stats: GlobalStats) -> String {
+    format!(
+        "
+    {global_statistics_text}\n\n\
+    Total sticker packs stolen: {total_stolen}\n\
+    Users who have stolen more than {first}: {first_count}\n\
+    than {second}: {second_count}\n\
+    than {third}: {third_count}\n\
+    than {fourth}: {fourth_count}\n\
+        ",
+        global_statistics_text = html_bold("Global statistics"),
+        total_stolen = html_code(global_stats.total_stolen.to_string()),
+        first = html_code(GreaterThan::FirstLevel.as_str()),
+        first_count = html_code(global_stats.first_count.to_string()),
+        second = html_code(GreaterThan::SecondLevel.as_str()),
+        second_count = html_code(global_stats.second_count.to_string()),
+        third = html_code(GreaterThan::ThirdLevel.as_str()),
+        third_count = html_code(global_stats.third_count.to_string()),
+        fourth = html_code(GreaterThan::FourthLevel.as_str()),
+        fourth_count = html_code(global_stats.fourth_count.to_string())
     )
 }
 

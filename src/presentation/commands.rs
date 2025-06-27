@@ -112,7 +112,7 @@ where
 
     router
         .callback_query
-        .register(process_stats_buttons::<MemoryStorage, UoWFactory<DB>>)
+        .register(process_stats_buttons::<UoWFactory<DB>>)
         .filter(Text::starts_with_single(CallbackDataPrefix::Stats.as_str()));
 }
 
