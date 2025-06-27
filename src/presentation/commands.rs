@@ -181,7 +181,6 @@ fn add_stickers_command<DB>(
         .message
         .register(add_stickers_to_user_owned_sticker_set::<MemoryStorage>)
         .filter(Command::one(done_command))
-        .filter(ContentType::one(ContentTypeEnum::Text))
         .filter(StateFilter::one(AddStickerState::GetStickersToAdd));
 }
 

@@ -33,8 +33,8 @@ where
         debug!("Start checking for deleted sets.");
 
         loop {
-            if Utc::now() - last_upd_time < Duration::hours(12) {
-                tokio::time::sleep(tokio::time::Duration::from_secs(6260)).await;
+            if Utc::now() - last_upd_time < Duration::seconds(10) {
+                tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
                 continue;
             }
 

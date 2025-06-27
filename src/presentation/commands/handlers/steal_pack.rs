@@ -6,7 +6,7 @@ use telers::{
     fsm::{Context, Storage},
     methods::{CreateNewStickerSet, DeleteMessage, GetMe, GetStickerSet, SendMessage},
     types::{InputFile, InputSticker, Message, MessageSticker, MessageText},
-    utils::text::{html_bold, html_code, html_quote, html_text_link},
+    utils::text::{html_code, html_quote, html_text_link},
 };
 use tracing::error;
 
@@ -24,10 +24,37 @@ use crate::{
     core::helpers::texts::sticker_set_message,
 };
 
+pub async fn check_existing_of_pack(bot: &Bot, set_name: &str, chat_id: i64) -> HandlerResult {
+    if let Err(ref error) = bot.send(GetStickerSet::new(set_name)).await {
+        if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if **message == *"Bad Request: STICKERSET_INVALID")
+        {
+            bot.send(SendMessage::new(
+                chat_id,
+                "This sticker is without sticker pack! Try to send another sticker pack.",
+            ))
+            .await?;
+
+            return Ok(EventReturn::Finish);
+        }
+
+        error!(
+            ?error,
+            "Error occurded while getting sticker set name to steal: "
+        );
+
+        bot.send(SendMessage::new(chat_id, "Sorry, an error occurded."))
+            .await?;
+
+        return Ok(EventReturn::Finish);
+    }
+
+    Ok(EventReturn::Finish)
+}
+
 pub async fn process_non_text_handler(bot: Bot, message: Message) -> HandlerResult {
     bot.send(SendMessage::new(
         message.chat().id(),
-        "Please, send me a text message:",
+        "Please, send me a text message.",
     ))
     .await?;
 
@@ -72,6 +99,8 @@ pub async fn get_sticker_set_name<S: Storage>(
         }
     };
 
+    check_existing_of_pack(&bot, &set_name, message.chat.id()).await?;
+
     fsm.set_value("steal_sticker_set_name", set_name.as_ref())
         .await
         .map_err(Into::into)?;
@@ -105,7 +134,7 @@ where
     let new_set_title = if message.text.len() > 64 {
         bot.send(SendMessage::new(
             message.chat.id(),
-            "Too long name for sticker pack! Please, enter a name up to 64 characters long:",
+            "Too long name for sticker pack! Please, enter a name up to 64 characters long.",
         ))
         .await?;
 
@@ -113,7 +142,7 @@ where
     } else if message.text.len() < 1 {
         bot.send(SendMessage::new(
             message.chat.id(),
-            "Too short name! Please, enter a name between 1 and 64 characters long:",
+            "Too short name! Please, enter a name between 1 and 64 characters long.",
         ))
         .await?;
 
@@ -128,15 +157,12 @@ where
         .await
         .map_err(Into::into)?
         .expect("Sticker set name for sticker set user want steal should be set");
-    let steal_sticker_set_link = format!("t.me/addstickers/{}", steal_sticker_set_name);
 
     fsm.finish().await.map_err(Into::into)?;
 
     let steal_sticker_set = bot
         .send(GetStickerSet::new(steal_sticker_set_name.as_ref()))
         .await?;
-
-    let steal_sticker_set_title = steal_sticker_set.title;
 
     let steal_stickers_from_sticker_set = steal_sticker_set.stickers;
 
@@ -208,7 +234,7 @@ where
 
                     bot.send(SendMessage::new(
                         message.chat.id(),
-                        "Sorry, an error occurded while creating new sticker pack. Try again :(",
+                        "Error occurded while creating new sticker pack.",
                     ))
                     .await?;
 
@@ -220,7 +246,7 @@ where
 
                 bot.send(SendMessage::new(
                     message.chat.id(),
-                    "Error occurded while creating new sticker pack :(",
+                    "Error occurded while creating new sticker pack",
                 ))
                 .await?;
 
@@ -252,12 +278,9 @@ where
             bot.send(SendMessage::new(
                 message.chat.id(),
                 format!(
-                    "Error occurded while creating new sticker pack {created_pack} (original {original_set}), {but_created}! \
-                    Due to an error, not all stickers have been stolen :( \
-                    Internal name of this sticker pack: {copy_set_name}",
+                    "Error occurded while creating new sticker pack {created_pack} but sticker pack was created! \
+                    Due to an error, not all stickers have been stolen. The internal name of this sticker pack: {copy_set_name}.",
                     created_pack = html_text_link(html_quote(new_set_title), new_set_link),
-                    original_set = html_text_link(html_quote(steal_sticker_set_title), steal_sticker_set_link),
-                    but_created = html_bold("but sticker pack was created"),
                     copy_set_name = html_code(new_set_name)
                 ),
             ).parse_mode(ParseMode::HTML))
