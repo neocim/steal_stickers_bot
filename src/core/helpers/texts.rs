@@ -72,19 +72,26 @@ pub fn current_page_message(
 }
 
 pub fn personal_stats_message(personal_stats: PersonalStats) -> String {
+    let deleted_count =
+        personal_stats.total_user_sets_count - personal_stats.not_deleted_user_sets_count;
+    let total_count_text = if deleted_count == 0 {
+        ""
+    } else {
+        &format!(
+            "Total number of stolen sticker packs (including {deleted_count} deleted ones): {total_count}",
+            deleted_count = html_code((deleted_count).to_string()),
+            total_count = html_code(personal_stats.total_user_sets_count.to_string())
+        )
+    };
+
     format!(
         "
     {personal_statistics_text}\n\n\
     The current number of stolen stickers: {not_deleted_count}\n\
-    Total number of stolen sticker packs (including {deleted_count} deleted ones): {total_count}
+    {total_count_text}
         ",
         personal_statistics_text = html_bold("Personal statistics"),
         not_deleted_count = html_code(personal_stats.not_deleted_user_sets_count.to_string()),
-        deleted_count = html_code(
-            (personal_stats.total_user_sets_count - personal_stats.not_deleted_user_sets_count)
-                .to_string()
-        ),
-        total_count = html_code(personal_stats.total_user_sets_count.to_string())
     )
 }
 
@@ -93,10 +100,10 @@ pub fn global_stats_message(global_stats: GlobalStats) -> String {
         "
     {global_statistics_text}\n\n\
     Total sticker packs stolen: {total_stolen}\n\
-    Users who have stolen more than {first}: {first_count}\n\
-    than {second}: {second_count}\n\
-    than {third}: {third_count}\n\
-    than {fourth}: {fourth_count}\n\
+    Users, who have stolen more than {first}: {first_count}\n\
+    More than {second}: {second_count}\n\
+    More than {third}: {third_count}\n\
+    More than {fourth}: {fourth_count}\n\
         ",
         global_statistics_text = html_bold("Global statistics"),
         total_stolen = html_code(global_stats.total_stolen.to_string()),

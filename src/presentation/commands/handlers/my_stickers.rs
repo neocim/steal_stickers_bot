@@ -138,6 +138,9 @@ where
         .await
         .map_err(HandlerError::new)?;
 
+    bot.send(AnswerCallbackQuery::new(callback_query.id))
+        .await?;
+
     let mut buttons = Vec::new();
     let number_of_pages =
         match get_buttons(&sticker_sets, STICKER_SETS_NUMBER_PER_PAGE, &mut buttons) {
@@ -149,9 +152,6 @@ where
                 return Ok(EventReturn::Finish);
             }
         };
-
-    bot.send(AnswerCallbackQuery::new(callback_query.id))
-        .await?;
 
     if number_of_pages == 1 {
         return Ok(EventReturn::Finish);
