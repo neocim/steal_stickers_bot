@@ -9,8 +9,14 @@ pub struct Set {
     pub title: String,
 }
 
-#[derive(FromRow)]
-pub struct SetsCount(pub i64);
+#[derive(Debug, Clone, PartialEq, Eq, FromRow)]
+pub struct SetCount(i64);
+
+impl Into<i64> for SetCount {
+    fn into(self) -> i64 {
+        self.0
+    }
+}
 
 impl From<Set> for SetEntitie {
     fn from(value: Set) -> Self {

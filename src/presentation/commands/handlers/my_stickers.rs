@@ -9,7 +9,7 @@ use telers::{
     methods::{AnswerCallbackQuery, EditMessageText, SendMessage},
     types::{CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, MessageText, ReplyMarkup},
 };
-use tracing::{error, warn};
+use tracing::error;
 
 use crate::{
     application::{
@@ -23,7 +23,7 @@ use crate::{
         stickers_helpers::constants::STICKER_SETS_NUMBER_PER_PAGE, texts::current_page_message,
     },
     domain::entities::set::Set,
-    presentation::commands::states::callback_data::CallbackData,
+    presentation::commands::states::callback_data::CallbackDataPrefix,
 };
 
 impl From<BeginError> for HandlerError {
@@ -135,7 +135,7 @@ where
     };
 
     message_data
-        .nth(CallbackData::MyStickers.as_str().len() - 1)
+        .nth(CallbackDataPrefix::MyStickers.as_str().len() - 1)
         .expect("Failed to eat callback data prefix");
 
     let current_page_number = match message_data.as_str().parse::<usize>() {
@@ -218,7 +218,7 @@ fn get_buttons(
                         InlineKeyboardButton::new(format!("Page {page_count}",)).callback_data(
                             format!(
                                 "{prefix}{page_count}",
-                                prefix = CallbackData::MyStickers.as_str()
+                                prefix = CallbackDataPrefix::MyStickers.as_str()
                             ),
                         ),
                     ])
@@ -230,7 +230,7 @@ fn get_buttons(
                         InlineKeyboardButton::new(format!("Page {page_count}",)).callback_data(
                             format!(
                                 "{prefix}{page_count}",
-                                prefix = CallbackData::MyStickers.as_str()
+                                prefix = CallbackDataPrefix::MyStickers.as_str()
                             ),
                         ),
                     );

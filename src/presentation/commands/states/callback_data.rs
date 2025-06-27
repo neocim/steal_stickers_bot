@@ -1,11 +1,11 @@
-use CallbackData::*;
+use CallbackDataPrefix::*;
 
-pub enum CallbackData {
+pub enum CallbackDataPrefix {
     MyStickers,
     Stats,
 }
 
-impl CallbackData {
+impl CallbackDataPrefix {
     pub const fn as_str(&self) -> &str {
         match self {
             MyStickers => "MyStickers",

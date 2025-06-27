@@ -19,7 +19,9 @@ use crate::{
         repositories::{set::SetRepoImpl, user::UserRepoImpl},
         uow::UoWFactory,
     },
-    presentation::commands::{handlers::stats::stats_handler, states::callback_data::CallbackData},
+    presentation::commands::{
+        handlers::stats::stats_handler, states::callback_data::CallbackDataPrefix,
+    },
 };
 pub use handlers::deleted_sets_upd::deleted_sets_upd;
 use handlers::{
@@ -220,7 +222,9 @@ where
     router
         .callback_query
         .register(process_button::<MemoryStorage, UoWFactory<DB>>)
-        .filter(Text::starts_with_single(CallbackData::MyStickers.as_str()));
+        .filter(Text::starts_with_single(
+            CallbackDataPrefix::MyStickers.as_str(),
+        ));
 }
 
 fn process_non_sticker(router: &mut Router<Reqwest>) {
