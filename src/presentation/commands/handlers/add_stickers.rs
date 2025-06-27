@@ -3,7 +3,7 @@ use std::time::Duration;
 use grammers_client::Client;
 use telers::{
     enums::ParseMode, 
-    errors::HandlerError, 
+    errors::{session::ErrorKind, TelegramErrorKind, HandlerError}, 
     event::{telegram::HandlerResult, EventReturn}, fsm::{Context, Storage}, 
     methods::{AddStickerToSet, DeleteMessage, GetMe, GetStickerSet, SendMessage}, 
     types::{InputFile, InputSticker, Message, MessageSticker, MessageText, ReplyParameters, Sticker}, 
@@ -22,7 +22,7 @@ use crate::{
         constants::{MAX_STICKER_SET_LENGTH, TELEGRAM_STICKER_SET_URL},
     },
     presentation::{
-        commands::{handlers::steal_pack::check_existing_of_pack, states::add_stickers::AddStickerState},
+        commands::{states::add_stickers::AddStickerState},
         telegram_application::get_sticker_set_user_id,
     },
 };
@@ -87,7 +87,32 @@ where
         }
     };
 
-    check_existing_of_pack(&bot, &sticker_set_name, message.chat.id()).await?;
+    if let Err(ref error) = bot.send(GetStickerSet::new(&*sticker_set_name)).await {
+        if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if **message == *"Bad Request: STICKERSET_INVALID")
+        {
+            bot.send(SendMessage::new(
+                message.chat.id(),
+                "This sticker is without sticker pack. Try to send another sticker pack.",
+            ))
+            .await?;
+
+            return Ok(EventReturn::Finish);
+        }
+
+        error!(
+            ?error,
+            "Error occurded while getting sticker set name to steal: "
+        );
+
+        bot.send(SendMessage::new(
+            message.chat.id(),
+            "Sorry, an error occurded.",
+        ))
+        .await?;
+
+        return Ok(EventReturn::Finish);
+    }
+
 
     let sticker_set = match bot
         .send(GetStickerSet::new(sticker_set_name.as_ref()))

@@ -24,33 +24,6 @@ use crate::{
     core::helpers::texts::sticker_set_message,
 };
 
-pub async fn check_existing_of_pack(bot: &Bot, set_name: &str, chat_id: i64) -> HandlerResult {
-    if let Err(ref error) = bot.send(GetStickerSet::new(set_name)).await {
-        if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if **message == *"Bad Request: STICKERSET_INVALID")
-        {
-            bot.send(SendMessage::new(
-                chat_id,
-                "This sticker is without sticker pack! Try to send another sticker pack.",
-            ))
-            .await?;
-
-            return Ok(EventReturn::Finish);
-        }
-
-        error!(
-            ?error,
-            "Error occurded while getting sticker set name to steal: "
-        );
-
-        bot.send(SendMessage::new(chat_id, "Sorry, an error occurded."))
-            .await?;
-
-        return Ok(EventReturn::Finish);
-    }
-
-    Ok(EventReturn::Finish)
-}
-
 pub async fn process_non_text_handler(bot: Bot, message: Message) -> HandlerResult {
     bot.send(SendMessage::new(
         message.chat().id(),
@@ -99,7 +72,31 @@ pub async fn get_sticker_set_name<S: Storage>(
         }
     };
 
-    check_existing_of_pack(&bot, &set_name, message.chat.id()).await?;
+    if let Err(ref error) = bot.send(GetStickerSet::new(&*set_name)).await {
+        if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if **message == *"Bad Request: STICKERSET_INVALID")
+        {
+            bot.send(SendMessage::new(
+                message.chat.id(),
+                "This sticker is without sticker pack. Try to send another sticker pack.",
+            ))
+            .await?;
+
+            return Ok(EventReturn::Finish);
+        }
+
+        error!(
+            ?error,
+            "Error occurded while getting sticker set name to steal: "
+        );
+
+        bot.send(SendMessage::new(
+            message.chat.id(),
+            "Sorry, an error occurded.",
+        ))
+        .await?;
+
+        return Ok(EventReturn::Finish);
+    }
 
     fsm.set_value("steal_sticker_set_name", set_name.as_ref())
         .await
