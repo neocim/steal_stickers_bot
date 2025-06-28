@@ -19,7 +19,9 @@ use crate::{
         repositories::{set::SetRepoImpl, user::UserRepoImpl},
         uow::UoWFactory,
     },
-    presentation::commands::states::callback_data::CallbackDataPrefix,
+    presentation::commands::{
+        handlers::add_stickers::undo_last_sticker, states::callback_data::CallbackDataPrefix,
+    },
 };
 
 pub use handlers::deleted_sets_upd::deleted_sets_upd;
@@ -91,7 +93,7 @@ where
     start_command(router, &["start", "help"]);
     source_command(router, &["src", "source"]);
     cancel_command(router, "cancel");
-    add_stickers_command::<DB>(router, "addstickers", "done");
+    add_stickers_command::<DB>(router, "addstickers", "done", "undo");
     steal_sticker_set_command::<DB>(router, "stealpack");
     stats_command::<DB>(router, "stats");
     my_stickers_command::<DB>(router, "mystickers");
@@ -154,6 +156,7 @@ fn add_stickers_command<DB>(
     router: &mut Router<Reqwest>,
     command: &'static str,
     done_command: &'static str,
+    undo_command: &'static str,
 ) where
     DB: Database,
     for<'a> UserRepoImpl<&'a mut DB::Connection>: UserRepo,
@@ -181,6 +184,12 @@ fn add_stickers_command<DB>(
         .message
         .register(add_stickers_to_user_owned_sticker_set::<MemoryStorage>)
         .filter(Command::one(done_command))
+        .filter(StateFilter::one(AddStickerState::GetStickersToAdd));
+
+    router
+        .message
+        .register(undo_last_sticker::<MemoryStorage>)
+        .filter(Command::one(undo_command))
         .filter(StateFilter::one(AddStickerState::GetStickersToAdd));
 }
 

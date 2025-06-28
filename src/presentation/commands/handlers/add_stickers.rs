@@ -3,10 +3,10 @@ use std::time::Duration;
 use grammers_client::Client;
 use telers::{
     enums::ParseMode, 
-    errors::{session::ErrorKind, TelegramErrorKind, HandlerError}, 
+    errors::{session::ErrorKind, HandlerError, TelegramErrorKind}, 
     event::{telegram::HandlerResult, EventReturn}, fsm::{Context, Storage}, 
-    methods::{AddStickerToSet, DeleteMessage, GetMe, GetStickerSet, SendMessage}, 
-    types::{InputFile, InputSticker, Message, MessageSticker, MessageText, ReplyParameters, Sticker}, 
+    methods::{AddStickerToSet, DeleteMessage, GetMe, GetStickerSet, SendMessage, SendSticker}, 
+    types::{InputFile, InputFileId, InputSticker, Message, MessageSticker, MessageText, ReplyParameters, Sticker}, 
     utils::text::{html_code, html_quote, html_text_link}, Bot, Extension
 };
 use tracing::error;
@@ -112,7 +112,6 @@ where
 
         return Ok(EventReturn::Finish);
     }
-
 
     let sticker_set = match bot
         .send(GetStickerSet::new(sticker_set_name.as_ref()))
@@ -230,7 +229,8 @@ where
     bot.send(SendMessage::new(
         message.chat.id(),
         "Now send me the sticker(s), you want to add in your sticker pack. \
-        When you're ready, use /done command to add all selected stickers into sticker pack.",
+        When you're ready, use /done command to add all selected stickers into sticker pack. \
+        Also you can remove last sent sticker from the add list, using /undo command.",
     ))
     .await?;
 
@@ -309,11 +309,54 @@ where
     bot.send(
         SendMessage::new(
             message.chat.id(),
-            "Sticker processed! Send the next one, or use the /done command if you're ready.",
+            "Sticker processed! Send the next one or use the /done or /undo commands.",
         )
         .reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())),
     )
     .await?;
+
+    Ok(EventReturn::Finish)
+}
+
+
+pub async fn undo_last_sticker<S: Storage>(bot: Bot, message: MessageText, fsm: Context<S>) -> HandlerResult {
+    let mut stickers_vec: Vec<Sticker> = match fsm
+        .get_value("get_stickers_to_add")
+        .await
+        .map_err(Into::into)?
+    {
+        Some(stickers_vec) => stickers_vec,
+        None => {
+            bot.send(SendMessage::new(
+                message.chat.id(),
+                "There is nothing to remove.",
+            ))
+            .await?;
+
+            return Ok(EventReturn::Finish);
+        }
+    };
+
+    let sticker = match stickers_vec.pop() {
+        Some(sticker) => sticker,
+        None => {
+            bot.send(SendMessage::new(message.chat.id(), "There is nothing to remove.")).await?;
+
+            return Ok(EventReturn::Finish);
+        }
+    };
+    
+    fsm.set_value("get_stickers_to_add", stickers_vec).await.map_err(Into::into)?;
+
+    let sticker_message = bot.send(SendSticker::new(message.chat.id(), 
+    InputFile::Id(InputFileId::new(&*sticker.file_id)))).await?;
+
+    bot.send(SendMessage::new(message.chat.id(), "This sticker has been removed.")
+        .reply_parameters(
+            ReplyParameters::new(
+                sticker_message.id())
+            ).chat_id(sticker_message.chat().id())
+        ).await?;
 
     Ok(EventReturn::Finish)
 }
@@ -332,11 +375,19 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
         // only panic if i'm forget call fsm.set_value() in function get_stolen_sticker_set()
         .expect("Sticker set name for sticker set should be set");
 
-    let stickers: Vec<Sticker> = match fsm
-        .get_value("get_stickers_to_add")
+    let stickers = match fsm
+        .get_value::<_, Vec<Sticker>>("get_stickers_to_add")
         .await
         .map_err(Into::into)?
     {
+        Some(stickers_vec) if stickers_vec.len() == 0 => { bot.send(SendMessage::new(
+                message.chat.id(),
+                "You've removed all the stickers. Send the sticker(s), and only then use /done command.",
+            ))
+            .await?;
+
+            return Ok(EventReturn::Finish);
+        }
         Some(stickers_vec) => stickers_vec,
         None => {
             bot.send(SendMessage::new(
