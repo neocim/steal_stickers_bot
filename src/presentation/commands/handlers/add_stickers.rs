@@ -318,7 +318,6 @@ where
     Ok(EventReturn::Finish)
 }
 
-
 pub async fn undo_last_sticker<S: Storage>(bot: Bot, message: MessageText, fsm: Context<S>) -> HandlerResult {
     let mut stickers_vec: Vec<Sticker> = match fsm
         .get_value("get_stickers_to_add")
