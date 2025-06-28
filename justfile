@@ -24,6 +24,6 @@ run-db:
     docker run --rm --name steal_stickers_bot_db \
         -p 5432:5432 \
         -e POSTGRES_USER=admin \
-        -e POSTGRES_PASSWORD=123 \
+        -e POSTGRES_PASSWORD=admin \
         -e POSTGRES_DB=db \
         postgres:17-alpine
