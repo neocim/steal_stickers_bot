@@ -31,7 +31,7 @@ pub fn start_message(username: &str) -> String {
     Hello, {username}! This is bot to steal stickers!\n\
     List of commands you can use:\n\n\
     /stealpack - Steal sticker pack\n\
-    /addstickers - Add sticker to a sticker pack stolen by this bot\n\
+    /addstickers - Add stickers to a sticker pack stolen by me\n\
     /mystickers - List of your stolen stickers\n\
     /stats - See the bot statistics\n\n\
     /help - Show this message\n\
