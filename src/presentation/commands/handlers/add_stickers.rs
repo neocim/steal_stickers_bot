@@ -136,7 +136,7 @@ where
         bot.send(SendMessage::new(
             message.chat.id(),
             "This sticker pack wasn't stolen by me, which means that I cannot add stickers to it according to Telegram rules. \
-            You can view all your stolen stickers using /mystickers or steal this sticker pack using /stealpack.",
+            You can view all your stolen stickers using /mystickers or steal this pack using /stealpack.",
         ))
         .await?;
 
@@ -172,8 +172,8 @@ where
         bot.send(
             SendMessage::new(
                 message.chat.id(),
-                "You are not the owner of this sticker pack! Please, send your sticker pack, stolen by me \
-                or steal this sticker pack using command /stealpack.",
+                "You are not the owner of this sticker pack! \
+                Please send your sticker pack that stolen by me, or steal this pack using /stealpack.",
             )
             .parse_mode(ParseMode::HTML),
         )
