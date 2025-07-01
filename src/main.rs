@@ -33,7 +33,7 @@ async fn main() {
     let client = match client_connect(api_id, api_hash.clone()).await {
         Ok(client) => client,
         Err(err) => {
-            error!(?err, "An error occurded while client connecting: ");
+            error!(?err, "An error occurred while client connecting: ");
 
             process::exit(1);
         }
@@ -48,7 +48,7 @@ async fn main() {
     let pool = match sqlx::PgPool::connect(&pg_url).await {
         Ok(pool) => pool,
         Err(err) => {
-            error!(?err, "An error occurded while connect to database:");
+            error!(?err, "An error occurred while connect to database:");
 
             process::exit(1);
         }
@@ -78,7 +78,7 @@ async fn run_or_auth(client: &Client, ph_num: &str, pswd: &str) {
 
     if Commands::Auth == cli.command {
         if let Err(err) = client_authorize(client, ph_num, pswd).await {
-            error!(?err, "An error occurded while client authorize:");
+            error!(?err, "An error occurred while client authorize:");
 
             process::exit(1);
         };

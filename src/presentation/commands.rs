@@ -10,6 +10,7 @@ use telers::{
     types::{BotCommand, BotCommandScopeAllPrivateChats},
 };
 
+mod common;
 mod handlers;
 mod states;
 
@@ -44,8 +45,8 @@ use states::{add_stickers::AddStickerState, steal_sticker_set::StealStickerSetSt
 
 pub async fn set_commands(bot: &Bot) -> Result<(), HandlerError> {
     let help_cmd = BotCommand::new("help", "Show help message");
-    let source_cmd = BotCommand::new("source", "Show the source of the bot");
-    let src_cmd = BotCommand::new("src", "Show the source of the bot");
+    let source_cmd = BotCommand::new("source", "Show the source code of the bot");
+    let src_cmd = BotCommand::new("src", "Show the source code of the bot");
     let steal_pack_cmd = BotCommand::new("stealpack", "Steal sticker pack");
     let add_stickers_cmd = BotCommand::new(
         "addstickers",

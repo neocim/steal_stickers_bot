@@ -10,14 +10,16 @@ use telers::{
 };
 use tracing::error;
 
-use super::add_stickers::add_stickers;
 use crate::{
     application::{
         common::traits::uow::UoWFactory as UoWFactoryTrait, interactors::create_set::create_set,
         set::dto::create::Create as CreateSet,
     },
     core::helpers::constants::CREATE_SET_IN_ONE_GO_LENGTH_LIMIT,
-    presentation::commands::states::steal_sticker_set::StealStickerSetState,
+    presentation::commands::{
+        common::{add_stickers, send_default_error_message},
+        states::steal_sticker_set::StealStickerSetState,
+    },
 };
 use crate::{
     core::helpers::common::{generate_sticker_set_name_and_link, sticker_format},
@@ -86,14 +88,10 @@ pub async fn get_sticker_set_name<S: Storage>(
 
         error!(
             ?error,
-            "Error occurded while getting sticker set name to steal: "
+            "Error occurred while getting sticker set name to steal: "
         );
 
-        bot.send(SendMessage::new(
-            message.chat.id(),
-            "Sorry, an error occurded.",
-        ))
-        .await?;
+        send_default_error_message(&bot, message.chat.id()).await?;
 
         return Ok(EventReturn::Finish);
     }
@@ -217,21 +215,18 @@ where
                 if matches!(&err, TelegramErrorKind::BadRequest { message } if message.as_ref()
                     == "Bad Request: SHORTNAME_OCCUPY_FAILED")
                 {
-                    error!(
-                        ?err,
-                        "Failed to create new sticker set; trying to generate sticker set name again:"
-                    );
-                    error!(new_set_name, "Sticker set name:");
-
                     (new_set_name, new_set_link) =
                         generate_sticker_set_name_and_link(11, &bot_username);
                 } else {
-                    error!(?err, "Error occureded while creating new sticker set:");
-                    error!(new_set_name, "sticker set name:");
+                    error!(
+                        ?err,
+                        ?new_set_name,
+                        "Bad request error occurred while creating new sticker set: "
+                    );
 
                     bot.send(SendMessage::new(
                         message.chat.id(),
-                        "Error occurded while creating new sticker pack.",
+                        "Sorry, an error occurred while creating new sticker pack",
                     ))
                     .await?;
 
@@ -239,11 +234,15 @@ where
                 }
             }
             err => {
-                error!(?err, "Error occureded while creating new sticker set:");
+                error!(
+                    ?err,
+                    ?new_set_name,
+                    "Error occurred while creating new sticker set:"
+                );
 
                 bot.send(SendMessage::new(
                     message.chat.id(),
-                    "Error occurded while creating new sticker pack",
+                    "Sorry, an error occurred while creating new sticker pack",
                 ))
                 .await?;
 
@@ -275,7 +274,7 @@ where
             bot.send(SendMessage::new(
                 message.chat.id(),
                 format!(
-                    "Error occurded while creating new sticker pack {created_pack} but sticker pack was created! \
+                    "Error occurred while creating new sticker pack {created_pack} but sticker pack was created! \
                     Due to an error, not all stickers have been stolen. The internal name of this sticker pack: {copy_set_name}.",
                     created_pack = html_text_link(html_quote(new_set_title), new_set_link),
                     copy_set_name = html_code(new_set_name)

@@ -15,7 +15,7 @@ pub fn sticker_format(sticker: &Sticker) -> String {
 }
 
 /// Generate new random sticker set name. This function assumes that the `length` field is a **positive integer greater than 2**!
-/// Otherwise errors may occur using the generated name.
+/// Otherwise errors may occurs using the generated name.
 pub fn generate_sticker_set_name_and_link(length: usize, bot_username: &str) -> (String, String) {
     let charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
     let charset_without_nums = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";

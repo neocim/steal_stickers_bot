@@ -27,7 +27,7 @@ pub fn init_tracing_subscriber_from_config(config: &ConfigToml) {
 
 pub fn get_config_toml() -> ConfigToml {
     let config = std::fs::read_to_string("configs/config.toml")
-        .expect("error occurded while reading config file");
+        .expect("error occurred while reading config file");
 
     toml::from_str(&config).unwrap()
 }

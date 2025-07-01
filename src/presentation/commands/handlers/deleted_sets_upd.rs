@@ -54,7 +54,7 @@ where
 
             let result = result.unwrap().get_all(GetAll::new(Some(false))).await;
             if let Err(err) = result {
-                error!("Error occurded while trying to get all sets: {:?}", err);
+                error!(?err, "Error occurred while trying to get all sets: ");
                 tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
                 continue;
             }
@@ -76,16 +76,13 @@ where
                         .await
                         .map_err(|err| {
                             error!(
-                                "Failed to update `deleted` column for sticker set `{}`: {:?}",
-                                set.short_name, err
+                                ?err,
+                                ?set.short_name,
+                                "Failed to update `deleted` column for sticker set: ",
                             );
                         });
                     } else {
-                        error!(
-                            "Failed to get sticker set `{}`: {:?}",
-                            set.short_name.as_str(),
-                            err
-                        );
+                        error!(?err, ?set.short_name, "Failed to get sticker set :",);
                     }
                 }
                 if i % 5 == 0 {

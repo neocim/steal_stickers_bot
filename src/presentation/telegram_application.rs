@@ -55,8 +55,11 @@ pub async fn client_authorize(
 
         match client.session().save_to_file(SESSION_FILE) {
             Ok(_) => {}
-            Err(e) => {
-                error!("NOTE: failed to save the session, will sign out when done: {e}");
+            Err(err) => {
+                error!(
+                    ?err,
+                    "Failed to save the session, will sign out when done: "
+                );
                 sign_out = true;
             }
         }

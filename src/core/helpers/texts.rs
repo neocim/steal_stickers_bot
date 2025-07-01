@@ -8,6 +8,10 @@ use crate::{
     domain::entities::set::Set,
 };
 
+pub fn default_error_message() -> String {
+    "Sorry, an error occurred".to_string()
+}
+
 pub fn sticker_set_message(
     sticker_set_title: &str,
     sticker_set_name: &str,
@@ -16,8 +20,8 @@ pub fn sticker_set_message(
     format!(
         "
         Now you have your own sticker pack {new_ss_url}. \
-        If you want, you can add any sticker(s) to this pack using command /addstickers. \
-        Also you can manage your new sticker pack, using official Telegram bot @Stickers, and to do it, \
+        If you want, you can add any stickers to this pack using /addstickers. \
+        You can also manage your new sticker pack, using official Telegram bot @Stickers, and to do it, \
         you should use this internal name of your sticker pack: {sticker_set_name}
         ",
         new_ss_url = html_text_link(html_quote(sticker_set_title), sticker_set_link),
