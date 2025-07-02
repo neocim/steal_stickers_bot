@@ -95,7 +95,7 @@ pub fn personal_stats_message(personal_stats: PersonalStats) -> String {
     format!(
         "
     {personal_statistics_text}\n\n\
-    The current number of stolen stickers: {not_deleted_count}
+    The current number of stolen stickers: {not_deleted_count}\n\
     {total_count_text}
         ",
         personal_statistics_text = html_bold("Personal statistics"),
