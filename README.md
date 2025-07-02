@@ -29,18 +29,24 @@ cargo test
 
 <h3>Running</h3>
 
-1. First, we need to authorize the client. Do it, using:
+1. First, we need to pull actual image of the bot, so as not to build it ourselves:
+```
+docker pull nnenty/steal_stickers_bot:latest
+```
+> You can also build it manually, using `just compose-build`
+
+2. Then we need to authorize the client. Do it, using:
 ```
 just auth
 ```
 > A code should be sent to your Telegram account. Enter it into the terminal without any extra characters.
 
-2. To finally run the bot, use:
+3. To finally run the bot, use:
 ```
 just compose-run
 ```
 
-3. After the previous step, bot will start working, but database will be without migrations. To solve it, run the command below (it uses information from [.env](./.env.example) file):
+4. After the previous step, bot will start working, but database will be without migrations. To solve it, run the command below (it uses information from [.env](./.env.example) file):
 ```
 just -E=./.env run-migrate
 ```
