@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sea_query::{Alias, Expr, Func, PostgresQueryBuilder, Query};
+use sea_query::{Alias, Expr, Func, Order, PostgresQueryBuilder, Query};
 use sea_query_binder::SqlxBinder;
 use sqlx::PgConnection;
 use tracing::debug;
@@ -281,7 +281,7 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
     async fn get_set_counts_for_all_users(&mut self, set: GetAll) -> Result<Vec<i64>, RepoError> {
         let (sql_query, values) = if set.get_deleted().is_some() {
             Query::select()
-                .expr(Func::count(1))
+                .expr_as(Func::count(1), Alias::new("count"))
                 .from(Alias::new("users"))
                 .inner_join(
                     Alias::new("sets"),
@@ -292,16 +292,20 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
                     Expr::col(Alias::new("deleted"))
                         .eq(set.get_deleted().expect("`deleted` is None")),
                 )
+                .group_by_col((Alias::new("users"), Alias::new("tg_id")))
+                .order_by(Alias::new("count"), Order::Desc)
                 .build_sqlx(PostgresQueryBuilder)
         } else {
             Query::select()
-                .expr(Func::count(1))
+                .expr_as(Func::count(1), Alias::new("count"))
                 .from(Alias::new("users"))
                 .inner_join(
                     Alias::new("sets"),
                     Expr::col((Alias::new("sets"), Alias::new("tg_id")))
                         .eq(Expr::col((Alias::new("users"), Alias::new("tg_id")))),
                 )
+                .group_by_col((Alias::new("users"), Alias::new("tg_id")))
+                .order_by(Alias::new("count"), Order::Desc)
                 .build_sqlx(PostgresQueryBuilder)
         };
 

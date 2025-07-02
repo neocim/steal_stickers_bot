@@ -155,30 +155,32 @@ where
         .await
         .map_err(HandlerError::new)?;
 
-    let mut greater_than_25 = 0u32;
-    let mut greater_than_50 = 0u32;
-    let mut greater_than_75 = 0u32;
-    let mut greater_than_100 = 0u32;
+    let mut gt_fourth = 0u32;
+    let mut gt_third = 0u32;
+    let mut gt_second = 0u32;
+    let mut gt_first = 0u32;
 
     for user_sets_count in all_set_counts.iter() {
-        match user_sets_count {
-            count if *count >= GreaterThan::FourthLevel.as_i64() => {
-                greater_than_25 += 1;
-                greater_than_50 += 1;
-                greater_than_75 += 1;
-                greater_than_100 += 1;
+        match *user_sets_count {
+            count if count >= GreaterThan::FourthLevel as i64 => {
+                gt_fourth += 1;
+                gt_third += 1;
+                gt_second += 1;
+                gt_first += 1;
             }
-            count if *count >= GreaterThan::ThirdLevel.as_i64() => {
-                greater_than_25 += 1;
-                greater_than_50 += 1;
-                greater_than_75 += 1;
+            count if count >= GreaterThan::ThirdLevel as i64 => {
+                gt_third += 1;
+                gt_second += 1;
+                gt_first += 1;
             }
-            count if *count >= GreaterThan::SecondLevel.as_i64() => {
-                greater_than_25 += 1;
-                greater_than_50 += 1;
+            count if count >= GreaterThan::SecondLevel as i64 => {
+                gt_second += 1;
+                gt_first += 1;
             }
-            count if *count >= GreaterThan::FirstLevel.as_i64() => greater_than_25 += 1,
-            _ => (),
+            count if count >= GreaterThan::FirstLevel as i64 => gt_first += 1,
+            // if we see a count that is less than `FistLevel`, then we skip all the
+            // following counts, because we don't need to spend time for them.
+            _ => break,
         }
     }
 
@@ -195,10 +197,10 @@ where
         inline_keyboard_markup,
         GlobalStats::new(
             all_set_counts.into_iter().sum(),
-            greater_than_25,
-            greater_than_50,
-            greater_than_75,
-            greater_than_100,
+            gt_first,
+            gt_second,
+            gt_third,
+            gt_fourth,
         ),
     ))
 }

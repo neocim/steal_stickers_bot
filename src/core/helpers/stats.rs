@@ -14,10 +14,10 @@ impl GreaterThan {
             GreaterThan::FourthLevel => "100",
         }
     }
+}
 
-    // i've tried to implement trait `Into<i64>`, but type inference can't handle it,
-    // so i'd have to write crutches with `GreaterThan.into()`
-    pub const fn as_i64(self) -> i64 {
+impl Into<i64> for GreaterThan {
+    fn into(self) -> i64 {
         match self {
             GreaterThan::FirstLevel => 25,
             GreaterThan::SecondLevel => 50,
