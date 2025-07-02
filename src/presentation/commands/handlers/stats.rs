@@ -162,22 +162,22 @@ where
 
     for user_sets_count in all_set_counts.iter() {
         match *user_sets_count {
-            count if count > GreaterThan::FourthLevel as i64 => {
+            count if count > Into::<i64>::into(GreaterThan::FourthLevel) => {
                 gt_fourth += 1;
                 gt_third += 1;
                 gt_second += 1;
                 gt_first += 1;
             }
-            count if count > GreaterThan::ThirdLevel as i64 => {
+            count if count > Into::<i64>::into(GreaterThan::ThirdLevel) => {
                 gt_third += 1;
                 gt_second += 1;
                 gt_first += 1;
             }
-            count if count > GreaterThan::SecondLevel as i64 => {
+            count if count > Into::<i64>::into(GreaterThan::SecondLevel) => {
                 gt_second += 1;
                 gt_first += 1;
             }
-            count if count > GreaterThan::FirstLevel as i64 => gt_first += 1,
+            count if count > Into::<i64>::into(GreaterThan::FirstLevel) => gt_first += 1,
             // if we see a count that is less than `FistLevel`, then we skip all the
             // following counts, because we don't need to spend time for them.
             _ => break,
