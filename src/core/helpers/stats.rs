@@ -1,19 +1,9 @@
+#[derive(PartialEq, Copy, Clone)]
 pub enum GreaterThan {
     FirstLevel,
     SecondLevel,
     ThirdLevel,
     FourthLevel,
-}
-
-impl GreaterThan {
-    pub const fn as_str(&self) -> &str {
-        match self {
-            GreaterThan::FirstLevel => "25",
-            GreaterThan::SecondLevel => "50",
-            GreaterThan::ThirdLevel => "75",
-            GreaterThan::FourthLevel => "100",
-        }
-    }
 }
 
 impl Into<i64> for GreaterThan {
@@ -24,6 +14,12 @@ impl Into<i64> for GreaterThan {
             GreaterThan::ThirdLevel => 75,
             GreaterThan::FourthLevel => 100,
         }
+    }
+}
+
+impl ToString for GreaterThan {
+    fn to_string(&self) -> String {
+        Into::<i64>::into(*self).to_string()
     }
 }
 

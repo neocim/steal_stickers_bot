@@ -95,7 +95,7 @@ pub fn personal_stats_message(personal_stats: PersonalStats) -> String {
     format!(
         "
     {personal_statistics_text}\n\n\
-    The current number of stolen stickers: {not_deleted_count}\n\
+    The current number of stolen stickers: {not_deleted_count}
     {total_count_text}
         ",
         personal_statistics_text = html_bold("Personal statistics"),
@@ -111,17 +111,17 @@ pub fn global_stats_message(global_stats: GlobalStats) -> String {
     Users, who have stolen more than {first}: {first_count}\n\
     More than {second}: {second_count}\n\
     More than {third}: {third_count}\n\
-    More than {fourth}: {fourth_count}\n\
+    More than {fourth}: {fourth_count}\n
         ",
         global_statistics_text = html_bold("Global statistics"),
         total_stolen = html_code(global_stats.total_stolen.to_string()),
-        first = html_code(GreaterThan::FirstLevel.as_str()),
+        first = html_code(GreaterThan::FirstLevel.to_string()),
         first_count = html_code(global_stats.first_count.to_string()),
-        second = html_code(GreaterThan::SecondLevel.as_str()),
+        second = html_code(GreaterThan::SecondLevel.to_string()),
         second_count = html_code(global_stats.second_count.to_string()),
-        third = html_code(GreaterThan::ThirdLevel.as_str()),
+        third = html_code(GreaterThan::ThirdLevel.to_string()),
         third_count = html_code(global_stats.third_count.to_string()),
-        fourth = html_code(GreaterThan::FourthLevel.as_str()),
+        fourth = html_code(GreaterThan::FourthLevel.to_string()),
         fourth_count = html_code(global_stats.fourth_count.to_string())
     )
 }
