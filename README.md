@@ -26,7 +26,7 @@ cargo test
 
 1. First, we need to pull actual image of the bot, so as not to build it ourselves:
 ```
-docker pull nnenty/steal_stickers_bot:latest
+just pull-img
 ```
 > You can also build it manually using `just compose-build`
 
