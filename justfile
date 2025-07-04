@@ -6,8 +6,15 @@ auth:
 
 compose-run:
     docker compose up
+
 compose-build:
     docker compose up --build
+
+push-img: compose-build
+    docker push nnenty/steal_stickers_bot:latest
+
+pull-img:
+    docker pull nnenty/steal_stickers_bot:latest
 
 run-migrate username=env("POSTGRES_USER") \
             password=env("POSTGRES_PASSWORD") \
