@@ -374,7 +374,7 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
             SendMessage::new(
                 message.chat.id(),
                 format!(
-                "Done! Trying to add that sticker(s) into {your} sticker pack.. \
+                "Done! Trying to add this sticker(s) to {your} sticker pack.. \
                 It may take up to a several minutes, if you have selected a lot of stickers to add.",
                 your = html_text_link("your", &sticker_set_name)),
             )
