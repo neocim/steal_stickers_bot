@@ -346,7 +346,7 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
     {
         Some(stickers_vec) if stickers_vec.len() == 0 => { bot.send(SendMessage::new(
                 message.chat.id(),
-                "You've removed all the stickers. Send the stickers, and only then use /done command.",
+                "You've removed all the stickers. Send the stickers and only then use /done command.",
             ))
             .await?;
 
@@ -356,7 +356,7 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
         None => {
             bot.send(SendMessage::new(
                 message.chat.id(),
-                "You haven't sent a single sticker! Send the stickers, and only then use the /done command.",
+                "You haven't sent a single sticker! Send the stickers and only then use the /done command.",
             ))
             .await?;
 
@@ -369,12 +369,17 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
     // only panic if messages uses in channels, but i'm using private filter in main function
     let user_id = message.from.expect("Error while parsing user").id;
 
+    let these_or_this = if stickers.len() == 1 {
+        "is sticker"
+    } else {
+        "ese stickers"
+    };
     let message_delete = bot
         .send(
             SendMessage::new(
                 message.chat.id(),
                 format!(
-                "Done! Trying to add this sticker(s) to {your} sticker pack.. \
+                "Done! Trying to add th{these_or_this} to {your} sticker pack.. \
                 It may take up to a several minutes, if you have selected a lot of stickers to add.",
                 your = html_text_link("your", &sticker_set_name)),
             )
