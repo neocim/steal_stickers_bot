@@ -3,7 +3,7 @@ use std::time::Duration;
 use grammers_client::Client;
 use telers::{
     enums::ParseMode, 
-    errors::{session::ErrorKind, HandlerError, TelegramErrorKind}, 
+    errors::{session::ErrorKind, TelegramErrorKind}, 
     event::{telegram::HandlerResult, EventReturn}, fsm::{Context, Storage}, 
     methods::{DeleteMessage, GetMe, GetStickerSet, SendMessage, SendSticker}, 
     types::{InputFile, InputFileId, Message, MessageSticker, MessageText, ReplyParameters, Sticker}, 
@@ -13,8 +13,7 @@ use tracing::error;
 
 use crate::{
     application::{
-        common::traits::uow::UoWFactory as UoWFactoryTrait, interactors::create_set::create_set,
-        set::dto::create::Create as CreateSet,
+        common::traits::uow::UoWFactory as UoWFactoryTrait,
     },
     core::helpers::{
         common::set_created_by,
@@ -29,7 +28,7 @@ use crate::{
 pub async fn process_non_sticker_handler(bot: Bot, message: Message) -> HandlerResult {
     bot.send(SendMessage::new(
         message.chat().id(),
-        "Please, send me a sticker.",
+        "Please send me a sticker.",
     ))
     .await?;
 
@@ -50,7 +49,7 @@ pub async fn add_stickers_handler<S: Storage>(
     bot.send(
         SendMessage::new(
             message.chat.id(),
-            "Send me your stolen sticker pack, in which you want to add sticker(s). \
+            "Send me your stolen sticker pack, in which you want to add stickers. \
                 You can see all your stolen sticker packs, using command /mystickers.",
         )
         .parse_mode(ParseMode::HTML),
@@ -65,20 +64,17 @@ pub async fn get_stolen_sticker_set<S, UoWFactory>(
     message: MessageSticker,
     fsm: Context<S>,
     Extension(client): Extension<Client>,
-    Extension(uow_factory): Extension<UoWFactory>,
 ) -> HandlerResult
 where
     UoWFactory: UoWFactoryTrait,
     S: Storage,
 {
-    let mut uow = uow_factory.create_uow();
-
     let sticker_set_name = match message.sticker.set_name {
         Some(sticker_set_name) => sticker_set_name,
         None => {
             bot.send(SendMessage::new(
                 message.chat.id(),
-                "This sticker is without sticker pack! Try to send another sticker pack.",
+                "This sticker is without sticker pack. Try to send another sticker pack.",
             ))
             .await?;
 
@@ -86,7 +82,9 @@ where
         }
     };
 
-    if let Err(ref error) = bot.send(GetStickerSet::new(&*sticker_set_name)).await {
+    let result = bot.send(GetStickerSet::new(&*sticker_set_name)).await;
+
+    if let Err(ref error) = result {
         if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if **message == *"Bad Request: STICKERSET_INVALID")
         {
             bot.send(SendMessage::new(
@@ -108,23 +106,8 @@ where
         return Ok(EventReturn::Finish);
     }
 
-    let sticker_set = match bot
-        .send(GetStickerSet::new(sticker_set_name.as_ref()))
-        .await
-    {
-        Ok(set) => set,
-        Err(err) => {
-            error!(
-                ?err,
-                ?sticker_set_name,
-                "Error occurred while getting sticker set to add stickers into it:"
-            );
-
-            send_default_error_message(&bot, message.chat.id()).await?;
-
-            return Ok(EventReturn::Finish);
-        }
-    };
+    // we checked above for errors
+    let sticker_set = result.unwrap();
 
     let bot_username = bot
         .send(GetMe::new())
@@ -154,26 +137,15 @@ where
         }
     };
 
-    create_set(
-        &mut uow,
-        CreateSet::new(
-            sticker_set_user_id,
-            sticker_set_name.as_ref(),
-            sticker_set.title.as_ref(),
-        ),
-    )
-    .await
-    .map_err(HandlerError::new)?;
-
-    // only panic if messages uses in channels, but i'm using private filter in main function
+    // only panic if messages uses in channels, but i'm using private filter
     let user_id = message.from.expect("user not specified").id;
 
     if user_id != sticker_set_user_id {
         bot.send(
             SendMessage::new(
                 message.chat.id(),
-                "You are not the owner of this sticker pack! \
-                Please send your sticker pack that stolen by me, or steal this pack using /stealpack.",
+                "You are not the owner of this sticker pack. \
+                Please send me your sticker pack that stolen by me, or steal this pack using /stealpack.",
             )
             .parse_mode(ParseMode::HTML),
         )
@@ -198,8 +170,8 @@ where
     } else {
         bot.send(SendMessage::new(
                 message.chat.id(),
-                format!("This sticker pack is completely filled. If you need to, remove a few stickers from it and only then \
-                use this command again.")
+                format!("This sticker pack is completely filled. \
+                Remove a few stickers from it and only then use /addstickers again.")
             ).reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())))
             .await?;
 
@@ -278,8 +250,8 @@ where
             if sticker_set_length + stickers_vec_len >= MAX_STICKER_SET_LENGTH {
                 bot.send(SendMessage::new(
                     message.chat.id(),
-                    format!("Please, use /done to add stickers, because the amount of stickers has reached \
-                    {max_len}. All next stickers (if you'll continue sending) will be ignored.", 
+                    format!("The amount of stickers has reached {max_len}. Use /done to add all the selected stickers, or 
+                    /undo if you want to remove the latest stickers from the add list. All the following sent stickers will be ignored.", 
                     max_len = html_code(MAX_STICKER_SET_LENGTH.to_string())),
                 ))
                 .await?;
@@ -343,7 +315,7 @@ pub async fn undo_last_sticker<S: Storage>(bot: Bot, message: MessageText, fsm: 
 
     bot.send(SendMessage::new(message.chat.id(), 
     "This sticker has been removed. \
-        You can try using /done or use /undo again.")
+        You can try using /done or /undo again.")
         .reply_parameters(
             ReplyParameters::new(
                 sticker_message.id())
@@ -374,7 +346,7 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
     {
         Some(stickers_vec) if stickers_vec.len() == 0 => { bot.send(SendMessage::new(
                 message.chat.id(),
-                "You've removed all the stickers. Send the sticker(s), and only then use /done command.",
+                "You've removed all the stickers. Send the stickers, and only then use /done command.",
             ))
             .await?;
 
@@ -384,7 +356,7 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
         None => {
             bot.send(SendMessage::new(
                 message.chat.id(),
-                "You haven't sent a single sticker! Send the sticker(s), and only then use the /done command.",
+                "You haven't sent a single sticker! Send the stickers, and only then use the /done command.",
             ))
             .await?;
 

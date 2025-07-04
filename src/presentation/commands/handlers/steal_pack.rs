@@ -15,7 +15,9 @@ use crate::{
         common::traits::uow::UoWFactory as UoWFactoryTrait, interactors::create_set::create_set,
         set::dto::create::Create as CreateSet,
     },
-    core::helpers::constants::CREATE_SET_IN_ONE_GO_LENGTH_LIMIT,
+    core::helpers::constants::{
+        CREATE_SET_IN_ONE_GO_LENGTH_LIMIT, MAX_SET_TITLE_LENGTH, MIN_SET_TITLE_LENGTH,
+    },
     presentation::commands::{
         common::{add_stickers, send_default_error_message},
         states::steal_sticker_set::StealStickerSetState,
@@ -29,7 +31,7 @@ use crate::{
 pub async fn process_non_text_handler(bot: Bot, message: Message) -> HandlerResult {
     bot.send(SendMessage::new(
         message.chat().id(),
-        "Please, send me a text message.",
+        "Please send me a text message.",
     ))
     .await?;
 
@@ -129,7 +131,10 @@ where
     let new_set_title = if message.text.len() > 64 {
         bot.send(SendMessage::new(
             message.chat.id(),
-            "Too long name for sticker pack! Please, enter a name up to 64 characters long.",
+            format!(
+                "Too long name! Please enter a name up to {max_len} characters long.",
+                max_len = html_code(MAX_SET_TITLE_LENGTH.to_string())
+            ),
         ))
         .await?;
 
@@ -137,7 +142,11 @@ where
     } else if message.text.len() < 1 {
         bot.send(SendMessage::new(
             message.chat.id(),
-            "Too short name! Please, enter a name between 1 and 64 characters long.",
+            format!(
+                "Too short name! Please enter a name between {min_len} and {max_len} characters long.",
+                min_len = html_code(MIN_SET_TITLE_LENGTH.to_string()),
+                max_len = html_code(MAX_SET_TITLE_LENGTH.to_string())
+            ),
         ))
         .await?;
 
