@@ -9,11 +9,15 @@ compose-run:
 
 compose-build:
     docker compose up --build
+    docker compose down
 
 pull-img:
     docker pull nnenty/steal_stickers_bot:latest
 
-run-migrate username=env("POSTGRES_USER") \
+migrate:
+    just -E=./.env run-migrate-with-env
+
+run-migrate-with-env username=env("POSTGRES_USER") \
             password=env("POSTGRES_PASSWORD") \
             host=env("POSTGRES_HOST") \
             port=env("POSTGRES_PORT") \
