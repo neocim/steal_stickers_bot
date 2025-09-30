@@ -39,6 +39,7 @@ pub fn start_message(username: &str) -> String {
     /mystickers - List of your stolen stickers\n\
     /stats - See the bot statistics\n\n\
     /help - Show this message\n\
+    /getowner - Get the owner ID of the sticker pack\n\
     /cancel - Cancel last command\n\
     /source or /src - Show source code of the bot\n\
         ",

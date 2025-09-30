@@ -65,10 +65,10 @@ pub async fn set_commands(bot: &Bot) -> Result<(), HandlerError> {
         my_stickers_cmd,
         stats_cmd,
         help_cmd,
+        get_owner_cmd,
         cancel_cmd,
         source_cmd,
         src_cmd,
-        get_owner_cmd
     ];
     bot.send(SetMyCommands::new(private_chats).scope(BotCommandScopeAllPrivateChats {}))
         .await?;
@@ -91,9 +91,9 @@ where
             "addstickers",
             "help",
             "cancel",
+            "getowner",
             "mystickers",
             "stats",
-            "getowner",
         ],
     );
     start_command(router, &["start", "help"]);
@@ -104,8 +104,8 @@ where
     stats_command::<DB>(router, "stats");
     my_stickers_command::<DB>(router, "mystickers");
     get_owner_command(router, "getowner");
-    process_non_sticker(router);
     process_non_text(router);
+    process_non_sticker(router);
 }
 
 fn stats_command<DB>(router: &mut Router<Reqwest>, command: &'static str)
@@ -267,10 +267,12 @@ fn process_non_sticker(router: &mut Router<Reqwest>) {
         .register(process_non_sticker_handler)
         .filter(ContentType::one(ContentTypeEnum::Sticker).invert())
         .filter(
-            StateFilter::one(StealStickerSetState::StealStickerSetName).or(StateFilter::many([
-                AddStickerState::GetStolenStickerSet,
-                AddStickerState::GetStickersToAdd,
-            ])),
+            StateFilter::one(StealStickerSetState::StealStickerSetName)
+                .or(StateFilter::many([
+                    AddStickerState::GetStolenStickerSet,
+                    AddStickerState::GetStickersToAdd,
+                ]))
+                .or(StateFilter::one(GetOwnerState::GetStickers)),
         );
 }
 

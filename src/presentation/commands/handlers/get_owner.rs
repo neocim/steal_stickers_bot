@@ -61,7 +61,7 @@ pub async fn get_owner_id(
         SendMessage::new(
             message.chat.id(),
             format!(
-                "ID the owner of this sticker pack — {}. Send the next one or use /cancel instead.",
+                "The ID of the owner of this sticker pack — {}. Send the next one or use /cancel instead.",
                 html_code(owner_id.to_string())
             ),
         )
