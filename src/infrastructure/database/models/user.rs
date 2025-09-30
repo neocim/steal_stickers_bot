@@ -1,5 +1,5 @@
 use crate::domain::entities::user::User as UserEntitie;
-use sqlx::{types::time::OffsetDateTime, FromRow};
+use sqlx::{FromRow, types::time::OffsetDateTime};
 
 #[derive(Debug, Clone, PartialEq, Eq, FromRow)]
 pub struct User {

@@ -5,7 +5,7 @@ use telers::{
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
     methods::{CreateNewStickerSet, DeleteMessage, GetMe, GetStickerSet, SendMessage},
-    types::{InputFile, InputSticker, Message, MessageSticker, MessageText},
+    types::{InputFile, InputSticker, MessageSticker, MessageText},
     utils::text::{html_code, html_quote, html_text_link},
 };
 use tracing::error;
@@ -27,16 +27,6 @@ use crate::{
     core::helpers::common::{generate_sticker_set_name_and_link, sticker_format},
     core::helpers::texts::sticker_set_message,
 };
-
-pub async fn process_non_text_handler(bot: Bot, message: Message) -> HandlerResult {
-    bot.send(SendMessage::new(
-        message.chat().id(),
-        "Please send me a text message.",
-    ))
-    .await?;
-
-    Ok(EventReturn::Finish)
-}
 
 pub async fn steal_sticker_set_handler<S: Storage>(
     bot: Bot,

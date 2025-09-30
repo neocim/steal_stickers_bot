@@ -21,7 +21,11 @@ use crate::{
         uow::UoWFactory,
     },
     presentation::commands::{
-        handlers::add_stickers::undo_last_sticker, states::callback_data::CallbackDataPrefix,
+        handlers::{
+            add_stickers::undo_last_sticker,
+            get_owner::{get_owner_handler, get_owner_id},
+        },
+        states::{callback_data::CallbackDataPrefix, get_owner::GetOwnerState},
     },
 };
 
@@ -29,17 +33,15 @@ pub use handlers::deleted_sets_upd::deleted_sets_upd;
 use handlers::{
     add_stickers::{
         add_stickers_handler, add_stickers_to_user_owned_sticker_set, get_stickers_to_add,
-        get_stolen_sticker_set, process_non_sticker_handler,
+        get_stolen_sticker_set,
     },
     bot_src::source_handler,
     cancel::cancel_handler,
+    common::{process_non_sticker_handler, process_non_text_handler},
     my_stickers::{my_stickers_handler, process_buttons as process_my_stickers_buttons},
     start::start_handler,
     stats::{process_buttons as process_stats_buttons, stats_handler},
-    steal_pack::{
-        create_new_sticker_set, get_sticker_set_name, process_non_text_handler,
-        steal_sticker_set_handler,
-    },
+    steal_pack::{create_new_sticker_set, get_sticker_set_name, steal_sticker_set_handler},
 };
 use states::{add_stickers::AddStickerState, steal_sticker_set::StealStickerSetState};
 
@@ -55,6 +57,7 @@ pub async fn set_commands(bot: &Bot) -> Result<(), HandlerError> {
     let my_stickers_cmd = BotCommand::new("mystickers", "List of your stolen stickers");
     let stats_cmd = BotCommand::new("stats", "See the bot statistics");
     let cancel_cmd = BotCommand::new("cancel", "Cancel last command");
+    let get_owner_cmd = BotCommand::new("getowner", "Get the ID of the owner of stickers");
 
     let private_chats = [
         steal_pack_cmd,
@@ -65,6 +68,7 @@ pub async fn set_commands(bot: &Bot) -> Result<(), HandlerError> {
         cancel_cmd,
         source_cmd,
         src_cmd,
+        get_owner_cmd
     ];
     bot.send(SetMyCommands::new(private_chats).scope(BotCommandScopeAllPrivateChats {}))
         .await?;
@@ -89,6 +93,7 @@ where
             "cancel",
             "mystickers",
             "stats",
+            "getowner",
         ],
     );
     start_command(router, &["start", "help"]);
@@ -98,6 +103,7 @@ where
     steal_sticker_set_command::<DB>(router, "stealpack");
     stats_command::<DB>(router, "stats");
     my_stickers_command::<DB>(router, "mystickers");
+    get_owner_command(router, "getowner");
     process_non_sticker(router);
     process_non_text(router);
 }
@@ -239,6 +245,20 @@ where
         .filter(Text::starts_with_single(
             CallbackDataPrefix::MyStickers.as_str(),
         ));
+}
+
+fn get_owner_command(router: &mut Router<Reqwest>, command: &'static str) {
+    router
+        .message
+        .register(get_owner_handler::<MemoryStorage>)
+        .filter(Command::one(command))
+        .filter(ContentType::one(ContentTypeEnum::Text));
+
+    router
+        .message
+        .register(get_owner_id)
+        .filter(ContentType::one(ContentTypeEnum::Sticker))
+        .filter(StateFilter::one(GetOwnerState::GetStickers));
 }
 
 fn process_non_sticker(router: &mut Router<Reqwest>) {
