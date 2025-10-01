@@ -20,6 +20,8 @@ services:
     container_name: steal_stickers.postgres
     image: "postgres:17-alpine"
     restart: "unless-stopped"
+    env_file:
+      - ./.env
     networks:
       - steal_stickers.postgres.network
     ports:

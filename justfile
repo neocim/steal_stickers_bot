@@ -7,6 +7,9 @@ auth:
 compose-run:
     docker compose up
 
+compose-run-b:
+    docker compose up --build
+
 compose-build:
     docker compose up --build
     docker compose down

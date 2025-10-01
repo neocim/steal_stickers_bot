@@ -2,38 +2,31 @@ use std::time::Duration;
 
 use grammers_client::Client;
 use telers::{
-    enums::ParseMode, 
-    errors::{session::ErrorKind, TelegramErrorKind}, 
-    event::{telegram::HandlerResult, EventReturn}, fsm::{Context, Storage}, 
-    methods::{DeleteMessage, GetMe, GetStickerSet, SendMessage, SendSticker}, 
-    types::{InputFile, InputFileId, Message, MessageSticker, MessageText, ReplyParameters, Sticker}, 
-    utils::text::{html_code, html_quote, html_text_link}, Bot, Extension
+    Bot, Extension,
+    enums::ParseMode,
+    errors::{TelegramErrorKind, session::ErrorKind},
+    event::{EventReturn, telegram::HandlerResult},
+    fsm::{Context, Storage},
+    methods::{DeleteMessage, GetMe, GetStickerSet, SendMessage, SendSticker},
+    types::{InputFile, InputFileId, MessageSticker, MessageText, ReplyParameters, Sticker},
+    utils::text::{html_code, html_quote, html_text_link},
 };
 use tracing::error;
 
 use crate::{
-    application::{
-        common::traits::uow::UoWFactory as UoWFactoryTrait,
-    },
+    application::common::traits::uow::UoWFactory as UoWFactoryTrait,
     core::helpers::{
         common::set_created_by,
         constants::{MAX_STICKER_SET_LENGTH, TELEGRAM_STICKER_SET_URL},
     },
     presentation::{
-        commands::{common::{add_stickers, send_default_error_message}, states::add_stickers::AddStickerState},
+        commands::{
+            common::{add_stickers, send_default_error_message},
+            states::add_stickers::AddStickerState,
+        },
         telegram_application::get_sticker_set_user_id,
     },
 };
-
-pub async fn process_non_sticker_handler(bot: Bot, message: Message) -> HandlerResult {
-    bot.send(SendMessage::new(
-        message.chat().id(),
-        "Please send me a sticker.",
-    ))
-    .await?;
-
-    Ok(EventReturn::Finish)
-}
 
 pub async fn add_stickers_handler<S: Storage>(
     bot: Bot,
@@ -129,7 +122,11 @@ where
     let sticker_set_user_id = match get_sticker_set_user_id(&sticker_set_name, &client).await {
         Ok(id) => id,
         Err(error) => {
-            error!(?error, ?sticker_set_name, "Error occurred while getting sticker set user id: ");
+            error!(
+                ?error,
+                ?sticker_set_name,
+                "Error occurred while getting sticker set user id: "
+            );
 
             send_default_error_message(&bot, message.chat.id()).await?;
 
@@ -168,12 +165,17 @@ where
     )
         .await?
     } else {
-        bot.send(SendMessage::new(
+        bot.send(
+            SendMessage::new(
                 message.chat.id(),
-                format!("This sticker pack is completely filled. \
-                Remove a few stickers from it and only then use /addstickers again.")
-            ).reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())))
-            .await?;
+                format!(
+                    "This sticker pack is completely filled. \
+                Remove a few stickers from it and only then use /addstickers again."
+                ),
+            )
+            .reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())),
+        )
+        .await?;
 
         return Ok(EventReturn::Finish);
     };
@@ -281,7 +283,11 @@ where
     Ok(EventReturn::Finish)
 }
 
-pub async fn undo_last_sticker<S: Storage>(bot: Bot, message: MessageText, fsm: Context<S>) -> HandlerResult {
+pub async fn undo_last_sticker<S: Storage>(
+    bot: Bot,
+    message: MessageText,
+    fsm: Context<S>,
+) -> HandlerResult {
     let mut stickers_vec: Vec<Sticker> = match fsm
         .get_value("get_stickers_to_add")
         .await
@@ -302,25 +308,37 @@ pub async fn undo_last_sticker<S: Storage>(bot: Bot, message: MessageText, fsm: 
     let sticker = match stickers_vec.pop() {
         Some(sticker) => sticker,
         None => {
-            bot.send(SendMessage::new(message.chat.id(), "There is nothing to remove.")).await?;
+            bot.send(SendMessage::new(
+                message.chat.id(),
+                "There is nothing to remove.",
+            ))
+            .await?;
 
             return Ok(EventReturn::Finish);
         }
     };
-    
-    fsm.set_value("get_stickers_to_add", stickers_vec).await.map_err(Into::into)?;
 
-    let sticker_message = bot.send(SendSticker::new(message.chat.id(), 
-    InputFile::Id(InputFileId::new(&*sticker.file_id)))).await?;
+    fsm.set_value("get_stickers_to_add", stickers_vec)
+        .await
+        .map_err(Into::into)?;
 
-    bot.send(SendMessage::new(message.chat.id(), 
-    "This sticker has been removed. \
-        You can try using /done or /undo again.")
-        .reply_parameters(
-            ReplyParameters::new(
-                sticker_message.id())
-            ).chat_id(sticker_message.chat().id())
-        ).await?;
+    let sticker_message = bot
+        .send(SendSticker::new(
+            message.chat.id(),
+            InputFile::Id(InputFileId::new(&*sticker.file_id)),
+        ))
+        .await?;
+
+    bot.send(
+        SendMessage::new(
+            message.chat.id(),
+            "This sticker has been removed. \
+        You can try using /done or /undo again.",
+        )
+        .reply_parameters(ReplyParameters::new(sticker_message.id()))
+        .chat_id(sticker_message.chat().id()),
+    )
+    .await?;
 
     Ok(EventReturn::Finish)
 }
@@ -344,7 +362,8 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
         .await
         .map_err(Into::into)?
     {
-        Some(stickers_vec) if stickers_vec.len() == 0 => { bot.send(SendMessage::new(
+        Some(stickers_vec) if stickers_vec.len() == 0 => {
+            bot.send(SendMessage::new(
                 message.chat.id(),
                 "You've removed all the stickers. Send the stickers and only then use /done command.",
             ))
