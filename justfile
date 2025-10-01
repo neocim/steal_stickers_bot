@@ -11,7 +11,7 @@ compose-run-b:
     docker compose up --build
 
 compose-build:
-    docker compose up --build
+    docker compose up --build -d
     docker compose down
 
 pull-img:
