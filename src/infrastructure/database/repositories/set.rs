@@ -283,14 +283,14 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
             Query::select()
                 .expr_as(Func::count(1), Alias::new("count"))
                 .from(Alias::new("users"))
+                .and_where(
+                    Expr::col(Alias::new("deleted"))
+                        .eq(set.get_deleted().expect("`deleted` is None")),
+                )
                 .inner_join(
                     Alias::new("sets"),
                     Expr::col((Alias::new("sets"), Alias::new("tg_id")))
                         .eq(Expr::col((Alias::new("users"), Alias::new("tg_id")))),
-                )
-                .and_where(
-                    Expr::col(Alias::new("deleted"))
-                        .eq(set.get_deleted().expect("`deleted` is None")),
                 )
                 .group_by_col((Alias::new("users"), Alias::new("tg_id")))
                 .order_by(Alias::new("count"), Order::Desc)

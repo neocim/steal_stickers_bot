@@ -42,7 +42,7 @@ pub async fn add_stickers_handler<S: Storage>(
     bot.send(
         SendMessage::new(
             message.chat.id(),
-            "Send me your stolen sticker pack, in which you want to add stickers. \
+            "Send me a sticker from your stolen sticker pack that you want to add stickers to. \
                 You can see all your stolen sticker packs, using command /mystickers.",
         )
         .parse_mode(ParseMode::HTML),
@@ -158,7 +158,7 @@ where
             SendMessage::new(
                 message.chat.id(),
                 format!("Current length of this sticker pack is {set_length_code}. You can add {remaining} more stickers.",
-                set_length_code = html_code(set_length.to_string()), 
+                set_length_code = html_code(set_length.to_string()),
                 remaining = html_code((MAX_STICKER_SET_LENGTH - set_length).to_string())
             )).parse_mode(ParseMode::HTML)
             .reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())),
@@ -252,10 +252,10 @@ where
             if sticker_set_length + stickers_vec_len >= MAX_STICKER_SET_LENGTH {
                 bot.send(SendMessage::new(
                     message.chat.id(),
-                    format!("The amount of stickers has reached {max_len}. Use /done to add all the selected stickers, or 
+                    format!("The amount of stickers has reached {max_len}. Use /done to add all the selected stickers, or \
                     /undo if you want to remove the latest stickers from the add list. All the following sent stickers will be ignored.", 
                     max_len = html_code(MAX_STICKER_SET_LENGTH.to_string())),
-                ))
+                ).parse_mode(ParseMode::HTML))
                 .await?;
 
                 return Ok(EventReturn::Finish);
@@ -332,8 +332,7 @@ pub async fn undo_last_sticker<S: Storage>(
     bot.send(
         SendMessage::new(
             message.chat.id(),
-            "This sticker has been removed. \
-        You can try using /done or /undo again.",
+            "This sticker was removed from the add list. You can try use /done or /undo again.",
         )
         .reply_parameters(ReplyParameters::new(sticker_message.id()))
         .chat_id(sticker_message.chat().id()),
