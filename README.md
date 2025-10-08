@@ -28,7 +28,7 @@ cargo test
 ```
 just pull-img
 ```
-> You can also build it manually using `just compose-build`
+> You can also build it manually using `just build`
 
 2. Then we need to authorize the client. Do it, using:
 ```

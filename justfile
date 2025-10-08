@@ -10,7 +10,7 @@ compose-run:
 compose-run-b:
     docker compose up --build
 
-compose-build:
+build:
     docker compose up --build -d
     docker compose down
 
