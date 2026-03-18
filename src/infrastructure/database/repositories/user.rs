@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use sea_query::{Alias, Expr, PostgresQueryBuilder, Query};
 use sea_query_binder::SqlxBinder as _;
 use sqlx::PgConnection;
@@ -27,7 +26,6 @@ impl<Conn> UserRepoImpl<Conn> {
     }
 }
 
-#[async_trait]
 impl UserRepo for UserRepoImpl<&mut PgConnection> {
     async fn create(&mut self, user: Create) -> Result<(), RepoKind<UserTgIdAlreadyExists>> {
         let (sql_query, values) = Query::insert()

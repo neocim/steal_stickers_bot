@@ -49,7 +49,7 @@ pub async fn get_owner_id(
                 "Unable to retrieve the owner's ID because this sticker is not in any sticker pack. Try to send another sticker or use /cancel instead."
             )
             .parse_mode(ParseMode::HTML)
-            .reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())))
+            .reply_parameters(ReplyParameters::new(message.message_id).chat_id(message.chat.id())))
             .await?;
 
             return Ok(EventReturn::Finish);
@@ -80,7 +80,7 @@ pub async fn get_owner_id(
             ),
         )
         .parse_mode(ParseMode::HTML)
-        .reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())),
+        .reply_parameters(ReplyParameters::new(message.message_id).chat_id(message.chat.id())),
     )
     .await?;
 

@@ -161,7 +161,7 @@ where
                 set_length_code = html_code(set_length.to_string()),
                 remaining = html_code((MAX_STICKER_SET_LENGTH - set_length).to_string())
             )).parse_mode(ParseMode::HTML)
-            .reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())),
+            .reply_parameters(ReplyParameters::new(message.message_id).chat_id(message.chat.id())),
     )
         .await?
     } else {
@@ -173,7 +173,7 @@ where
                 Remove a few stickers from it and only then use /addstickers again."
                 ),
             )
-            .reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())),
+            .reply_parameters(ReplyParameters::new(message.message_id).chat_id(message.chat.id())),
         )
         .await?;
 
@@ -203,7 +203,7 @@ where
     tokio::time::sleep(Duration::from_secs(15)).await;
     bot.send(DeleteMessage::new(
         message_delete.chat().id(),
-        message_delete.id(),
+        message_delete.message_id(),
     ))
     .await?;
 
@@ -228,13 +228,13 @@ where
 
     let sticker_to_add = message.sticker;
 
-    if sticker_to_add.emoji.is_none() {
+    if sticker_to_add.emoji().is_none() {
         bot.send(
             SendMessage::new(
                 message.chat.id(),
                 "Sorry, but this sticker is without emoji. Try send another sticker.",
             )
-            .reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())),
+            .reply_parameters(ReplyParameters::new(message.message_id).chat_id(message.chat.id())),
         )
         .await?;
 
@@ -276,7 +276,7 @@ where
             message.chat.id(),
             "Sticker processed! Send the next one or use the /done or /undo commands.",
         )
-        .reply_parameters(ReplyParameters::new(message.id).chat_id(message.chat.id())),
+        .reply_parameters(ReplyParameters::new(message.message_id).chat_id(message.chat.id())),
     )
     .await?;
 
@@ -334,7 +334,7 @@ pub async fn undo_last_sticker<S: Storage>(
             message.chat.id(),
             "This sticker was removed from the add list. You can try use /done or /undo again.",
         )
-        .reply_parameters(ReplyParameters::new(sticker_message.id()))
+        .reply_parameters(ReplyParameters::new(sticker_message.message_id()))
         .chat_id(sticker_message.chat().id()),
     )
     .await?;

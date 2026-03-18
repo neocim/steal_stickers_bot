@@ -1,7 +1,8 @@
-use std::process;
+use std::{process, sync::Arc};
 
 use clap::{Parser, Subcommand};
 use grammers_client::Client;
+use grammers_session::storages::SqliteSession;
 use telers::Bot;
 use tracing::{debug, error};
 
@@ -16,21 +17,26 @@ use crate::{
     config::{get_config_toml, init_tracing_subscriber_from_config},
     presentation::{
         router::start_bot,
-        telegram_application::{client_authorize, client_connect},
+        telegram_application::{client_authorize, client_connect, constants::SESSION_FILE},
     },
 };
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
+    let session = Arc::new(
+        SqliteSession::open(SESSION_FILE)
+            .await
+            .expect("Failed to open session"),
+    );
     let config = get_config_toml();
     let pg_url = config.get_postgres_url();
     // FIXME!: perhaps there is another, more profitable way to create a variable that lives the entire program.
-    let bot = Box::leak(Box::new(Bot::new(&config.bot.bot_token)));
+    let bot = Bot::new(&config.bot.bot_token);
     let (api_id, api_hash) = (config.tg_app.api_id, config.tg_app.api_hash.clone());
     init_tracing_subscriber_from_config(&config);
 
     debug!("Connecting client..");
-    let client = match client_connect(api_id, api_hash.clone()).await {
+    let client = match client_connect(Arc::clone(&session), api_id).await {
         Ok(client) => client,
         Err(err) => {
             error!(?err, "An error occurred while client connecting: ");
@@ -41,7 +47,13 @@ async fn main() {
     debug!("Client connected!");
 
     debug!("Trying to log in..");
-    run_or_auth(&client, &config.auth.phone_number, &config.auth.password).await;
+    run_or_auth(
+        &client,
+        &api_hash,
+        &config.auth.phone_number,
+        &config.auth.password,
+    )
+    .await;
     debug!("Successfully logged in!");
 
     debug!("Connecting to the database with url `{pg_url}`..");
@@ -73,11 +85,11 @@ pub enum Commands {
     Run,
 }
 
-async fn run_or_auth(client: &Client, ph_num: &str, pswd: &str) {
+async fn run_or_auth(client: &Client, api_hash: &str, phone: &str, password: &str) {
     let cli = Cli::parse();
 
     if Commands::Auth == cli.command {
-        if let Err(err) = client_authorize(client, ph_num, pswd).await {
+        if let Err(err) = client_authorize(client, api_hash, phone, password).await {
             error!(?err, "An error occurred while client authorize:");
 
             process::exit(1);

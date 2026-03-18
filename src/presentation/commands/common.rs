@@ -47,11 +47,12 @@ pub async fn add_stickers(
         if let Err(err) = bot
             .send(AddStickerToSet::new(user_id, set_name, {
                 let sticker_is = InputSticker::new(
-                    InputFile::id(sticker.file_id.as_ref()),
+                    InputFile::id(sticker.file_id()),
                     sticker_format(&sticker),
+                    sticker.emoji(),
                 );
 
-                sticker_is.emoji_list(sticker.emoji)
+                sticker_is.emoji_list(sticker.emoji().unwrap())
             }))
             .await
         {

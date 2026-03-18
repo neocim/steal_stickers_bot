@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use sea_query::{Alias, Expr, Func, Order, PostgresQueryBuilder, Query};
 use sea_query_binder::SqlxBinder;
 use sqlx::PgConnection;
@@ -32,7 +31,6 @@ impl<Conn> SetRepoImpl<Conn> {
     }
 }
 
-#[async_trait]
 impl SetRepo for SetRepoImpl<&mut PgConnection> {
     async fn create<'a>(
         &'a mut self,

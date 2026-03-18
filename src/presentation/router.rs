@@ -2,6 +2,7 @@ use grammers_client::Client;
 use sqlx::{Pool, Postgres};
 use telers::{
     Bot, Dispatcher, Router, enums,
+    event::simple,
     filters::ChatType,
     fsm::{MemoryStorage, Strategy},
     middlewares::outer::FSMContext,
@@ -10,18 +11,15 @@ use tracing::debug;
 
 use crate::{
     infrastructure::database::uow::UoWFactory,
-    presentation::{
-        commands::{deleted_sets_upd, init_commands, set_commands},
-        middlewares::CreateUserMiddleware,
-    },
+    presentation::commands::{PrivateRouterBuilder, deleted_sets_upd, set_commands},
 };
 
-pub async fn start_bot(bot: &'static Bot, pool: Pool<Postgres>, client: Client) {
-    let router = init_router(bot, pool.clone());
+pub async fn start_bot(bot: Bot, pool: Pool<Postgres>, client: Client) {
+    let router = init_router(bot.clone(), pool.clone());
 
     let dispatcher = Dispatcher::builder()
         .main_router(router.clone().configure_default())
-        .bot(bot.clone())
+        .bot(bot)
         .allowed_updates(router.resolve_used_update_types())
         .extension(client)
         .extension(UoWFactory::new(pool))
@@ -33,32 +31,15 @@ pub async fn start_bot(bot: &'static Bot, pool: Pool<Postgres>, client: Client) 
     }
 }
 
-fn init_router(bot: &'static Bot, pool: Pool<Postgres>) -> Router {
-    let mut main_router = Router::new("main");
-    let mut private_router = Router::new("private");
-
-    init_commands::<sqlx::Postgres>(&mut private_router);
-
-    private_router
-        .update
-        .filter(ChatType::one(enums::ChatType::Private));
-
-    private_router
-        .update
-        .outer_middlewares
-        .register(FSMContext::new(MemoryStorage::new()).strategy(Strategy::UserInChat));
-
-    private_router
-        .update
-        .outer_middlewares
-        .register(CreateUserMiddleware::new(UoWFactory::new(pool.clone())));
-
-    main_router
-        .startup
-        .register(deleted_sets_upd, (pool.clone(), bot.clone()));
-
-    main_router.include(private_router);
-    main_router.startup.register(set_commands, (bot,));
+fn init_router(bot: Bot, pool: Pool<Postgres>) -> Router {
+    let private_router = PrivateRouterBuilder::init(Router::new("private"), pool.clone());
+    let main_router = Router::new("main")
+        .include(private_router)
+        .on_startup(|observer| {
+            observer
+                .register(simple::Handler::new(set_commands, (bot.clone(),)))
+                .register(simple::Handler::new(deleted_sets_upd, (pool, bot.clone())))
+        });
 
     main_router
 }

@@ -1,5 +1,3 @@
-use async_trait::async_trait;
-
 use crate::{application::common::exceptions::RepoKind, domain::entities::user::User};
 
 use super::{
@@ -7,9 +5,14 @@ use super::{
     exceptions::{UserTgIdAlreadyExists, UserTgIdNotExist},
 };
 
-#[async_trait]
 pub trait UserRepo {
-    async fn create(&mut self, user: Create) -> Result<(), RepoKind<UserTgIdAlreadyExists>>;
+    fn create(
+        &mut self,
+        user: Create,
+    ) -> impl Future<Output = Result<(), RepoKind<UserTgIdAlreadyExists>>> + Send;
 
-    async fn get_by_tg_id(&mut self, user: GetByTgID) -> Result<User, RepoKind<UserTgIdNotExist>>;
+    fn get_by_tg_id(
+        &mut self,
+        user: GetByTgID,
+    ) -> impl Future<Output = Result<User, RepoKind<UserTgIdNotExist>>> + Send;
 }

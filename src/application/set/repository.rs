@@ -1,5 +1,3 @@
-use async_trait::async_trait;
-
 use crate::{
     application::{
         common::exceptions::{RepoError, RepoKind},
@@ -17,34 +15,41 @@ use super::{
     exceptions::{SetShortNameAlreadyExist, SetShortNameNotExist, SetTgIdNotExist},
 };
 
-#[async_trait]
 pub trait SetRepo {
-    async fn create<'a>(
+    fn create<'a>(
         &'a mut self,
         set: Create<'a>,
-    ) -> Result<(), RepoKind<SetShortNameAlreadyExist>>;
+    ) -> impl Future<Output = Result<(), RepoKind<SetShortNameAlreadyExist>>> + Send;
 
-    async fn get_by_tg_id(&mut self, set: GetByTgID)
-    -> Result<Vec<Set>, RepoKind<SetTgIdNotExist>>;
+    fn get_by_tg_id(
+        &mut self,
+        set: GetByTgID,
+    ) -> impl Future<Output = Result<Vec<Set>, RepoKind<SetTgIdNotExist>>> + Send;
 
-    async fn get_set_counts_for_all_users(&mut self, set: GetAll) -> Result<Vec<i64>, RepoError>;
+    fn get_set_counts_for_all_users(
+        &mut self,
+        set: GetAll,
+    ) -> impl Future<Output = Result<Vec<i64>, RepoError>> + Send;
 
-    async fn delete_by_short_name<'a>(
+    fn delete_by_short_name<'a>(
         &'a mut self,
         set: DeleteByShortName<'a>,
-    ) -> Result<(), RepoKind<SetShortNameNotExist>>;
+    ) -> impl Future<Output = Result<(), RepoKind<SetShortNameNotExist>>> + Send;
 
-    async fn get_one_by_short_name<'a>(
+    fn get_one_by_short_name<'a>(
         &'a mut self,
         set: GetByShortName<'a>,
-    ) -> Result<Set, RepoKind<SetShortNameNotExist>>;
+    ) -> impl Future<Output = Result<Set, RepoKind<SetShortNameNotExist>>> + Send;
 
-    async fn set_deleted_col_by_short_name<'a>(
+    fn set_deleted_col_by_short_name<'a>(
         &'a mut self,
         set: SetDeletedColByShortName<'a>,
-    ) -> Result<(), RepoKind<SetShortNameNotExist>>;
+    ) -> impl Future<Output = Result<(), RepoKind<SetShortNameNotExist>>> + Send;
 
-    async fn get_all(&mut self, set: GetAll) -> Result<Vec<Set>, RepoError>;
+    fn get_all(&mut self, set: GetAll) -> impl Future<Output = Result<Vec<Set>, RepoError>> + Send;
 
-    async fn count_by_tg_id(&mut self, set: CountByTgID) -> Result<i64, RepoError>;
+    fn count_by_tg_id(
+        &mut self,
+        set: CountByTgID,
+    ) -> impl Future<Output = Result<i64, RepoError>> + Send;
 }

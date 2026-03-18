@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use telers::{
     Request,
     errors::{EventErrorKind, MiddlewareError},
@@ -26,7 +25,6 @@ where
     }
 }
 
-#[async_trait]
 impl<UoWF> OuterMiddleware for CreateUserMiddleware<UoWF>
 where
     UoWF: UoWFactory + Send + Sync + 'static + Clone,
@@ -34,8 +32,8 @@ where
     for<'a> <UoWF::UoW as UoWTrait>::UserRepo<'a>: Send + Sync,
 {
     async fn call(&mut self, request: Request) -> Result<MiddlewareResponse, EventErrorKind> {
-        let user_id = match request.update.from_id() {
-            Some(id) => id,
+        let user_id = match request.update.user() {
+            Some(user) => user.id,
             None => {
                 return Ok((request, EventReturn::Skip));
             }

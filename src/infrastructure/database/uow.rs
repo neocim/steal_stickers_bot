@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use sqlx::{Database, Pool, Transaction};
 use telers::FromContext;
 
@@ -74,7 +73,6 @@ where
     }
 }
 
-#[async_trait]
 impl<DB> UnitOfWork for UoW<DB>
 where
     DB: Database,

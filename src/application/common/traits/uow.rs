@@ -1,13 +1,10 @@
-use async_trait::async_trait;
-
 use crate::application::{
     common::exceptions::{BeginError, CommitError, RollbackError},
     set::repository::SetRepo,
     user::repository::UserRepo,
 };
 
-#[async_trait]
-pub trait UoW {
+pub trait UoW: Send {
     type Connection<'a>
     where
         Self: 'a;
@@ -22,15 +19,15 @@ pub trait UoW {
 
     async fn connect(&mut self) -> Result<Self::Connection<'_>, BeginError>;
 
-    async fn begin(&mut self) -> Result<(), BeginError>;
+    fn begin(&mut self) -> impl Future<Output = Result<(), BeginError>> + Send;
 
-    async fn commit(&mut self) -> Result<(), CommitError>;
+    fn commit(&mut self) -> impl Future<Output = Result<(), CommitError>> + Send;
 
-    async fn rollback(&mut self) -> Result<(), RollbackError>;
+    fn rollback(&mut self) -> impl Future<Output = Result<(), RollbackError>> + Send;
 
-    async fn user_repo(&mut self) -> Result<Self::UserRepo<'_>, BeginError>;
+    fn user_repo(&mut self) -> impl Future<Output = Result<Self::UserRepo<'_>, BeginError>> + Send;
 
-    async fn set_repo(&mut self) -> Result<Self::SetRepo<'_>, BeginError>;
+    fn set_repo(&mut self) -> impl Future<Output = Result<Self::SetRepo<'_>, BeginError>> + Send;
 }
 
 pub trait UoWFactory {

@@ -1,41 +1,45 @@
-use std::io;
+use std::{io, sync::Arc, time::Duration};
 
-use grammers_client::{Client, Config, InitParams, SignInError};
-use grammers_session::Session;
+use grammers_client::{
+    Client, SenderPool, SignInError, client::AutoSleep, client::ClientConfiguration,
+};
+use grammers_session::storages::SqliteSession;
 use grammers_tl_types::{
     enums::{self, InputStickerSet},
     functions::messages::GetStickerSet,
     types::{self, InputStickerSetShortName},
 };
 
-use tracing::error;
-
-mod constants;
+pub mod constants;
 mod errors;
-use constants::{RECONNECT_POLICY, SESSION_FILE};
 
-pub async fn client_connect(api_id: i32, api_hash: String) -> Result<Client, errors::Error> {
-    Ok(Client::connect(Config {
-        session: Session::load_file_or_create(SESSION_FILE)?,
-        api_id,
-        api_hash,
-        params: InitParams {
-            reconnection_policy: &RECONNECT_POLICY,
-            ..Default::default()
-        },
-    })
-    .await?)
+pub async fn client_connect(
+    session: Arc<SqliteSession>,
+    api_id: i32,
+) -> Result<Client, errors::Error> {
+    let SenderPool { runner, handle, .. } = SenderPool::new(session, api_id);
+
+    let configuration = ClientConfiguration {
+        retry_policy: Box::new(AutoSleep {
+            threshold: Duration::from_secs(5),
+            io_errors_as_flood_of: Some(Duration::from_secs(1)),
+        }),
+        auto_cache_peers: true,
+    };
+    let client = Client::with_configuration(handle, configuration);
+    let _ = tokio::spawn(runner.run());
+
+    return Ok(client);
 }
 
 pub async fn client_authorize(
     client: &Client,
+    api_hash: &str,
     phone: &str,
     password: &str,
 ) -> Result<(), errors::Error> {
-    let mut sign_out = false;
-
     if !client.is_authorized().await? {
-        let token = client.request_login_code(phone).await?;
+        let token = client.request_login_code(phone, api_hash).await?;
 
         println!("Enter the code you received on your Telegram account:");
         let mut code = String::new();
@@ -52,21 +56,6 @@ pub async fn client_authorize(
             Err(err) => return Err(err.into()),
         };
         println!("Signed in!");
-
-        match client.session().save_to_file(SESSION_FILE) {
-            Ok(_) => {}
-            Err(err) => {
-                error!(
-                    ?err,
-                    "Failed to save the session, will sign out when done: "
-                );
-                sign_out = true;
-            }
-        }
-    }
-
-    if sign_out {
-        drop(client.sign_out_disconnect().await);
     }
 
     Ok(())
