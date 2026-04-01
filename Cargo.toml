@@ -5,7 +5,10 @@ edition = "2024"
 
 [dependencies]
 # main crates
-telers = { version = "1.0.0-beta.1", features = ["memory-storage", "default_signal"] }
+telers = { version = "1.0.0-beta.1", features = [
+    "memory-storage",
+    "default_signal",
+] }
 tokio = { version = "1.36", features = ["macros"] }
 
 sea-query = "0.31"
@@ -23,4 +26,3 @@ chrono = "0.4"
 grammers-client = "0.9.0"
 grammers-tl-types = "0.9.0"
 grammers-session = "0.9.0"
-

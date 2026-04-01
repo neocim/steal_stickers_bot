@@ -82,7 +82,7 @@ pub enum Commands {
     /// Authorize client and exit
     Auth,
     /// Run programm (exit if client not authorized)
-    Run,
+    Start,
 }
 
 async fn run_or_auth(client: &Client, api_hash: &str, phone: &str, password: &str) {
@@ -100,7 +100,8 @@ async fn run_or_auth(client: &Client, api_hash: &str, phone: &str, password: &st
 
         process::exit(0);
     }
-    if Commands::Run == cli.command && !client.is_authorized().await.expect("error to authorize") {
+    if Commands::Start == cli.command && !client.is_authorized().await.expect("error to authorize")
+    {
         error!("Client is not authorized! Run programm with command auth:\njust auth");
 
         process::exit(1);

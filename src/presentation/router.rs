@@ -1,12 +1,6 @@
 use grammers_client::Client;
 use sqlx::{Pool, Postgres};
-use telers::{
-    Bot, Dispatcher, Router, enums,
-    event::simple,
-    filters::ChatType,
-    fsm::{MemoryStorage, Strategy},
-    middlewares::outer::FSMContext,
-};
+use telers::{Bot, Dispatcher, Router, event::simple};
 use tracing::debug;
 
 use crate::{

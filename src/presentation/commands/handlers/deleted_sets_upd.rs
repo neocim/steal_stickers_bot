@@ -34,7 +34,7 @@ where
 
         loop {
             if Utc::now() - last_upd_time < Duration::hours(12) {
-                debug!("Sleeping..");
+                debug!("Sleeping `deleted_sets` middleware for two hours until next check..");
                 tokio::time::sleep(tokio::time::Duration::from_secs(6260)).await;
                 continue;
             }
