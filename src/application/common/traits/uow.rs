@@ -17,7 +17,7 @@ pub trait UoW: Send {
     where
         Self: 'a;
 
-    async fn connect(&mut self) -> Result<Self::Connection<'_>, BeginError>;
+    fn connect(&mut self) -> impl Future<Output = Result<Self::Connection<'_>, BeginError>> + Send;
 
     fn begin(&mut self) -> impl Future<Output = Result<(), BeginError>> + Send;
 

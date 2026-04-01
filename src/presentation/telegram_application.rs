@@ -9,7 +9,7 @@ use grammers_tl_types::{
     functions::messages::GetStickerSet,
     types::{self, InputStickerSetShortName},
 };
-use tracing::{debug, info};
+use tracing::info;
 
 pub mod constants;
 mod errors;

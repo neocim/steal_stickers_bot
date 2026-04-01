@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 #[derive(Clone)]
 pub enum StealStickerSetState {
     StealStickerSetName,
