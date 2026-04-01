@@ -83,7 +83,7 @@ where
             }
         };
 
-    let reply_markup = ReplyMarkup::InlineKeyboard(InlineKeyboardMarkup::new(buttons));
+    let reply_markup = ReplyMarkup::InlineKeyboardMarkup(InlineKeyboardMarkup::new(buttons));
     bot.send(
         SendMessage::new(
             chat_id,
@@ -112,9 +112,14 @@ where
 {
     let mut uow = uow_factory.create_uow();
 
-    let (chat_id, message_id) = match (callback_query.chat_id(), callback_query.message_id()) {
-        (Some(chat_id), Some(message_id)) => (chat_id, message_id),
-        _ => return Ok(EventReturn::Finish),
+    let (chat_id, message_id) = if let Some(message) = callback_query.message {
+        if let Some(chat_id) = message.chat_id() {
+            (chat_id, message.message_id())
+        } else {
+            return Ok(EventReturn::Finish);
+        }
+    } else {
+        return Ok(EventReturn::Finish);
     };
 
     // i guarantee that there will be `Some()`

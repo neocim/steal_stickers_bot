@@ -37,8 +37,8 @@ where
 
     let mut uow = uow_factory.create_uow();
 
-    let user_id = match message.from_id() {
-        Some(id) => id,
+    let user_id = match message.from() {
+        Some(user) => user.id,
         None => return Ok(EventReturn::Finish),
     };
     let chat_id = message.chat().id();
@@ -65,9 +65,14 @@ where
 {
     let mut uow = uow_factory.create_uow();
 
-    let (chat_id, message_id) = match (callback_query.chat_id(), callback_query.message_id()) {
-        (Some(chat_id), Some(message_id)) => (chat_id, message_id),
-        _ => return Ok(EventReturn::Finish),
+    let (chat_id, message_id) = if let Some(message) = callback_query.message {
+        if let Some(chat_id) = message.chat_id() {
+            (chat_id, message.message_id())
+        } else {
+            return Ok(EventReturn::Finish);
+        }
+    } else {
+        return Ok(EventReturn::Finish);
     };
     let user_id = callback_query.from.id;
 
@@ -207,7 +212,7 @@ where
 
 async fn send_edit_message(
     bot: &Bot,
-    text: impl Into<String>,
+    text: impl Into<Box<str>>,
     chat_id: i64,
     message_id: i64,
     keyboard_markup: InlineKeyboardMarkup,

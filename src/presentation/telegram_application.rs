@@ -9,6 +9,7 @@ use grammers_tl_types::{
     functions::messages::GetStickerSet,
     types::{self, InputStickerSetShortName},
 };
+use tracing::{debug, info};
 
 pub mod constants;
 mod errors;
@@ -55,7 +56,9 @@ pub async fn client_authorize(
             Ok(_) => (),
             Err(err) => return Err(err.into()),
         };
-        println!("Signed in!");
+        info!("Signed in!");
+    } else {
+        info!("Already signed in!")
     }
 
     Ok(())

@@ -5,9 +5,9 @@ use super::constants::TELEGRAM_STICKER_SET_URL;
 
 /// Return sticker format for each sticker.
 pub fn sticker_format(sticker: &Sticker) -> String {
-    if sticker.is_animated {
+    if sticker.is_animated() {
         "animated".to_owned()
-    } else if sticker.is_video {
+    } else if sticker.is_video() {
         "video".to_owned()
     } else {
         "static".to_owned()

@@ -13,3 +13,9 @@ impl CallbackDataPrefix {
         }
     }
 }
+
+impl AsRef<str> for CallbackDataPrefix {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}

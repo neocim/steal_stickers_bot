@@ -8,7 +8,7 @@ use telers::{
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
     methods::{DeleteMessage, GetMe, GetStickerSet, SendMessage, SendSticker},
-    types::{InputFile, InputFileId, MessageSticker, MessageText, ReplyParameters, Sticker},
+    types::{FileId, InputFile, MessageSticker, MessageText, ReplyParameters, Sticker},
     utils::text::{html_code, html_quote, html_text_link},
 };
 use tracing::error;
@@ -62,7 +62,7 @@ where
     UoWFactory: UoWFactoryTrait,
     S: Storage,
 {
-    let sticker_set_name = match message.sticker.set_name {
+    let sticker_set_name = match message.sticker.set_name() {
         Some(sticker_set_name) => sticker_set_name,
         None => {
             bot.send(SendMessage::new(
@@ -226,7 +226,7 @@ where
         // only panic if i'm forget call fsm.set_value() in function get_stolen_sticker_set()
         .expect("sticker set name and sticker set title for sticker set should be set");
 
-    let sticker_to_add = message.sticker;
+    let sticker_to_add = *message.sticker;
 
     if sticker_to_add.emoji().is_none() {
         bot.send(
@@ -318,6 +318,8 @@ pub async fn undo_last_sticker<S: Storage>(
         }
     };
 
+    let user_removed_all_stickers = stickers_vec.len() == 0;
+
     fsm.set_value("get_stickers_to_add", stickers_vec)
         .await
         .map_err(Into::into)?;
@@ -325,7 +327,7 @@ pub async fn undo_last_sticker<S: Storage>(
     let sticker_message = bot
         .send(SendSticker::new(
             message.chat.id(),
-            InputFile::Id(InputFileId::new(&*sticker.file_id)),
+            InputFile::Id(FileId::new(sticker.file_id())),
         ))
         .await?;
 
@@ -338,6 +340,14 @@ pub async fn undo_last_sticker<S: Storage>(
         .chat_id(sticker_message.chat().id()),
     )
     .await?;
+
+    if user_removed_all_stickers {
+        bot.send(SendMessage::new(
+            message.chat.id(),
+            "It looks like you've removed all the stickers from the add list. Before use /done or /undo again, you should send at least one sticker.",
+        ))
+        .await?;
+    }
 
     Ok(EventReturn::Finish)
 }
@@ -413,7 +423,7 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
     // delete unnecessary message
     bot.send(DeleteMessage::new(
         message_delete.chat().id(),
-        message_delete.id(),
+        message_delete.message_id(),
     ))
     .await?;
 
@@ -422,15 +432,15 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
             "Sticker(s) have been added into {set}!",
             set = html_text_link(
                 html_quote(sticker_set_title),
-                format!("{TELEGRAM_STICKER_SET_URL}{}", sticker_set_name)
+                format!("{TELEGRAM_STICKER_SET_URL}{sticker_set_name}")
             )
         )
     } else {
         format!(
-            "Error occurred while adding stickers into {set}. Due to an error, not all specified stickers have been added.",
+            "Oops! Due to an unexpected error, not all specified stickers have been added into {set}.",
             set = html_text_link(
                 html_quote(sticker_set_title),
-                format!("{TELEGRAM_STICKER_SET_URL}{}", sticker_set_name)
+                format!("{TELEGRAM_STICKER_SET_URL}{sticker_set_name}")
             )
         )
     };

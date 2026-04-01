@@ -24,7 +24,7 @@ pub async fn get_owner_handler<S: Storage>(
 
     bot.send(SendMessage::new(
         message.chat.id(),
-        "Send me a sticker and i'll show you the owner of this sticker pack:",
+        "Send me any sticker and i'll show you the owner of this sticker pack:",
     ))
     .await?;
 
@@ -40,7 +40,7 @@ pub async fn get_owner_id(
     message: MessageSticker,
     Extension(client): Extension<Client>,
 ) -> HandlerResult {
-    let set_name = match message.sticker.set_name {
+    let set_name = match message.sticker.set_name() {
         Some(set_name) => set_name,
         None => {
             bot.send(

@@ -5,7 +5,7 @@ use telers::{
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
     methods::{CreateNewStickerSet, DeleteMessage, GetMe, GetStickerSet, SendMessage},
-    types::{InputFile, InputSticker, MessageSticker, MessageText},
+    types::{FileId, InputFile, InputSticker, MessageSticker, MessageText},
     utils::text::{html_code, html_quote, html_text_link},
 };
 use tracing::error;
@@ -53,7 +53,7 @@ pub async fn get_sticker_set_name<S: Storage>(
     message: MessageSticker,
     fsm: Context<S>,
 ) -> HandlerResult {
-    let set_name = match message.sticker.set_name {
+    let set_name = match message.sticker.set_name() {
         Some(sticker_set_name) => sticker_set_name,
         None => {
             bot.send(SendMessage::new(
@@ -88,7 +88,7 @@ pub async fn get_sticker_set_name<S: Storage>(
         return Ok(EventReturn::Finish);
     }
 
-    fsm.set_value("steal_sticker_set_name", set_name.as_ref())
+    fsm.set_value("steal_sticker_set_name", set_name)
         .await
         .map_err(Into::into)?;
 
@@ -119,13 +119,16 @@ where
 {
     // if user enter wrong sticker set title, process it
     let new_set_title = if message.text.len() > 64 {
-        bot.send(SendMessage::new(
-            message.chat.id(),
-            format!(
-                "Too long name! Please enter a name up to {max_len} characters long.",
-                max_len = html_code(MAX_SET_TITLE_LENGTH.to_string())
-            ),
-        ))
+        bot.send(
+            SendMessage::new(
+                message.chat.id(),
+                format!(
+                    "Too long name! Please enter a name up to {max_len} characters long.",
+                    max_len = html_code(MAX_SET_TITLE_LENGTH.to_string())
+                ),
+            )
+            .parse_mode(ParseMode::HTML),
+        )
         .await?;
 
         return Ok(EventReturn::Finish);
@@ -137,7 +140,7 @@ where
                 min_len = html_code(MIN_SET_TITLE_LENGTH.to_string()),
                 max_len = html_code(MAX_SET_TITLE_LENGTH.to_string())
             ),
-        ))
+        ).parse_mode(ParseMode::HTML))
         .await?;
 
         return Ok(EventReturn::Finish);
@@ -200,11 +203,11 @@ where
                 .iter()
                 .take(limit_sticker_set_length)
                 .map(|sticker| {
-                    let istick: InputSticker = InputSticker::new(
-                        InputFile::id(sticker.file_id.as_ref()),
+                    InputSticker::new(
+                        InputFile::Id(FileId::new(sticker.file_id())),
                         sticker_format(sticker),
-                    );
-                    istick.emoji_list(sticker.emoji.clone())
+                        sticker.emoji(),
+                    )
                 }),
         ))
         .await
@@ -297,7 +300,7 @@ where
     // delete unnecessary message
     bot.send(DeleteMessage::new(
         message_delete.chat().id(),
-        message_delete.id(),
+        message_delete.message_id(),
     ))
     .await?;
 

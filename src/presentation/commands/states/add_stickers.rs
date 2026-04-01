@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 #[derive(Clone)]
 pub enum AddStickerState {
     GetStolenStickerSet,
@@ -15,9 +13,9 @@ impl AddStickerState {
     }
 }
 
-impl From<AddStickerState> for Cow<'static, str> {
-    fn from(state: AddStickerState) -> Self {
-        Cow::Borrowed(state.as_str())
+impl AsRef<str> for AddStickerState {
+    fn as_ref(&self) -> &str {
+        self.as_str()
     }
 }
 

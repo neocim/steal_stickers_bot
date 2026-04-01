@@ -13,9 +13,9 @@ impl GetOwnerState {
     }
 }
 
-impl From<GetOwnerState> for Cow<'static, str> {
-    fn from(state: GetOwnerState) -> Self {
-        Cow::Borrowed(state.as_str())
+impl AsRef<str> for GetOwnerState {
+    fn as_ref(&self) -> &str {
+        self.as_str()
     }
 }
 

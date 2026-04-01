@@ -15,9 +15,9 @@ impl StealStickerSetState {
     }
 }
 
-impl From<StealStickerSetState> for Cow<'static, str> {
-    fn from(state: StealStickerSetState) -> Self {
-        Cow::Borrowed(state.as_str())
+impl AsRef<str> for StealStickerSetState {
+    fn as_ref(&self) -> &str {
+        self.as_str()
     }
 }
 
