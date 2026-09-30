@@ -4,13 +4,16 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-# main crates
-telers = { version = "1.0.0-beta.1", features = [
+# telers = { version = "1.0.0-beta.9", features = [
+#     "std",
+#     "memory-storage",
+#     "default_signal",
+# ] }
+telers = { git = "https://github.com/Desiders/telers.git", commit = "0955f1f", features = [
     "memory-storage",
     "default_signal",
 ] }
-tokio = { version = "1.36", features = ["macros"] }
-
+tokio = { version = "1.52", features = ["macros"] }
 sea-query = "0.31"
 sea-query-binder = { version = "0.6.0", features = ["sqlx-postgres"] }
 sqlx = { version = "0.7", features = ["postgres", "time", "runtime-tokio"] }
@@ -20,9 +23,8 @@ random-string = "1.1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 toml = "0.8"
-thiserror = "1"
+thiserror = "2.0"
 clap = { version = "4.5.16", features = ["derive"] }
 chrono = "0.4"
-grammers-client = "0.9.0"
-grammers-tl-types = "0.9.0"
-grammers-session = "0.9.0"
+# grammers-client = "0.10.0"
+grammers-client = { git = "https://codeberg.org/Lonami/grammers.git", commit = "42d4b51059" }
