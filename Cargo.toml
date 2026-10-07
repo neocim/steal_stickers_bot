@@ -1,6 +1,6 @@
 [package]
 name = "steal_stickers_bot"
-version = "0.1.0"
+version = "1.3.0"
 edition = "2024"
 
 [dependencies]
@@ -9,7 +9,7 @@ edition = "2024"
 #     "memory-storage",
 #     "default_signal",
 # ] }
-telers = { git = "https://github.com/Desiders/telers.git", commit = "0955f1f", features = [
+telers = { git = "https://github.com/Desiders/telers.git", rev = "0955f1f", features = [
     "memory-storage",
     "default_signal",
 ] }
@@ -27,4 +27,6 @@ thiserror = "2.0"
 clap = { version = "4.5.16", features = ["derive"] }
 chrono = "0.4"
 # grammers-client = "0.10.0"
-grammers-client = { git = "https://codeberg.org/Lonami/grammers.git", commit = "42d4b51059" }
+# grammers-session = "0.10.0"
+grammers-client = { git = "https://codeberg.org/Lonami/grammers.git", rev = "58fe6e4357dbd8b9474a73f8fcd4e4e53875e1ce" }
+grammers-session = { git = "https://codeberg.org/Lonami/grammers.git", rev = "58fe6e4357dbd8b9474a73f8fcd4e4e53875e1ce" }

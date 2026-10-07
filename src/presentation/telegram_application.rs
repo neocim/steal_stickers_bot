@@ -1,14 +1,12 @@
-use std::{io, sync::Arc, time::Duration};
+use std::{io, sync::Arc};
 
-use grammers_client::{
-    Client, SenderPool, SignInError, client::AutoSleep, client::ClientConfiguration,
-};
-use grammers_session::storages::SqliteSession;
-use grammers_tl_types::{
+use grammers_client::tl::{
     enums::{self, InputStickerSet},
     functions::messages::GetStickerSet,
     types::{self, InputStickerSetShortName},
 };
+use grammers_client::{Client, SenderPool, SignInError};
+use grammers_session::storages::SqliteSession;
 use tracing::info;
 
 pub mod constants;
@@ -20,14 +18,7 @@ pub async fn client_connect(
 ) -> Result<Client, errors::Error> {
     let SenderPool { runner, handle, .. } = SenderPool::new(session, api_id);
 
-    let configuration = ClientConfiguration {
-        retry_policy: Box::new(AutoSleep {
-            threshold: Duration::from_secs(5),
-            io_errors_as_flood_of: Some(Duration::from_secs(1)),
-        }),
-        auto_cache_peers: true,
-    };
-    let client = Client::with_configuration(handle, configuration);
+    let client = Client::new(handle);
     let _ = tokio::spawn(runner.run());
 
     return Ok(client);

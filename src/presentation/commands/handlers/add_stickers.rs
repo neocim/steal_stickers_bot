@@ -161,7 +161,7 @@ where
                 set_length_code = html_code(set_length.to_string()),
                 remaining = html_code((MAX_STICKER_SET_LENGTH - set_length).to_string())
             )).parse_mode(ParseMode::HTML)
-            .reply_parameters(ReplyParameters::new(message.message_id).chat_id(message.chat.id())),
+            .reply_parameters(ReplyParameters::new().chat_id(message.chat.id()).message_id(message.message_id)),
     )
         .await?
     } else {
@@ -173,7 +173,11 @@ where
                 Remove a few stickers from it and only then use /addstickers again."
                 ),
             )
-            .reply_parameters(ReplyParameters::new(message.message_id).chat_id(message.chat.id())),
+            .reply_parameters(
+                ReplyParameters::new()
+                    .chat_id(message.chat.id())
+                    .message_id(message.message_id),
+            ),
         )
         .await?;
 
@@ -234,7 +238,11 @@ where
                 message.chat.id(),
                 "Sorry, but this sticker is without emoji. Try send another sticker.",
             )
-            .reply_parameters(ReplyParameters::new(message.message_id).chat_id(message.chat.id())),
+            .reply_parameters(
+                ReplyParameters::new()
+                    .chat_id(message.chat.id())
+                    .message_id(message.message_id),
+            ),
         )
         .await?;
 
@@ -276,7 +284,11 @@ where
             message.chat.id(),
             "Sticker processed! Send the next one or use the /done or /undo commands.",
         )
-        .reply_parameters(ReplyParameters::new(message.message_id).chat_id(message.chat.id())),
+        .reply_parameters(
+            ReplyParameters::new()
+                .chat_id(message.chat.id())
+                .message_id(message.message_id),
+        ),
     )
     .await?;
 
@@ -336,7 +348,7 @@ pub async fn undo_last_sticker<S: Storage>(
             message.chat.id(),
             "This sticker was removed from the add list. You can try use /done or /undo again.",
         )
-        .reply_parameters(ReplyParameters::new(sticker_message.message_id()))
+        .reply_parameters(ReplyParameters::new().message_id(sticker_message.message_id()))
         .chat_id(sticker_message.chat().id()),
     )
     .await?;
