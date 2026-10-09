@@ -61,7 +61,16 @@ impl PrivateRouterBuilder {
         for<'a> SetRepoImpl<&'a mut DB::Connection>: SetRepo,
         CreateUserMiddleware<UoWFactory<DB>>: OuterMiddleware,
     {
-        let router = Self { router }
+        let router = PrivateRouterBuilder { router }
+            .start_src_commands(&["start", "help"], &["src", "source"])
+            .cancel_command("cancel")
+            .add_stickers_command::<DB>("addstickers", "done", "undo")
+            .steal_sticker_set_command::<DB>("stealpack")
+            .stats_command::<DB>("stats")
+            .my_stickers_command::<DB>("mystickers")
+            .get_owner_command("getowner")
+            .process_non_text()
+            .process_non_sticker()
             .process_non_command(&[
                 "source",
                 "src",
@@ -72,27 +81,20 @@ impl PrivateRouterBuilder {
                 "getowner",
                 "mystickers",
                 "stats",
+                "start",
             ])
-            .start_command(&["start", "help"])
-            .source_command(&["src", "source"])
-            .cancel_command("cancel")
-            .add_stickers_command::<DB>("addstickers", "done", "undo")
-            .steal_sticker_set_command::<DB>("stealpack")
-            .stats_command::<DB>("stats")
-            .my_stickers_command::<DB>("mystickers")
-            .get_owner_command("getowner")
-            .process_non_text()
-            .process_non_sticker()
             .router;
 
-        router.on_all(|observer| {
+        let router = router.on_all(|observer| {
             observer
                 .filter(ChatType::one(Private))
                 .register_outer_middleware(
                     FSMContext::new(MemoryStorage::new()).strategy(Strategy::UserInChat),
                 )
                 .register_outer_middleware(CreateUserMiddleware::new(UoWFactory::new(pool.clone())))
-        })
+        });
+
+        router
     }
 
     fn stats_command<DB>(mut self, command: &'static str) -> Self
@@ -124,16 +126,53 @@ impl PrivateRouterBuilder {
         self
     }
 
-    /// Executes Telegram commands `/start` and `/help`
-    fn start_command(mut self, commands: &'static [&str]) -> Self {
+    // For some reason, when registering `start_command` and `source_command`
+    // in different `router.on_message(...)` methods, a conflict occurs, which prevents
+    // the other commands in the chain from being registered.
+    //
+    // This function is a crutch.
+    /// Executes Telegram commands `/start` and `/help`, `/source` and `/src`
+    fn start_src_commands(
+        mut self,
+        start_comands: &'static [&str],
+        src_commands: &'static [&str],
+    ) -> Self {
         self.router = self.router.on_message(|observer| {
-            observer.register(
-                Handler::new(start_handler::<MemoryStorage>)
-                    .filter(Command::many(commands.iter().map(ToOwned::to_owned))),
-            )
+            observer
+                .register(
+                    Handler::new(start_handler::<MemoryStorage>)
+                        .filter(Command::many(start_comands.iter().map(ToOwned::to_owned))),
+                )
+                .register(
+                    Handler::new(source_handler::<MemoryStorage>)
+                        .filter(Command::many(src_commands.iter().map(ToOwned::to_owned))),
+                )
         });
         self
     }
+
+    #[allow(unused)]
+    /// Executes Telegram commands `/start` and `/help`
+    fn start_command(
+        mut self,
+        start_comands: &'static [&str],
+        src_commands: &'static [&str],
+    ) -> Self {
+        self.router = self.router.on_message(|observer| {
+            observer
+                .register(
+                    Handler::new(start_handler::<MemoryStorage>)
+                        .filter(Command::many(start_comands.iter().map(ToOwned::to_owned))),
+                )
+                .register(
+                    Handler::new(source_handler::<MemoryStorage>)
+                        .filter(Command::many(src_commands.iter().map(ToOwned::to_owned))),
+                )
+        });
+        self
+    }
+
+    #[allow(unused)]
     /// Executes Telegram commands `/src` and `/source`
     fn source_command(mut self, commands: &'static [&str]) -> Self {
         self.router = self.router.on_message(|observer| {
