@@ -19,10 +19,13 @@ pub fn detailed_error_message(err: &str) -> String {
     )
 }
 
-pub fn added_stickers_message(tg_set_url: &str, set_name: &str, set_title: &str) -> String {
+pub fn added_stickers_message(set_name: &str, set_title: &str) -> String {
     format!(
         "Sticker(s) have been added into {set}!",
-        set = html_text_link(html_quote(set_title), format!("{tg_set_url}{set_name}"))
+        set = html_text_link(
+            html_quote(set_title),
+            format!("{TELEGRAM_STICKER_SET_URL}{set_name}")
+        )
     )
 }
 

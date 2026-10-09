@@ -9,16 +9,14 @@ use telers::{
     fsm::{Context, Storage},
     methods::{DeleteMessage, GetMe, GetStickerSet, SendMessage, SendSticker},
     types::{FileId, InputFile, MessageSticker, MessageText, ReplyParameters, Sticker},
-    utils::text::{html_code, html_quote, html_text_link},
+    utils::text::{html_code, html_text_link},
 };
 use tracing::error;
 
 use crate::{
     application::common::traits::uow::UoWFactory as UoWFactoryTrait,
     core::helpers::{
-        common::set_created_by,
-        constants::{MAX_STICKER_SET_LENGTH, TELEGRAM_STICKER_SET_URL},
-        texts::added_stickers_message,
+        common::set_created_by, constants::MAX_STICKER_SET_LENGTH, texts::added_stickers_message,
     },
     presentation::{
         commands::{
@@ -446,11 +444,7 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
     bot.send(
         SendMessage::new(
             message.chat.id(),
-            added_stickers_message(
-                TELEGRAM_STICKER_SET_URL,
-                &sticker_set_name,
-                &sticker_set_title,
-            ),
+            added_stickers_message(&sticker_set_name, &sticker_set_title),
         )
         .parse_mode(ParseMode::HTML),
     )
