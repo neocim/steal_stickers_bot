@@ -3,7 +3,7 @@ use std::process;
 use clap::{Parser, Subcommand};
 use grammers_client::Client;
 use telers::Bot;
-use tracing::{debug, error};
+use tracing::{error, info};
 
 pub mod application;
 mod config;
@@ -26,7 +26,7 @@ async fn main() {
     let (api_id, api_hash) = (config.tg_app.api_id, config.tg_app.api_hash.clone());
     init_tracing_subscriber_from_config(&config);
 
-    debug!("Connecting client..");
+    info!("Connecting client..");
     let client = match client_connect(api_id).await {
         Ok(client) => client,
         Err(err) => {
@@ -35,9 +35,9 @@ async fn main() {
             process::exit(1);
         }
     };
-    debug!("Client connected!");
+    info!("Client connected!");
 
-    debug!("Trying to log in..");
+    info!("Trying to log in..");
     run_or_auth(
         &client,
         &api_hash,
@@ -45,9 +45,9 @@ async fn main() {
         &config.auth.password,
     )
     .await;
-    debug!("Successfully logged in!");
+    info!("Successfully logged in!");
 
-    debug!("Connecting to the database with url `{pg_url}`..");
+    info!("Connecting to the database with url..");
     let pool = match sqlx::PgPool::connect(&pg_url).await {
         Ok(pool) => pool,
         Err(err) => {
@@ -56,7 +56,7 @@ async fn main() {
             process::exit(1);
         }
     };
-    debug!("Connected the database!");
+    info!("Connected the database!");
 
     start_bot(bot, pool, client).await;
 }
@@ -85,7 +85,7 @@ async fn run_or_auth(client: &Client, api_hash: &str, phone: &str, password: &st
 
             process::exit(1);
         };
-        debug!(
+        info!(
             "Client sucessfully authorized! Now run programm using command:\njust compose-run OR just compose-build"
         );
 

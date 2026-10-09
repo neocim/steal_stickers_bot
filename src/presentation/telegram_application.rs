@@ -37,7 +37,7 @@ pub async fn client_authorize(
     if !client.is_authorized().await? {
         let token = client.request_login_code(phone, api_hash).await?;
 
-        println!("Enter the code you received on your Telegram account:");
+        print!("Enter the code you received on your Telegram account: ");
         let mut code = String::new();
         io::stdin().read_line(&mut code)?;
         let code = code.trim();
