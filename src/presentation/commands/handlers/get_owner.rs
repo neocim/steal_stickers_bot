@@ -11,7 +11,7 @@ use telers::{
 use tracing::error;
 
 use crate::presentation::{
-    commands::{common::send_default_error_message, states::get_owner::GetOwnerState},
+    commands::{common::send_default_error_msg, states::get_owner::GetOwnerState},
     telegram_application::get_sticker_set_user_id,
 };
 
@@ -65,7 +65,7 @@ pub async fn get_owner_id(
                 "Error occurred while getting sticker set user id: "
             );
 
-            send_default_error_message(&bot, message.chat.id()).await?;
+            send_default_error_msg(&bot, message.chat.id()).await?;
 
             return Ok(EventReturn::Finish);
         }

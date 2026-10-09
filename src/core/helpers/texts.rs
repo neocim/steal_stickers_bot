@@ -1,6 +1,6 @@
 //! Its bad to storing messages here, but i dont care
 
-use telers::utils::text::{html_bold, html_code, html_quote, html_text_link};
+use telers::utils::text::{html_blockquote, html_bold, html_code, html_quote, html_text_link};
 
 use super::{common::get_page_begin_and_end, constants::TELEGRAM_STICKER_SET_URL};
 use crate::{
@@ -9,10 +9,24 @@ use crate::{
 };
 
 pub fn default_error_message() -> String {
-    "Sorry, an error occurred".to_string()
+    "Sorry, an unexpected error has occurred.".to_string()
 }
 
-pub fn sticker_set_message(
+pub fn detailed_error_message(err: &str) -> String {
+    format!(
+        "Sorry, an unexpected error has occurred. Please, contact the bot owner with this error:\n{}",
+        html_blockquote(err)
+    )
+}
+
+pub fn added_stickers_message(tg_set_url: &str, set_name: &str, set_title: &str) -> String {
+    format!(
+        "Sticker(s) have been added into {set}!",
+        set = html_text_link(html_quote(set_title), format!("{tg_set_url}{set_name}"))
+    )
+}
+
+pub fn stolen_set_message(
     sticker_set_title: &str,
     sticker_set_name: &str,
     sticker_set_link: &str,

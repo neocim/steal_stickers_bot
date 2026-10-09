@@ -18,10 +18,13 @@ use crate::{
     core::helpers::{
         common::set_created_by,
         constants::{MAX_STICKER_SET_LENGTH, TELEGRAM_STICKER_SET_URL},
+        texts::added_stickers_message,
     },
     presentation::{
         commands::{
-            common::{add_stickers, send_default_error_message},
+            common::{
+                AddStickersError, add_stickers, send_default_error_msg, send_detailed_error_msg,
+            },
             states::add_stickers::AddStickerState,
         },
         telegram_application::get_sticker_set_user_id,
@@ -78,7 +81,7 @@ where
     let result = bot.send(GetStickerSet::new(&*sticker_set_name)).await;
 
     if let Err(ref error) = result {
-        if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if **message == *"Bad Request: STICKERSET_INVALID")
+        if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if message.as_ref() == "Bad Request: STICKERSET_INVALID")
         {
             bot.send(SendMessage::new(
                 message.chat.id(),
@@ -94,7 +97,7 @@ where
             "Error occurred while getting sticker set name to steal: "
         );
 
-        send_default_error_message(&bot, message.chat.id()).await?;
+        send_default_error_msg(&bot, message.chat.id()).await?;
 
         return Ok(EventReturn::Finish);
     }
@@ -128,7 +131,7 @@ where
                 "Error occurred while getting sticker set user id: "
             );
 
-            send_default_error_message(&bot, message.chat.id()).await?;
+            send_default_error_msg(&bot, message.chat.id()).await?;
 
             return Ok(EventReturn::Finish);
         }
@@ -427,10 +430,11 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
         )
         .await?;
 
-    let all_stickers_was_added = add_stickers(&bot, user_id, sticker_set_name.as_ref(), stickers)
-        .await
-        // cant panic because we checked above that we're have at least 1 sticker in this list
-        .expect("empty stickers list");
+    if let Err(AddStickersError::Other(err)) =
+        add_stickers(&bot, user_id, sticker_set_name.as_ref(), stickers).await
+    {
+        send_detailed_error_msg(&bot, &err, message.chat.id()).await?;
+    }
 
     // delete unnecessary message
     bot.send(DeleteMessage::new(
@@ -439,26 +443,16 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
     ))
     .await?;
 
-    let stickers_was_added_msg = if all_stickers_was_added {
-        format!(
-            "Sticker(s) have been added into {set}!",
-            set = html_text_link(
-                html_quote(sticker_set_title),
-                format!("{TELEGRAM_STICKER_SET_URL}{sticker_set_name}")
-            )
-        )
-    } else {
-        format!(
-            "Oops! Due to an unexpected error, not all specified stickers have been added into {set}.",
-            set = html_text_link(
-                html_quote(sticker_set_title),
-                format!("{TELEGRAM_STICKER_SET_URL}{sticker_set_name}")
-            )
-        )
-    };
-
     bot.send(
-        SendMessage::new(message.chat.id(), stickers_was_added_msg).parse_mode(ParseMode::HTML),
+        SendMessage::new(
+            message.chat.id(),
+            added_stickers_message(
+                TELEGRAM_STICKER_SET_URL,
+                &sticker_set_name,
+                &sticker_set_title,
+            ),
+        )
+        .parse_mode(ParseMode::HTML),
     )
     .await?;
 

@@ -1,72 +1,105 @@
-use std::{borrow::Cow, time::Duration};
+use std::{borrow::Cow, fmt::Display, time::Duration};
 
 use telers::{
     Bot,
+    enums::ParseMode,
+    errors::{TelegramErrorKind, session::ErrorKind},
     event::{EventReturn, telegram::HandlerResult},
     methods::{AddStickerToSet, SendMessage},
     types::{InputFile, InputSticker, Sticker},
 };
-use tracing::error;
 
-use crate::core::helpers::{common::sticker_format, texts::default_error_message};
+use crate::core::helpers::{
+    common::sticker_format,
+    texts::{default_error_message, detailed_error_message},
+};
+
+const SLEEP_TIME: u64 = 1500;
 
 #[derive(Debug, Clone, thiserror::Error)]
-#[error("Error occurred while adding stickers: {message}")]
-pub(crate) struct AddStickersError {
-    message: Cow<'static, str>,
+pub(crate) enum AddStickersError {
+    StickerSetInvalid,
+    Other(Cow<'static, str>),
 }
 
-impl AddStickersError {
-    fn new(message: impl Into<Cow<'static, str>>) -> Self {
-        Self {
-            message: message.into(),
+impl Display for AddStickersError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::StickerSetInvalid => write!(f, "Sticker set is invalid"),
+            Self::Other(err) => write!(f, "Error while adding stickers: {err}"),
         }
     }
 }
 
-pub async fn send_default_error_message(bot: &Bot, chat_id: i64) -> HandlerResult {
+pub async fn send_default_error_msg(bot: &Bot, chat_id: i64) -> HandlerResult {
     bot.send(SendMessage::new(chat_id, default_error_message()))
         .await?;
 
     return Ok(EventReturn::Finish);
 }
 
-/// Returns `true` if all stickers was stolen, `false` otherwise
+pub async fn send_detailed_error_msg(bot: &Bot, err: &str, chat_id: i64) -> HandlerResult {
+    bot.send(SendMessage::new(chat_id, detailed_error_message(err)).parse_mode(ParseMode::HTML))
+        .await?;
+
+    return Ok(EventReturn::Finish);
+}
+
 pub async fn add_stickers(
     bot: &Bot,
     user_id: i64,
     set_name: &str,
     stickers: Vec<Sticker>,
-) -> Result<bool, AddStickersError> {
+) -> Result<(), AddStickersError> {
     if stickers.is_empty() {
-        return Err(AddStickersError::new("list is empty"));
+        return Err(AddStickersError::Other("List is empty".into()));
     }
 
-    let mut all_stickers_was_stolen = true;
     for sticker in stickers {
-        if let Err(err) = bot
-            .send(AddStickerToSet::new(user_id, set_name, {
-                let sticker_is = InputSticker::new(
-                    InputFile::id(sticker.file_id()),
-                    sticker_format(&sticker),
-                    sticker.emoji(),
-                );
-
-                sticker_is.emoji_list(sticker.emoji().unwrap())
-            }))
-            .await
-        {
-            error!(
-                ?err,
-                ?set_name,
-                "Error occurred while adding stickers to sticker set: "
-            );
-            all_stickers_was_stolen = false;
+        match add_sticker(bot, user_id, set_name, &sticker).await {
+            Ok(_) => {}
+            // try to add this sticker again
+            Err(AddStickersError::StickerSetInvalid) => {
+                for _ in [0..9] {
+                    tokio::time::sleep(Duration::from_millis(SLEEP_TIME)).await;
+                    if let Ok(_) = add_sticker(bot, user_id, set_name, &sticker).await {
+                        break;
+                    }
+                }
+            }
+            Err(err) => return Err(err),
         }
-
         // sleep because you can’t send telegram api requests more often than per second
-        tokio::time::sleep(Duration::from_millis(1500)).await;
+        tokio::time::sleep(Duration::from_millis(SLEEP_TIME)).await;
     }
 
-    Ok(all_stickers_was_stolen)
+    Ok(())
+}
+
+async fn add_sticker<'a>(
+    bot: &Bot,
+    user_id: i64,
+    set_name: &str,
+    sticker: &'a Sticker,
+) -> Result<(), AddStickersError> {
+    match bot
+        .send(AddStickerToSet::new(user_id, set_name, {
+            let sticker_is = InputSticker::new(
+                InputFile::id(sticker.file_id()),
+                sticker_format(&sticker),
+                sticker.emoji(),
+            );
+
+            sticker_is.emoji_list(sticker.emoji().unwrap())
+        }))
+        .await
+    {
+        Ok(_) => Ok(()),
+        Err(ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }))
+            if message.as_ref() == "Bad Request: STICKERSET_INVALID" =>
+        {
+            Err(AddStickersError::StickerSetInvalid)
+        }
+        Err(err) => Err(AddStickersError::Other(err.to_string().into())),
+    }
 }
