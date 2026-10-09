@@ -29,12 +29,15 @@ where
     tokio::spawn(async move {
         let uow_factory = UoWFactory::new(pool.clone());
         let mut last_upd_time = Utc::now();
+        let sleep_hours = 12;
 
         debug!("Start checking for deleted sets.");
 
         loop {
-            if Utc::now() - last_upd_time < Duration::hours(12) {
-                debug!("Sleeping `deleted_sets` middleware for two hours until next check..");
+            if Utc::now() - last_upd_time < Duration::hours(sleep_hours) {
+                debug!(
+                    "Sleeping `deleted_sets` middleware for {sleep_hours} hours until next check.."
+                );
                 tokio::time::sleep(tokio::time::Duration::from_secs(6260)).await;
                 continue;
             }
