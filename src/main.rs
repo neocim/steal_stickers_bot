@@ -1,8 +1,7 @@
-use std::{process, sync::Arc};
+use std::process;
 
 use clap::{Parser, Subcommand};
 use grammers_client::Client;
-use grammers_session::storages::SqliteSession;
 use telers::Bot;
 use tracing::{debug, error};
 
@@ -15,19 +14,11 @@ mod presentation;
 
 use crate::{
     config::{get_config_toml, init_tracing_subscriber_from_config},
-    presentation::{
-        router::start_bot,
-        telegram_application::{client_authorize, client_connect, constants::SESSION_FILE},
-    },
+    presentation::{client_authorize, client_connect, start_bot},
 };
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
-    let session = Arc::new(
-        SqliteSession::open(SESSION_FILE)
-            .await
-            .expect("Failed to open session"),
-    );
     let config = get_config_toml();
     let pg_url = config.get_postgres_url();
     // FIXME!: perhaps there is another, more profitable way to create a variable that lives the entire program.
@@ -36,7 +27,7 @@ async fn main() {
     init_tracing_subscriber_from_config(&config);
 
     debug!("Connecting client..");
-    let client = match client_connect(Arc::clone(&session), api_id).await {
+    let client = match client_connect(api_id).await {
         Ok(client) => client,
         Err(err) => {
             error!(?err, "An error occurred while client connecting: ");

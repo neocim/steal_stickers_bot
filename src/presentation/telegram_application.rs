@@ -9,13 +9,17 @@ use grammers_client::{Client, SenderPool, SignInError};
 use grammers_session::storages::SqliteSession;
 use tracing::info;
 
-pub mod constants;
+use crate::presentation::telegram_application::constants::SESSION_FILE;
+
+mod constants;
 mod errors;
 
-pub async fn client_connect(
-    session: Arc<SqliteSession>,
-    api_id: i32,
-) -> Result<Client, errors::Error> {
+pub async fn client_connect(api_id: i32) -> Result<Client, errors::Error> {
+    let session = Arc::new(
+        SqliteSession::open(SESSION_FILE)
+            .await
+            .expect("Failed to open session"),
+    );
     let SenderPool { runner, handle, .. } = SenderPool::new(session, api_id);
 
     let client = Client::new(handle);
