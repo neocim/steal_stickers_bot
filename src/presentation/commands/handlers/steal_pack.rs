@@ -6,7 +6,7 @@ use telers::{
     fsm::{Context, Storage},
     methods::{CreateNewStickerSet, DeleteMessage, GetMe, GetStickerSet, SendMessage},
     types::{FileId, InputFile, InputSticker, MessageSticker, MessageText},
-    utils::text::{html_code, html_quote, html_text_link},
+    utils::text::{html_code, html_quote},
 };
 use tracing::error;
 
@@ -15,14 +15,11 @@ use crate::{
         common::traits::uow::UoWFactory as UoWFactoryTrait, interactors::create_set::create_set,
         set::dto::create::Create as CreateSet,
     },
-    core::helpers::{
-        constants::{
-            CREATE_SET_IN_ONE_GO_LENGTH_LIMIT, MAX_SET_TITLE_LENGTH, MIN_SET_TITLE_LENGTH,
-        },
-        texts::{default_error_message, detailed_error_message},
+    core::helpers::constants::{
+        CREATE_SET_IN_ONE_GO_LENGTH_LIMIT, MAX_SET_TITLE_LENGTH, MIN_SET_TITLE_LENGTH,
     },
     presentation::commands::{
-        common::{add_stickers, send_default_error_msg, send_detailed_error_msg},
+        common::{AddStickersError, add_stickers, send_default_error_msg, send_detailed_error_msg},
         states::steal_sticker_set::StealStickerSetState,
     },
 };
@@ -243,6 +240,17 @@ where
                 return send_detailed_error_msg(&bot, &err.to_string(), message.chat.id()).await;
             }
         }
+    }
+
+    if let Err(AddStickersError::Other(err)) = add_stickers(
+        &bot,
+        user_id,
+        new_set_name.as_ref(),
+        steal_stickers_from_sticker_set[limit_sticker_set_length..].into(),
+    )
+    .await
+    {
+        send_detailed_error_msg(&bot, &err, message.chat.id()).await?;
     }
 
     let mut uow = uow_factory.create_uow();
