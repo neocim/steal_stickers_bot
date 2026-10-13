@@ -2,8 +2,7 @@ use std::time::Duration;
 
 use grammers_client::{
     Client,
-    InvocationError::{self, Rpc},
-    sender::RpcError,
+    InvocationError::{self},
 };
 use telers::{
     Bot, Extension,
