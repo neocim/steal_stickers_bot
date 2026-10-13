@@ -35,6 +35,13 @@ pub fn sticker_without_pack() -> String {
     )
 }
 
+pub fn user_doesnt_has_stickers_yet() -> String {
+    format!(
+        "You don't have a single stolen sticker pack. \
+        Steal any sticker pack using the /stealpack and only then use this command."
+    )
+}
+
 pub fn stolen_set_message(
     sticker_set_title: &str,
     sticker_set_name: &str,

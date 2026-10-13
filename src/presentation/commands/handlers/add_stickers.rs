@@ -7,7 +7,7 @@ use grammers_client::{
 use telers::{
     Bot, Extension,
     enums::ParseMode,
-    errors::{TelegramErrorKind, session::ErrorKind},
+    errors::{HandlerError, TelegramErrorKind, session::ErrorKind},
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
     methods::{DeleteMessage, GetMe, GetStickerSet, SendMessage, SendSticker},
@@ -17,11 +17,17 @@ use telers::{
 use tracing::error;
 
 use crate::{
-    application::common::traits::uow::UoWFactory as UoWFactoryTrait,
+    application::{
+        common::{
+            exceptions::TransactionKind,
+            traits::uow::{UoW, UoWFactory as UoWFactoryTrait},
+        },
+        set::{dto::count_by_tg_id::CountByTgID, repository::SetRepo as _},
+    },
     core::helpers::{
         common::set_created_by,
         constants::MAX_STICKER_SET_LENGTH,
-        texts::{added_stickers_message, sticker_without_pack},
+        texts::{added_stickers_message, sticker_without_pack, user_doesnt_has_stickers_yet},
     },
     presentation::{
         commands::{
@@ -34,12 +40,41 @@ use crate::{
     },
 };
 
-pub async fn add_stickers_handler<S: Storage>(
+pub async fn add_stickers_handler<S: Storage, UoWFactory>(
     bot: Bot,
     message: MessageText,
     fsm: Context<S>,
-) -> HandlerResult {
+    Extension(uow_factory): Extension<UoWFactory>,
+) -> HandlerResult
+where
+    UoWFactory: UoWFactoryTrait,
+{
     fsm.finish().await.map_err(Into::into)?;
+
+    let user_id = match message.from {
+        Some(user) => user.id,
+        None => return Ok(EventReturn::Finish),
+    };
+
+    let mut uow = uow_factory.create_uow();
+
+    let set_count = uow
+        .set_repo()
+        .await
+        .map_err(HandlerError::new)?
+        .count_by_tg_id(CountByTgID::new(user_id, Some(false)))
+        .await
+        .map_err(HandlerError::new)?;
+
+    if set_count == 0 {
+        bot.send(SendMessage::new(
+            message.chat.id(),
+            user_doesnt_has_stickers_yet(),
+        ))
+        .await?;
+
+        return Ok(EventReturn::Finish);
+    }
 
     fsm.set_state(AddStickerState::GetStolenStickerSet)
         .await

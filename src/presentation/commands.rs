@@ -176,7 +176,7 @@ impl PrivateRouterBuilder {
     {
         self.router = self.router.on_message(|observer| {
             observer.registers([
-                Handler::new(add_stickers_handler::<MemoryStorage>)
+                Handler::new(add_stickers_handler::<MemoryStorage, UoWFactory<DB>>)
                     .filter(Command::one(command))
                     .filter(MessageType::one(MessageTypeEnum::Text)),
                 Handler::new(get_stolen_sticker_set::<MemoryStorage, UoWFactory<DB>>)

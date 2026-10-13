@@ -18,11 +18,14 @@ use crate::{
         },
         set::{dto::get_by_tg_id::GetByTgID as GetSetByTgID, repository::SetRepo as _},
     },
-    core::{
-        helpers::constants::STICKER_SETS_NUMBER_PER_PAGE, helpers::texts::current_page_message,
+    core::helpers::{
+        constants::STICKER_SETS_NUMBER_PER_PAGE,
+        texts::{current_page_message, user_doesnt_has_stickers_yet},
     },
     domain::entities::set::Set,
-    presentation::commands::states::callback_data::CallbackDataPrefix,
+    presentation::commands::{
+        common::send_detailed_error_msg, states::callback_data::CallbackDataPrefix,
+    },
 };
 
 impl From<BeginError> for HandlerError {
@@ -151,8 +154,7 @@ where
         match get_buttons(&sticker_sets, STICKER_SETS_NUMBER_PER_PAGE, &mut buttons) {
             Ok(pages) => pages,
             Err(err) => {
-                bot.send(SendMessage::new(chat_id, err.message.to_string()))
-                    .await?;
+                send_detailed_error_msg(&bot, &err.message.to_string(), chat_id).await?;
 
                 return Ok(EventReturn::Finish);
             }
@@ -231,10 +233,7 @@ fn get_buttons(
             })
     // otherwise user does not have sticker sets stolen by this bot
     } else {
-        return Err(GetButtonsError::new(
-            "You don't have a single stolen sticker pack. \
-            Steal any sticker pack using the /stealpack command and it will appear in this list.",
-        ));
+        return Err(GetButtonsError::new(user_doesnt_has_stickers_yet()));
     };
 
     Ok(page_count)
