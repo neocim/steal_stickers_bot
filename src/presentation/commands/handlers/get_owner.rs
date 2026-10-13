@@ -24,7 +24,7 @@ pub async fn get_owner_handler<S: Storage>(
 
     bot.send(SendMessage::new(
         message.chat.id(),
-        "Send me any sticker and i'll show you the owner of this sticker pack:",
+        "Send me any sticker and i'll show you the owner ID of this sticker pack:",
     ))
     .await?;
 

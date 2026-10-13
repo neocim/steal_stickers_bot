@@ -44,7 +44,7 @@ pub async fn add_stickers_handler<S: Storage>(
         SendMessage::new(
             message.chat.id(),
             "Send me a sticker from your stolen sticker pack that you want to add stickers to. \
-                You can see all your stolen sticker packs, using command /mystickers.",
+                You can see all your stolen sticker packs using /mystickers.",
         )
         .parse_mode(ParseMode::HTML),
     )

@@ -123,7 +123,7 @@ where
             SendMessage::new(
                 message.chat.id(),
                 format!(
-                    "Too long name! Please enter a name up to {max_len} characters long.",
+                    "Too long name! Please enter a name up to {max_len} characters long:",
                     max_len = html_code(MAX_SET_TITLE_LENGTH.to_string())
                 ),
             )
@@ -136,7 +136,7 @@ where
         bot.send(SendMessage::new(
             message.chat.id(),
             format!(
-                "Too short name! Please enter a name between {min_len} and {max_len} characters long.",
+                "Too short name! Please enter a name between {min_len} and {max_len} characters long:",
                 min_len = html_code(MIN_SET_TITLE_LENGTH.to_string()),
                 max_len = html_code(MAX_SET_TITLE_LENGTH.to_string())
             ),
