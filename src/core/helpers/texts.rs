@@ -58,8 +58,7 @@ pub fn start_message(username: &str) -> String {
     /help - Show this message\n\
     /getowner - Get the owner ID of the sticker pack\n\
     /cancel - Cancel last command\n\
-    /source or /src - Show source code of the bot\n\
-        ",
+    /source or /src - Show source code of the bot",
     )
 }
 
