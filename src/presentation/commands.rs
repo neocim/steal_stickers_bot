@@ -53,6 +53,20 @@ pub struct PrivateRouterBuilder {
     router: Router,
 }
 
+const ALL_COMMANDS: &'static [&str] = &[
+    "start",
+    "help",
+    "source",
+    "src",
+    "addstickers",
+    "done",
+    "undo",
+    "stealpack",
+    "mystickers",
+    "stats",
+    "getowner",
+];
+
 impl PrivateRouterBuilder {
     pub fn init<DB>(router: Router, pool: Pool<DB>) -> Router
     where
@@ -72,18 +86,7 @@ impl PrivateRouterBuilder {
             .get_owner_command("getowner")
             .process_non_text()
             .process_non_sticker()
-            .process_non_command(&[
-                "source",
-                "src",
-                "stealpack",
-                "addstickers",
-                "help",
-                "cancel",
-                "getowner",
-                "mystickers",
-                "stats",
-                "start",
-            ])
+            .process_non_command(ALL_COMMANDS)
             .router;
 
         let router = router.on_all(|observer| {
@@ -193,7 +196,7 @@ impl PrivateRouterBuilder {
         self
     }
 
-    /// Executes Telegram command `/steal_pack`
+    /// Executes Telegram command `/stealpack`
     fn steal_sticker_set_command<DB>(mut self, command: &'static str) -> Self
     where
         DB: Database,
@@ -210,6 +213,7 @@ impl PrivateRouterBuilder {
                     .filter(StateFilter::one(StealStickerSetState::StealStickerSetName)),
                 Handler::new(create_new_sticker_set::<MemoryStorage, UoWFactory<DB>>)
                     .filter(MessageType::one(MessageTypeEnum::Text))
+                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert())
                     .filter(StateFilter::one(StealStickerSetState::CreateNewStickerSet)),
             ])
         });
@@ -288,7 +292,6 @@ impl PrivateRouterBuilder {
 
 pub async fn set_commands(bot: Bot) -> Result<(), HandlerError> {
     let help_cmd = BotCommand::new("help", "Show help message");
-    let source_cmd = BotCommand::new("source", "Show the source code of the bot");
     let src_cmd = BotCommand::new("src", "Show the source code of the bot");
     let steal_pack_cmd = BotCommand::new("stealpack", "Steal sticker pack");
     let add_stickers_cmd = BotCommand::new(
@@ -308,7 +311,6 @@ pub async fn set_commands(bot: Bot) -> Result<(), HandlerError> {
         help_cmd,
         get_owner_cmd,
         cancel_cmd,
-        source_cmd,
         src_cmd,
     ];
     bot.send(SetMyCommands::new(private_chats).scope(BotCommandScopeAllPrivateChats {}))
