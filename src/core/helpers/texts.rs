@@ -29,6 +29,12 @@ pub fn added_stickers_message(set_name: &str, set_title: &str) -> String {
     )
 }
 
+pub fn sticker_without_pack() -> String {
+    format!(
+        "This sticker is without sticker pack or this pack has been deleted. Try to send another sticker pack."
+    )
+}
+
 pub fn stolen_set_message(
     sticker_set_title: &str,
     sticker_set_name: &str,
@@ -39,7 +45,7 @@ pub fn stolen_set_message(
         Now you have your own sticker pack {new_ss_url}. \
         If you want, you can add any stickers to this pack using /addstickers. \
         You can also manage your new sticker pack, using official Telegram bot @Stickers, and to do it, \
-        you should use this internal name of your sticker pack: {sticker_set_name}
+        you should use short name of your sticker pack: {sticker_set_name}
         ",
         new_ss_url = html_text_link(html_quote(sticker_set_title), sticker_set_link),
         sticker_set_name = html_code(sticker_set_name)

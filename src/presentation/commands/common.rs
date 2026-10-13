@@ -19,6 +19,7 @@ const SLEEP_TIME: u64 = 1500;
 #[derive(Debug, Clone, thiserror::Error)]
 pub(crate) enum AddStickersError {
     StickerSetInvalid,
+    StickerSetDeleted,
     Other(Cow<'static, str>),
 }
 
@@ -26,6 +27,7 @@ impl Display for AddStickersError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::StickerSetInvalid => write!(f, "Sticker set is invalid"),
+            Self::StickerSetDeleted => write!(f, "It seems the sticker pack has been deleted."),
             Self::Other(err) => write!(f, "Error while adding stickers: {err}"),
         }
     }
@@ -55,7 +57,11 @@ pub async fn add_stickers(
         return Err(AddStickersError::Other("List is empty".into()));
     }
 
+    let mut fallback_count = 0;
     for sticker in stickers {
+        if fallback_count >= 1 {
+            return Err(AddStickersError::StickerSetDeleted);
+        }
         match add_sticker(bot, user_id, set_name, &sticker).await {
             Ok(_) => {}
             // try to add this sticker again
@@ -65,6 +71,7 @@ pub async fn add_stickers(
                     if let Ok(_) = add_sticker(bot, user_id, set_name, &sticker).await {
                         break;
                     }
+                    fallback_count += 1;
                 }
             }
             Err(err) => return Err(err),

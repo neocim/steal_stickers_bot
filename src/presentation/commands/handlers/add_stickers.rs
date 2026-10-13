@@ -1,6 +1,10 @@
 use std::time::Duration;
 
-use grammers_client::Client;
+use grammers_client::{
+    Client,
+    InvocationError::{self, Rpc},
+    sender::RpcError,
+};
 use telers::{
     Bot, Extension,
     enums::ParseMode,
@@ -16,7 +20,9 @@ use tracing::error;
 use crate::{
     application::common::traits::uow::UoWFactory as UoWFactoryTrait,
     core::helpers::{
-        common::set_created_by, constants::MAX_STICKER_SET_LENGTH, texts::added_stickers_message,
+        common::set_created_by,
+        constants::MAX_STICKER_SET_LENGTH,
+        texts::{added_stickers_message, sticker_without_pack},
     },
     presentation::{
         commands::{
@@ -25,7 +31,7 @@ use crate::{
             },
             states::add_stickers::AddStickerState,
         },
-        telegram_application::get_sticker_set_user_id,
+        telegram_application::{errors::Error as TGError, get_sticker_set_user_id},
     },
 };
 
@@ -66,11 +72,8 @@ where
     let sticker_set_name = match message.sticker.set_name() {
         Some(sticker_set_name) => sticker_set_name,
         None => {
-            bot.send(SendMessage::new(
-                message.chat.id(),
-                "This sticker is without sticker pack. Try to send another sticker pack.",
-            ))
-            .await?;
+            bot.send(SendMessage::new(message.chat.id(), sticker_without_pack()))
+                .await?;
 
             return Ok(EventReturn::Finish);
         }
@@ -81,11 +84,8 @@ where
     if let Err(ref error) = result {
         if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if message.as_ref() == "Bad Request: STICKERSET_INVALID")
         {
-            bot.send(SendMessage::new(
-                message.chat.id(),
-                "This sticker is without sticker pack. Try to send another sticker pack.",
-            ))
-            .await?;
+            bot.send(SendMessage::new(message.chat.id(), sticker_without_pack()))
+                .await?;
 
             return Ok(EventReturn::Finish);
         }
@@ -122,14 +122,25 @@ where
 
     let sticker_set_user_id = match get_sticker_set_user_id(&sticker_set_name, &client).await {
         Ok(id) => id,
-        Err(error) => {
+        Err(TGError::InvocationError(InvocationError::Rpc(err))) => {
+            if err.name == "STICKERSET_INVALID" {
+                bot.send(SendMessage::new(
+                    message.chat.id(),
+                    "It seems this sticker pack has been deleted. Try to send another sticker pack.",
+                ))
+                .await?;
+            }
+
+            return Ok(EventReturn::Finish);
+        }
+        Err(err) => {
             error!(
-                ?error,
+                ?err,
                 ?sticker_set_name,
                 "Error occurred while getting sticker set user id: "
             );
 
-            send_default_error_msg(&bot, message.chat.id()).await?;
+            send_detailed_error_msg(&bot, &err.to_string(), message.chat.id()).await?;
 
             return Ok(EventReturn::Finish);
         }
@@ -237,7 +248,7 @@ where
         bot.send(
             SendMessage::new(
                 message.chat.id(),
-                "Sorry, but this sticker is without emoji. Try send another sticker.",
+                "This sticker doesn't have an emoji, so it can't be added. Try send another sticker.",
             )
             .reply_parameters(
                 ReplyParameters::new()

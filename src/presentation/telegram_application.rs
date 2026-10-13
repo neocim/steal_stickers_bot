@@ -12,7 +12,7 @@ use tracing::info;
 use crate::presentation::telegram_application::constants::SESSION_FILE;
 
 mod constants;
-mod errors;
+pub mod errors;
 
 pub async fn client_connect(api_id: i32) -> Result<Client, errors::Error> {
     let session = Arc::new(

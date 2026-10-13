@@ -15,8 +15,11 @@ use crate::{
         common::traits::uow::UoWFactory as UoWFactoryTrait, interactors::create_set::create_set,
         set::dto::create::Create as CreateSet,
     },
-    core::helpers::constants::{
-        CREATE_SET_IN_ONE_GO_LENGTH_LIMIT, MAX_SET_TITLE_LENGTH, MIN_SET_TITLE_LENGTH,
+    core::helpers::{
+        constants::{
+            CREATE_SET_IN_ONE_GO_LENGTH_LIMIT, MAX_SET_TITLE_LENGTH, MIN_SET_TITLE_LENGTH,
+        },
+        texts::sticker_without_pack,
     },
     presentation::commands::{
         common::{AddStickersError, add_stickers, send_default_error_msg, send_detailed_error_msg},
@@ -56,11 +59,8 @@ pub async fn get_sticker_set_name<S: Storage>(
     let set_name = match message.sticker.set_name() {
         Some(sticker_set_name) => sticker_set_name,
         None => {
-            bot.send(SendMessage::new(
-                message.chat.id(),
-                "This sticker is without sticker pack! Try to send another sticker pack.",
-            ))
-            .await?;
+            bot.send(SendMessage::new(message.chat.id(), sticker_without_pack()))
+                .await?;
 
             return Ok(EventReturn::Finish);
         }
@@ -69,11 +69,8 @@ pub async fn get_sticker_set_name<S: Storage>(
     if let Err(ref error) = bot.send(GetStickerSet::new(&*set_name)).await {
         if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if **message == *"Bad Request: STICKERSET_INVALID")
         {
-            bot.send(SendMessage::new(
-                message.chat.id(),
-                "This sticker is without sticker pack. Try to send another sticker pack.",
-            ))
-            .await?;
+            bot.send(SendMessage::new(message.chat.id(), sticker_without_pack()))
+                .await?;
 
             return Ok(EventReturn::Finish);
         }
