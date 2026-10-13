@@ -163,15 +163,16 @@ where
     }
 
     let inline_keyboard_markup = InlineKeyboardMarkup::new(buttons);
-    let edit_message = EditMessageText::new(current_page_message(
-        current_page_number,
-        number_of_pages,
-        STICKER_SETS_NUMBER_PER_PAGE,
-        &sticker_sets,
-    ))
-    .chat_id(chat_id)
-    .message_id(message_id)
-    .reply_markup(inline_keyboard_markup);
+    let edit_message = EditMessageText::new()
+        .text(current_page_message(
+            current_page_number,
+            number_of_pages,
+            STICKER_SETS_NUMBER_PER_PAGE,
+            &sticker_sets,
+        ))
+        .chat_id(chat_id)
+        .message_id(message_id)
+        .reply_markup(inline_keyboard_markup);
 
     if let Err(error) = bot.send(edit_message.parse_mode(ParseMode::HTML)).await {
         match &error {

@@ -61,18 +61,7 @@ impl PrivateRouterBuilder {
         for<'a> SetRepoImpl<&'a mut DB::Connection>: SetRepo,
         CreateUserMiddleware<UoWFactory<DB>>: OuterMiddleware,
     {
-        let router = Self { router }
-            .process_non_command(&[
-                "source",
-                "src",
-                "stealpack",
-                "addstickers",
-                "help",
-                "cancel",
-                "getowner",
-                "mystickers",
-                "stats",
-            ])
+        let router = PrivateRouterBuilder { router }
             .start_command(&["start", "help"])
             .source_command(&["src", "source"])
             .cancel_command("cancel")
@@ -83,16 +72,30 @@ impl PrivateRouterBuilder {
             .get_owner_command("getowner")
             .process_non_text()
             .process_non_sticker()
+            .process_non_command(&[
+                "source",
+                "src",
+                "stealpack",
+                "addstickers",
+                "help",
+                "cancel",
+                "getowner",
+                "mystickers",
+                "stats",
+                "start",
+            ])
             .router;
 
-        router.on_all(|observer| {
+        let router = router.on_all(|observer| {
             observer
                 .filter(ChatType::one(Private))
                 .register_outer_middleware(
                     FSMContext::new(MemoryStorage::new()).strategy(Strategy::UserInChat),
                 )
                 .register_outer_middleware(CreateUserMiddleware::new(UoWFactory::new(pool.clone())))
-        })
+        });
+
+        router
     }
 
     fn stats_command<DB>(mut self, command: &'static str) -> Self
@@ -125,21 +128,23 @@ impl PrivateRouterBuilder {
     }
 
     /// Executes Telegram commands `/start` and `/help`
-    fn start_command(mut self, commands: &'static [&str]) -> Self {
+    fn start_command(mut self, start_comands: &'static [&str]) -> Self {
         self.router = self.router.on_message(|observer| {
             observer.register(
                 Handler::new(start_handler::<MemoryStorage>)
-                    .filter(Command::many(commands.iter().map(ToOwned::to_owned))),
+                    .filter(Command::many(start_comands.iter().map(ToOwned::to_owned))),
             )
         });
         self
     }
+
     /// Executes Telegram commands `/src` and `/source`
     fn source_command(mut self, commands: &'static [&str]) -> Self {
         self.router = self.router.on_message(|observer| {
-            observer
-                .register(Handler::new(source_handler::<MemoryStorage>))
-                .filter(Command::many(commands.iter().map(ToOwned::to_owned)))
+            observer.register(
+                Handler::new(source_handler::<MemoryStorage>)
+                    .filter(Command::many(commands.iter().map(ToOwned::to_owned))),
+            )
         });
         self
     }

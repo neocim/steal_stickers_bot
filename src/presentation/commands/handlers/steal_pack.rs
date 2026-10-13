@@ -15,17 +15,20 @@ use crate::{
         common::traits::uow::UoWFactory as UoWFactoryTrait, interactors::create_set::create_set,
         set::dto::create::Create as CreateSet,
     },
-    core::helpers::constants::{
-        CREATE_SET_IN_ONE_GO_LENGTH_LIMIT, MAX_SET_TITLE_LENGTH, MIN_SET_TITLE_LENGTH,
+    core::helpers::{
+        constants::{
+            CREATE_SET_IN_ONE_GO_LENGTH_LIMIT, MAX_SET_TITLE_LENGTH, MIN_SET_TITLE_LENGTH,
+        },
+        texts::{default_error_message, detailed_error_message},
     },
     presentation::commands::{
-        common::{add_stickers, send_default_error_message},
+        common::{add_stickers, send_default_error_msg, send_detailed_error_msg},
         states::steal_sticker_set::StealStickerSetState,
     },
 };
 use crate::{
     core::helpers::common::{generate_sticker_set_name_and_link, sticker_format},
-    core::helpers::texts::sticker_set_message,
+    core::helpers::texts::stolen_set_message,
 };
 
 pub async fn steal_sticker_set_handler<S: Storage>(
@@ -83,7 +86,7 @@ pub async fn get_sticker_set_name<S: Storage>(
             "Error occurred while getting sticker set name to steal: "
         );
 
-        send_default_error_message(&bot, message.chat.id()).await?;
+        send_default_error_msg(&bot, message.chat.id()).await?;
 
         return Ok(EventReturn::Finish);
     }
@@ -187,11 +190,11 @@ where
     ).parse_mode(ParseMode::HTML))
     .await?;
 
-    let (limit_sticker_set_length, more_than_limit) =
+    let limit_sticker_set_length =
         if steal_stickers_from_sticker_set.len() > CREATE_SET_IN_ONE_GO_LENGTH_LIMIT {
-            (CREATE_SET_IN_ONE_GO_LENGTH_LIMIT, true)
+            CREATE_SET_IN_ONE_GO_LENGTH_LIMIT
         } else {
-            (steal_stickers_from_sticker_set.len(), false)
+            steal_stickers_from_sticker_set.len()
         };
 
     while let Err(err) = bot
@@ -226,29 +229,18 @@ where
                         "Bad request error occurred while creating new sticker set: "
                     );
 
-                    bot.send(SendMessage::new(
-                        message.chat.id(),
-                        "Sorry, an error occurred while creating new sticker pack",
-                    ))
-                    .await?;
-
-                    return Ok(EventReturn::Finish);
+                    return send_detailed_error_msg(&bot, &err.to_string(), message.chat.id())
+                        .await;
                 }
             }
             err => {
                 error!(
                     ?err,
                     ?new_set_name,
-                    "Error occurred while creating new sticker set:"
+                    "Unexpected error occurred while creating new sticker set:"
                 );
 
-                bot.send(SendMessage::new(
-                    message.chat.id(),
-                    "Sorry, an error occurred while creating new sticker pack",
-                ))
-                .await?;
-
-                return Ok(EventReturn::Finish);
+                return send_detailed_error_msg(&bot, &err.to_string(), message.chat.id()).await;
             }
         }
     }
@@ -262,46 +254,20 @@ where
     .await
     .map_err(HandlerError::new)?;
 
-    if more_than_limit {
-        let all_stickers_was_added = add_stickers(
-            &bot,
-            user_id,
-            new_set_name.as_ref(),
-            steal_stickers_from_sticker_set[limit_sticker_set_length..].into(),
-        )
-        .await
-        .expect("empty stickers list");
-
-        if !all_stickers_was_added {
-            bot.send(SendMessage::new(
-                message.chat.id(),
-                format!(
-                    "Error occurred while creating new sticker pack {created_pack} but sticker pack was created! \
-                    Due to an error, not all stickers have been stolen. The internal name of this sticker pack: {copy_set_name}.",
-                    created_pack = html_text_link(html_quote(new_set_title), new_set_link),
-                    copy_set_name = html_code(new_set_name)
-                ),
-            ).parse_mode(ParseMode::HTML))
-            .await?;
-
-            return Ok(EventReturn::Finish);
-        }
-    }
-
-    bot.send(
-        SendMessage::new(
-            message.chat.id(),
-            sticker_set_message(&new_set_title, &new_set_name, &new_set_link),
-        )
-        .parse_mode(ParseMode::HTML),
-    )
-    .await?;
-
     // delete unnecessary message
     bot.send(DeleteMessage::new(
         message_delete.chat().id(),
         message_delete.message_id(),
     ))
+    .await?;
+
+    bot.send(
+        SendMessage::new(
+            message.chat.id(),
+            stolen_set_message(&new_set_title, &new_set_name, &new_set_link),
+        )
+        .parse_mode(ParseMode::HTML),
+    )
     .await?;
 
     Ok(EventReturn::Finish)

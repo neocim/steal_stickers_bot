@@ -217,7 +217,8 @@ async fn send_edit_message(
     message_id: i64,
     keyboard_markup: InlineKeyboardMarkup,
 ) -> HandlerResult {
-    let edit_message = EditMessageText::new(text)
+    let edit_message = EditMessageText::new()
+        .text(text)
         .chat_id(chat_id)
         .message_id(message_id)
         .parse_mode(ParseMode::HTML)

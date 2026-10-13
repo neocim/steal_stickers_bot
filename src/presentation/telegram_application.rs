@@ -1,33 +1,28 @@
-use std::{io, sync::Arc, time::Duration};
+use std::{io, sync::Arc};
 
-use grammers_client::{
-    Client, SenderPool, SignInError, client::AutoSleep, client::ClientConfiguration,
-};
-use grammers_session::storages::SqliteSession;
-use grammers_tl_types::{
+use grammers_client::tl::{
     enums::{self, InputStickerSet},
     functions::messages::GetStickerSet,
     types::{self, InputStickerSetShortName},
 };
+use grammers_client::{Client, SenderPool, SignInError};
+use grammers_session::storages::SqliteSession;
 use tracing::info;
 
-pub mod constants;
+use crate::presentation::telegram_application::constants::SESSION_FILE;
+
+mod constants;
 mod errors;
 
-pub async fn client_connect(
-    session: Arc<SqliteSession>,
-    api_id: i32,
-) -> Result<Client, errors::Error> {
+pub async fn client_connect(api_id: i32) -> Result<Client, errors::Error> {
+    let session = Arc::new(
+        SqliteSession::open(SESSION_FILE)
+            .await
+            .expect("Failed to open session"),
+    );
     let SenderPool { runner, handle, .. } = SenderPool::new(session, api_id);
 
-    let configuration = ClientConfiguration {
-        retry_policy: Box::new(AutoSleep {
-            threshold: Duration::from_secs(5),
-            io_errors_as_flood_of: Some(Duration::from_secs(1)),
-        }),
-        auto_cache_peers: true,
-    };
-    let client = Client::with_configuration(handle, configuration);
+    let client = Client::new(handle);
     let _ = tokio::spawn(runner.run());
 
     return Ok(client);
@@ -42,7 +37,7 @@ pub async fn client_authorize(
     if !client.is_authorized().await? {
         let token = client.request_login_code(phone, api_hash).await?;
 
-        println!("Enter the code you received on your Telegram account:");
+        print!("Enter the code you received on your Telegram account: ");
         let mut code = String::new();
         io::stdin().read_line(&mut code)?;
         let code = code.trim();
