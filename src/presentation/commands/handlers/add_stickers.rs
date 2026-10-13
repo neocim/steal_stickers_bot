@@ -18,10 +18,7 @@ use tracing::error;
 
 use crate::{
     application::{
-        common::{
-            exceptions::TransactionKind,
-            traits::uow::{UoW, UoWFactory as UoWFactoryTrait},
-        },
+        common::traits::uow::{UoW, UoWFactory as UoWFactoryTrait},
         set::{dto::count_by_tg_id::CountByTgID, repository::SetRepo as _},
     },
     core::helpers::{
