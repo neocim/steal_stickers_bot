@@ -5,7 +5,7 @@ use telers::{
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
     methods::{CreateNewStickerSet, DeleteMessage, GetMe, GetStickerSet, SendMessage},
-    types::{FileId, InputFile, InputSticker, MessageSticker, MessageText},
+    types::{FileId, InputFile, InputSticker, MessageSticker, MessageText, ReplyParameters},
     utils::text::{html_code, html_quote},
 };
 use tracing::error;
@@ -19,7 +19,7 @@ use crate::{
         constants::{
             CREATE_SET_IN_ONE_GO_LENGTH_LIMIT, MAX_SET_TITLE_LENGTH, MIN_SET_TITLE_LENGTH,
         },
-        texts::sticker_without_pack,
+        texts::{now_enter_set_name, sticker_without_pack},
     },
     presentation::commands::{
         common::{AddStickersError, add_stickers, send_default_error_msg, send_detailed_error_msg},
@@ -93,10 +93,13 @@ pub async fn get_sticker_set_name<S: Storage>(
         .await
         .map_err(Into::into)?;
 
-    bot.send(SendMessage::new(
-        message.chat.id(),
-        "Now enter name for your new sticker pack (1-64 characters):",
-    ))
+    bot.send(
+        SendMessage::new(message.chat.id(), now_enter_set_name()).reply_parameters(
+            ReplyParameters::new()
+                .chat_id(message.chat.id())
+                .message_id(message.message_id),
+        ),
+    )
     .await?;
 
     Ok(EventReturn::Finish)
@@ -171,8 +174,7 @@ where
     let user_id = message.from.expect("user without id").id;
 
     // prepare name for new sticker set and link to use it in message later
-    let (mut new_set_name, mut new_set_link) =
-        generate_sticker_set_name_and_link(11, &bot_username);
+    let (mut new_set_name, mut new_set_link) = generate_sticker_set_name_and_link(&bot_username);
 
     let message_delete = bot.send(SendMessage::new(
         message.chat.id(),
@@ -215,7 +217,7 @@ where
                     == "Bad Request: SHORTNAME_OCCUPY_FAILED")
                 {
                     (new_set_name, new_set_link) =
-                        generate_sticker_set_name_and_link(11, &bot_username);
+                        generate_sticker_set_name_and_link(&bot_username);
                 } else {
                     error!(
                         ?err,

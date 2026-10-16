@@ -4,6 +4,7 @@ pub mod cancel;
 pub mod common;
 pub mod deleted_sets_upd;
 pub mod get_owner;
+pub mod link_parser;
 pub mod my_stickers;
 pub mod start;
 pub mod stats;

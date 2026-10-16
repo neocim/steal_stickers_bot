@@ -1,6 +1,8 @@
 use random_string::generate;
 use telers::types::Sticker;
 
+use crate::core::helpers::constants::CREATED_SET_SHORT_NAME_LENGTH;
+
 use super::constants::TELEGRAM_STICKER_SET_URL;
 
 /// Return sticker format for each sticker.
@@ -16,12 +18,12 @@ pub fn sticker_format(sticker: &Sticker) -> String {
 
 /// Generate new random sticker set name. This function assumes that the `length` field is a **positive integer greater than 2**!
 /// Otherwise errors may occurs using the generated name.
-pub fn generate_sticker_set_name_and_link(length: usize, bot_username: &str) -> (String, String) {
+pub fn generate_sticker_set_name_and_link(bot_username: &str) -> (String, String) {
     let charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
     let charset_without_nums = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     let set_name_prefix = generate(1, charset_without_nums);
-    let set_name = generate(length - 1, charset);
+    let set_name = generate(CREATED_SET_SHORT_NAME_LENGTH - 1, charset);
     let set_name = format!("{set_name_prefix}{set_name}_by_{bot_username}");
 
     let set_link = format!("{TELEGRAM_STICKER_SET_URL}{}", set_name);
@@ -59,7 +61,7 @@ pub fn set_created_by(set_name: &str, bot_username: &str) -> bool {
 
 #[test]
 fn sticker_format_test() {
-    let (generated_name, generated_link) = generate_sticker_set_name_and_link(15, "your_bot");
+    let (generated_name, generated_link) = generate_sticker_set_name_and_link("your_bot");
 
     assert!(!generated_name.contains("t.me/addstickers/"));
     assert!(

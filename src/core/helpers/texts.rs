@@ -29,6 +29,14 @@ pub fn added_stickers_message(set_name: &str, set_title: &str) -> String {
     )
 }
 
+pub fn now_enter_set_name() -> String {
+    format!("Now enter name for your new sticker pack (1-64 characters):")
+}
+
+pub fn invalid_set() -> String {
+    format!("This sticker set is invalid. Try to send another link or sticker.")
+}
+
 pub fn sticker_without_pack() -> String {
     format!(
         "This sticker is without sticker pack or this pack has been deleted. Try to send another sticker pack."
