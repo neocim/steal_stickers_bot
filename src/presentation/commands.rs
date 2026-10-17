@@ -267,20 +267,18 @@ impl PrivateRouterBuilder {
     fn process_non_commands(mut self) -> Self {
         self.router = self
             .router
-            .on_callback_query(|observer| {
-                observer
-                    .register(Handler::new(
-                        process_user_agreement_buttons::<MemoryStorage>,
-                    ))
-                    .filter(Text::starts_with_single(
-                        CallbackDataPrefix::StealSet.as_str(),
-                    ))
-            })
             .on_message(|observer| {
                 observer.register(
                     Handler::new(process_non_commands_handler::<MemoryStorage>)
                         .filter(StateFilter::none())
                         .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
+                )
+            })
+            .on_callback_query(|observer| {
+                observer.register(
+                    Handler::new(process_user_agreement_buttons::<MemoryStorage>).filter(
+                        Text::starts_with_single(CallbackDataPrefix::StealSet.as_str()),
+                    ),
                 )
             });
 
