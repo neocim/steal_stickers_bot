@@ -8,6 +8,7 @@ use telers::{
     methods::{AnswerCallbackQuery, EditMessageText, SendMessage},
     types::{CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message},
 };
+use tracing::debug;
 
 use crate::{
     application::{
@@ -68,11 +69,7 @@ where
     let mut uow = uow_factory.create_uow();
 
     let (chat_id, message_id) = if let Some(message) = callback_query.message {
-        if let Some(chat_id) = message.chat_id() {
-            (chat_id, message.message_id())
-        } else {
-            return Ok(EventReturn::Finish);
-        }
+        (message.chat().id(), message.message_id())
     } else {
         return Ok(EventReturn::Finish);
     };

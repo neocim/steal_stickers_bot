@@ -6,7 +6,6 @@ use telers::{
     event::telegram::Handler,
     filters::{
         CallbackData as CallbackDataFilter, ChatType, Command, MessageType, State as StateFilter,
-        Text,
     },
     fsm::{MemoryStorage, Strategy},
     methods::SetMyCommands,
