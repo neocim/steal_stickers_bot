@@ -16,6 +16,16 @@ pub fn now_enter_set_name() -> &'static str {
     "Now enter name for your new sticker pack (1-64 characters):"
 }
 
+pub fn do_you_want_to_steal(set_name: &str) -> String {
+    format!(
+        "Do you want to steal {set} sticker set?",
+        set = html_text_link(
+            html_quote("this"),
+            format!("{TELEGRAM_STICKER_SET_URL}{set_name}")
+        )
+    )
+}
+
 pub fn invalid_set() -> &'static str {
     "This sticker set is invalid. Try to send another link or sticker."
 }

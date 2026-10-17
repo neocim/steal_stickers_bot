@@ -5,6 +5,8 @@ use telers::{
     enums::ParseMode,
     errors::{HandlerError, TelegramErrorKind, session::ErrorKind},
     event::{EventReturn, telegram::HandlerResult},
+    fsm::Context,
+    fsm::Storage,
     methods::{AddStickerToSet, GetStickerSet, SendMessage},
     types::{InputFile, InputSticker, ReplyParameters, Sticker},
 };
@@ -12,7 +14,7 @@ use telers::{
 use crate::core::helpers::{
     common::sticker_format,
     constants::{TELEGRAM_SET_SHORT_NAME_MAX_LENGTH, TELEGRAM_STICKER_SET_URL},
-    texts::{default_error_message, detailed_error_message, invalid_set},
+    texts::{default_error_message, detailed_error_message, invalid_set, sticker_without_pack},
 };
 
 const SLEEP_TIME: u64 = 1500;
@@ -36,6 +38,70 @@ impl Display for AddStickersError {
             Self::Other(err) => write!(f, "Error while adding stickers: {err}"),
         }
     }
+}
+
+pub async fn process_link_to_steal<S: Storage>(
+    bot: &Bot,
+    chat_id: i64,
+    message_id: i64,
+    fsm: &Context<S>,
+    text: &str,
+) -> HandlerResult {
+    let set_name = match parse_sticker_set_link(&bot, text).await {
+        Ok(set_name) => set_name,
+        Err(err) => match err.downcast_ref() {
+            Some(InvalidSetLinkError) => {
+                return send_invalid_set_msg(&bot, chat_id, message_id).await;
+            }
+            None => {
+                send_detailed_error_msg(&bot, &err.to_string(), chat_id, message_id).await?;
+                return Ok(EventReturn::Finish);
+            }
+        },
+    };
+
+    fsm.set_value("steal_sticker_set_name", set_name)
+        .await
+        .map_err(Into::into)?;
+
+    Ok(EventReturn::Finish)
+}
+
+pub async fn process_sticker_to_steal<S: Storage>(
+    bot: &Bot,
+    chat_id: i64,
+    message_id: i64,
+    fsm: &Context<S>,
+    sticker: &Sticker,
+) -> HandlerResult {
+    let set_name = match sticker.set_name() {
+        Some(set_name) => set_name,
+        None => {
+            bot.send(SendMessage::new(chat_id, sticker_without_pack()))
+                .await?;
+
+            return Ok(EventReturn::Finish);
+        }
+    };
+
+    match check_set_name(&bot, set_name).await {
+        Ok(set_name) => set_name,
+        Err(err) => match err.downcast_ref() {
+            Some(InvalidSetLinkError) => {
+                return send_invalid_set_msg(&bot, chat_id, message_id).await;
+            }
+            None => {
+                send_detailed_error_msg(&bot, &err.to_string(), chat_id, message_id).await?;
+                return Ok(EventReturn::Finish);
+            }
+        },
+    };
+
+    fsm.set_value("steal_sticker_set_name", set_name.to_string())
+        .await
+        .map_err(Into::into)?;
+
+    Ok(EventReturn::Finish)
 }
 
 pub async fn parse_sticker_set_link<'a>(bot: &Bot, text: &str) -> Result<String, HandlerError> {

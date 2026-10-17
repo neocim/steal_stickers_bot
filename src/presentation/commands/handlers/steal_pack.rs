@@ -188,7 +188,7 @@ where
     };
 
     // only panic if i'm forget call fsm.set_value() in function steal_sticker_set_name()
-    let steal_sticker_set_name: Box<str> = fsm
+    let steal_sticker_set_name: String = fsm
         .get_value("steal_sticker_set_name")
         .await
         .map_err(Into::into)?

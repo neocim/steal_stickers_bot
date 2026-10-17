@@ -87,10 +87,10 @@ impl PrivateRouterBuilder {
             .source_command(&["src", "source"])
             .cancel_command("cancel")
             .steal_sticker_set_command::<DB>("stealpack")
+            .process_non_commands()
             .process_non_text_and_stickers()
             .process_non_text()
             .process_non_sticker()
-            .process_non_commands()
             .router;
 
         let router = router.on_all(|observer| {

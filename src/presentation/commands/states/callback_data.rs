@@ -3,6 +3,7 @@ use CallbackDataPrefix::*;
 pub enum CallbackDataPrefix {
     MyStickers,
     Stats,
+    StealSet,
 }
 
 impl CallbackDataPrefix {
@@ -10,6 +11,7 @@ impl CallbackDataPrefix {
         match self {
             MyStickers => "MyStickers",
             Stats => "Stats",
+            StealSet => "StealSet",
         }
     }
 }
