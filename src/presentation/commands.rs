@@ -4,7 +4,9 @@ use telers::{
     enums::{ChatType::Private, MessageType as MessageTypeEnum},
     errors::HandlerError,
     event::telegram::Handler,
-    filters::{ChatType, Command, MessageType, State as StateFilter, Text},
+    filters::{
+        CallbackData as CallbackDataFilter, Command, MessageType, State as StateFilter, Text,
+    },
     fsm::{MemoryStorage, Strategy},
     methods::SetMyCommands,
     middlewares::{OuterMiddleware, outer::FSMContext},
@@ -29,7 +31,7 @@ use crate::{
                 get_owner::{get_owner_handler, get_owner_id},
                 non_commands::{process_non_commands_handler, process_user_agreement_buttons},
             },
-            states::{callback_data::CallbackDataPrefix, get_owner::GetOwnerState},
+            states::{callback_data::StealSetAction, get_owner::GetOwnerState},
         },
         middlewares::CreateUserMiddleware,
     },
@@ -95,7 +97,6 @@ impl PrivateRouterBuilder {
 
         let router = router.on_all(|observer| {
             observer
-                .filter(ChatType::one(Private))
                 .register_outer_middleware(
                     FSMContext::new(MemoryStorage::new()).strategy(Strategy::UserInChat),
                 )
@@ -273,9 +274,8 @@ impl PrivateRouterBuilder {
             })
             .on_callback_query(|observer| {
                 observer.register(
-                    Handler::new(process_user_agreement_buttons::<MemoryStorage>).filter(
-                        Text::starts_with_single(CallbackDataPrefix::StealSet.as_str()),
-                    ),
+                    Handler::new(process_user_agreement_buttons::<MemoryStorage>)
+                        .filter(CallbackDataFilter::<StealSetAction>::new()),
                 )
             });
 

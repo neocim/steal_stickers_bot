@@ -1,22 +1,24 @@
 use crate::{
     core::helpers::{
         constants::TELEGRAM_STICKER_SET_URL,
-        texts::{do_you_want_to_steal, now_enter_set_name, you_can_steal_at_any_time},
+        texts::{
+            do_you_want_to_steal, now_enter_set_name, start_message, you_can_steal_at_any_time,
+        },
     },
     presentation::commands::{
         common::{process_link_to_steal, process_sticker_to_steal},
-        states::{callback_data::CallbackDataPrefix, steal_sticker_set::StealStickerSetState},
+        states::{callback_data::StealSetAction, steal_sticker_set::StealStickerSetState},
     },
 };
 use telers::{
     Bot,
+    callback_data::CallbackData as _,
     enums::ParseMode,
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
     methods::{AnswerCallbackQuery, EditMessageText, SendMessage},
     types::{CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message, ReplyParameters},
 };
-use tracing::debug;
 
 pub async fn process_non_commands_handler<S: Storage>(
     bot: Bot,
@@ -38,6 +40,15 @@ pub async fn process_non_commands_handler<S: Storage>(
             sticker,
         )
         .await?;
+    } else {
+        bot.send(SendMessage::new(
+            message.chat().id(),
+            // only can panic if messages uses in channels, but i'm using private filter in main function
+            start_message(&message.from().expect("error while parsing user").first_name),
+        ))
+        .await?;
+
+        return Ok(EventReturn::Finish);
     };
 
     let set_name: String = fsm
@@ -46,15 +57,20 @@ pub async fn process_non_commands_handler<S: Storage>(
         .map_err(Into::into)?
         .expect("Sticker set name for sticker set user want steal should be set");
 
+    let yes_data = StealSetAction {
+        action: "Yes".into(),
+    }
+    .pack()
+    .expect("Failed to pack StealSetAction::Yes");
+    let no_data = StealSetAction {
+        action: "No".into(),
+    }
+    .pack()
+    .expect("Failed to pack StealSetAction::No");
+
     let buttons = [[
-        InlineKeyboardButton::new("Yes").callback_data(format!(
-            "{prefix}Yes",
-            prefix = CallbackDataPrefix::StealSet.as_str()
-        )),
-        InlineKeyboardButton::new("No").callback_data(format!(
-            "{prefix}No",
-            prefix = CallbackDataPrefix::StealSet.as_str()
-        )),
+        InlineKeyboardButton::new("Yes").callback_data(yes_data),
+        InlineKeyboardButton::new("No").callback_data(no_data),
     ]];
 
     let inline_keyboard_markup = InlineKeyboardMarkup::new(buttons);
@@ -73,25 +89,19 @@ pub async fn process_non_commands_handler<S: Storage>(
 
     Ok(EventReturn::Finish)
 }
-
 pub async fn process_user_agreement_buttons<S: Storage>(
     bot: Bot,
     callback_query: CallbackQuery,
+    StealSetAction { action }: StealSetAction,
     fsm: Context<S>,
 ) -> HandlerResult {
-    debug!("111111111111111111111111");
     let (chat_id, message_id) = if let Some(message) = callback_query.message {
-        if let Some(chat_id) = message.chat_id() {
-            (chat_id, message.message_id())
-        } else {
-            return Ok(EventReturn::Finish);
-        }
+        (message.chat().id(), message.message_id())
     } else {
         return Ok(EventReturn::Finish);
     };
-    debug!("{}", callback_query.data.as_ref().unwrap());
 
-    if callback_query.data.unwrap().ends_with("Yes") {
+    if action == "Yes" {
         bot.send(
             EditMessageText::new()
                 .text(now_enter_set_name())

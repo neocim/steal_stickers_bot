@@ -1,23 +1,19 @@
-use CallbackDataPrefix::*;
+use telers::CallbackData;
 
-pub enum CallbackDataPrefix {
-    MyStickers,
-    Stats,
-    StealSet,
+#[derive(CallbackData, Clone, Debug)]
+#[callback_data(prefix = "StealSet")]
+pub struct StealSetAction {
+    pub action: String,
 }
 
-impl CallbackDataPrefix {
-    pub const fn as_str(&self) -> &str {
-        match self {
-            MyStickers => "MyStickers",
-            Stats => "Stats",
-            StealSet => "StealSet",
-        }
-    }
+#[derive(CallbackData, Clone, Debug)]
+#[callback_data(prefix = "Stats")]
+pub struct StatsState {
+    pub state: String,
 }
 
-impl AsRef<str> for CallbackDataPrefix {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
+#[derive(CallbackData, Clone, Debug)]
+#[callback_data(prefix = "MyStickers")]
+pub struct MyStickersPage {
+    pub page: usize,
 }

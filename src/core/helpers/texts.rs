@@ -27,7 +27,7 @@ pub fn do_you_want_to_steal(set_name: &str) -> String {
 }
 
 pub fn you_can_steal_at_any_time() -> &'static str {
-    "Well, you can steal this and any other set of stickers at any time."
+    "Well, you can steal this and any other sticker set at any time."
 }
 
 pub fn invalid_set() -> &'static str {
