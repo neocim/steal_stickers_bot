@@ -5,7 +5,8 @@ use telers::{
     errors::HandlerError,
     event::telegram::Handler,
     filters::{
-        CallbackData as CallbackDataFilter, Command, MessageType, State as StateFilter, Text,
+        CallbackData as CallbackDataFilter, ChatType, Command, MessageType, State as StateFilter,
+        Text,
     },
     fsm::{MemoryStorage, Strategy},
     methods::SetMyCommands,
@@ -114,6 +115,7 @@ impl PrivateRouterBuilder {
         self.router = self.router.on_message(|observer| {
             observer.register(
                 Handler::new(start_handler::<MemoryStorage>)
+                    .filter(ChatType::one(Private))
                     .filter(Command::many(start_comands.iter().map(ToOwned::to_owned))),
             )
         });
@@ -139,6 +141,7 @@ impl PrivateRouterBuilder {
                     ]))
                     .filter(StateFilter::one(StealStickerSetState::StealStickerSetName)),
                 Handler::new(create_new_sticker_set::<MemoryStorage, UoWFactory<DB>>)
+                    .filter(ChatType::one(Private))
                     .filter(MessageType::one(MessageTypeEnum::Text))
                     .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert())
                     .filter(StateFilter::one(StealStickerSetState::CreateNewStickerSet)),
@@ -165,12 +168,14 @@ impl PrivateRouterBuilder {
                     .filter(Command::one(command))
                     .filter(MessageType::one(MessageTypeEnum::Text)),
                 Handler::new(get_stolen_sticker_set::<MemoryStorage, UoWFactory<DB>>)
+                    .filter(ChatType::one(Private))
                     .filter(MessageType::one(MessageTypeEnum::Sticker))
                     .filter(StateFilter::one(AddStickerState::GetStolenStickerSet)),
                 Handler::new(get_stickers_to_add::<MemoryStorage, UoWFactory<DB>>)
                     .filter(MessageType::one(MessageTypeEnum::Sticker))
                     .filter(StateFilter::one(AddStickerState::GetStickersToAdd)),
                 Handler::new(add_stickers_to_user_owned_sticker_set::<MemoryStorage>)
+                    .filter(ChatType::one(Private))
                     .filter(Command::one(done_command))
                     .filter(StateFilter::one(AddStickerState::GetStickersToAdd)),
                 Handler::new(undo_last_sticker::<MemoryStorage>)
@@ -270,6 +275,7 @@ impl PrivateRouterBuilder {
             .on_message(|observer| {
                 observer.register(
                     Handler::new(process_non_commands_handler::<MemoryStorage>)
+                        .filter(ChatType::one(Private))
                         .filter(StateFilter::none())
                         .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
                 )
