@@ -25,6 +25,7 @@ use crate::{
         commands::{
             handlers::{
                 add_stickers::undo_last_sticker,
+                common::process_non_text_or_stickers_handler,
                 get_owner::{get_owner_handler, get_owner_id},
                 non_commands::process_non_commands_handler,
             },
@@ -86,6 +87,7 @@ impl PrivateRouterBuilder {
             .source_command(&["src", "source"])
             .cancel_command("cancel")
             .steal_sticker_set_command::<DB>("stealpack")
+            .process_non_text_and_stickers()
             .process_non_text()
             .process_non_sticker()
             .process_non_commands()
@@ -259,6 +261,20 @@ impl PrivateRouterBuilder {
                 Handler::new(process_non_commands_handler::<MemoryStorage>)
                     .filter(StateFilter::none())
                     .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
+            )
+        });
+        self
+    }
+
+    fn process_non_text_and_stickers(mut self) -> Self {
+        self.router = self.router.on_message(|observer| {
+            observer.register(
+                Handler::new(process_non_text_or_stickers_handler)
+                    .filter(
+                        MessageType::many([MessageTypeEnum::Text, MessageTypeEnum::Sticker])
+                            .invert(),
+                    )
+                    .filter(StateFilter::one(StealStickerSetState::StealStickerSetName)),
             )
         });
         self

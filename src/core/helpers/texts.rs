@@ -21,7 +21,7 @@ pub fn invalid_set() -> &'static str {
 }
 
 pub fn link_or_sticker() -> &'static str {
-    "Please send a sticker set link or a sticker:"
+    "Please send a valid sticker set link or a sticker:"
 }
 
 pub fn sticker_without_pack() -> &'static str {
