@@ -36,6 +36,13 @@ pub async fn process_non_commands_handler<S: Storage>(
     let set_name = if let Ok(set_name) = parse_sticker_set_link(&bot, &message, text).await {
         set_name
     } else {
+        bot.send(SendMessage::new(
+            message.chat().id(),
+            // only can panic if messages uses in channels, but i'm using private filter in main function
+            start_message(&message.from().expect("error while parsing user").first_name),
+        ))
+        .await?;
+
         return Ok(EventReturn::Skip);
     };
 

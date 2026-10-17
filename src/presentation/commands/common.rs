@@ -68,12 +68,7 @@ pub async fn check_set_name(bot: &Bot, message: &Message, set_name: &str) -> Han
     if let Err(ref error) = bot.send(GetStickerSet::new(&*set_name)).await {
         if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if **message == *"Bad Request: STICKERSET_INVALID")
         {
-            return send_invalid_set_msg(
-                &bot,
-                message.chat_id().expect("Chat without ID"),
-                message.message_id(),
-            )
-            .await;
+            return send_invalid_set_msg(&bot, message.chat().id(), message.message_id()).await;
         }
 
         error!(
@@ -90,7 +85,7 @@ pub async fn check_set_name(bot: &Bot, message: &Message, set_name: &str) -> Han
 
 pub async fn send_invalid_set_msg(bot: &Bot, chat_id: i64, message_id: i64) -> HandlerResult {
     bot.send(
-        SendMessage::new(message_id, invalid_set()).reply_parameters(
+        SendMessage::new(chat_id, invalid_set()).reply_parameters(
             ReplyParameters::new()
                 .chat_id(chat_id)
                 .message_id(message_id),

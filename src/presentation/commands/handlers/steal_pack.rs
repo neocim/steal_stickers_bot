@@ -80,29 +80,20 @@ pub async fn get_sticker_set_name<S: Storage>(
         // Applying filter for stickers and text messages during handler registration
         let text = message.text().expect("Provided message is not a text");
         if let None = text.find(TELEGRAM_STICKER_SET_URL) {
-            bot.send(
-                SendMessage::new(message.chat().id(), link_or_sticker()).reply_parameters(
-                    ReplyParameters::new()
-                        .chat_id(message.chat_id().expect("Chat without ID"))
-                        .message_id(message.message_id()),
-                ),
-            )
-            .await?;
+            bot.send(SendMessage::new(message.chat().id(), link_or_sticker()))
+                .await?;
+
+            return Ok(EventReturn::Finish);
         }
         match parse_sticker_set_link(&bot, &message, text).await {
             Ok(set_name) => set_name,
             Err(err) => match err.downcast_ref() {
                 Some(ParseSetLinkError) => {
-                    return send_invalid_set_msg(
-                        &bot,
-                        message.chat_id().expect("Chat without ID"),
-                        message.message_id(),
-                    )
-                    .await;
+                    return send_invalid_set_msg(&bot, message.chat().id(), message.message_id())
+                        .await;
                 }
                 None => {
-                    send_detailed_error_msg(&bot, &err.to_string(), message.chat_id().unwrap())
-                        .await?;
+                    send_detailed_error_msg(&bot, &err.to_string(), message.chat().id()).await?;
                     return Ok(EventReturn::Finish);
                 }
             },
