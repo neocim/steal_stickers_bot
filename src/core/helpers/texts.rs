@@ -8,8 +8,29 @@ use crate::{
     domain::entities::set::Set,
 };
 
-pub fn default_error_message() -> String {
-    "Sorry, an unexpected error has occurred.".to_string()
+pub fn default_error_message() -> &'static str {
+    "Sorry, an unexpected error has occurred."
+}
+
+pub fn now_enter_set_name() -> &'static str {
+    "Now enter name for your new sticker pack (1-64 characters):"
+}
+
+pub fn invalid_set() -> &'static str {
+    "This sticker set is invalid. Try to send another link or sticker."
+}
+
+pub fn invalid_or_empty_set() -> &'static str {
+    "This sticker set is empty or you sent invalid sticker set link. Try to send another link or sticker."
+}
+
+pub fn sticker_without_pack() -> &'static str {
+    "This sticker is without sticker pack or this pack has been deleted. Try to send another sticker pack."
+}
+
+pub fn user_doesnt_has_stickers_yet() -> &'static str {
+    "You don't have a single stolen sticker pack. \
+     Steal at least one sticker pack using the /stealpack and only then use this command."
 }
 
 pub fn detailed_error_message(err: &str) -> String {
@@ -26,27 +47,6 @@ pub fn added_stickers_message(set_name: &str, set_title: &str) -> String {
             html_quote(set_title),
             format!("{TELEGRAM_STICKER_SET_URL}{set_name}")
         )
-    )
-}
-
-pub fn now_enter_set_name() -> String {
-    format!("Now enter name for your new sticker pack (1-64 characters):")
-}
-
-pub fn invalid_set() -> String {
-    format!("This sticker set is invalid. Try to send another link or sticker.")
-}
-
-pub fn sticker_without_pack() -> String {
-    format!(
-        "This sticker is without sticker pack or this pack has been deleted. Try to send another sticker pack."
-    )
-}
-
-pub fn user_doesnt_has_stickers_yet() -> String {
-    format!(
-        "You don't have a single stolen sticker pack. \
-        Steal at least one sticker pack using the /stealpack and only then use this command."
     )
 }
 
