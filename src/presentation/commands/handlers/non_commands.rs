@@ -7,13 +7,9 @@ use telers::{
 };
 
 use crate::{
-    core::helpers::{
-        constants::{TELEGRAM_SET_SHORT_NAME_MAX_LENGTH, TELEGRAM_STICKER_SET_URL},
-        texts::{invalid_set, now_enter_set_name, start_message},
-    },
+    core::helpers::texts::{now_enter_set_name, start_message},
     presentation::commands::{
-        common::{check_set_name, parse_sticker_set_link},
-        states::steal_sticker_set::StealStickerSetState,
+        common::parse_sticker_set_link, states::steal_sticker_set::StealStickerSetState,
     },
 };
 
