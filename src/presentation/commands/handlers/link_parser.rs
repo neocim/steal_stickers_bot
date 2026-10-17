@@ -38,6 +38,17 @@ pub async fn process_sticker_pack_links<S: Storage>(
             .take_while(|c| c.is_ascii_alphabetic() || *c == '_')
             .collect();
 
+        if short_name.len() < 1 {
+            bot.send(
+                SendMessage::new(message.chat.id(), invalid_set()).reply_parameters(
+                    ReplyParameters::new()
+                        .chat_id(message.chat.id())
+                        .message_id(message.message_id),
+                ),
+            )
+            .await?;
+        }
+
         if let Err(ref error) = bot.send(GetStickerSet::new(&*short_name)).await {
             if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if **message == *"Bad Request: STICKERSET_INVALID")
             {
