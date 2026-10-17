@@ -6,9 +6,8 @@ use telers::{
     errors::{HandlerError, TelegramErrorKind, session::ErrorKind},
     event::{EventReturn, telegram::HandlerResult},
     methods::{AddStickerToSet, GetStickerSet, SendMessage},
-    types::{InputFile, InputSticker, Message, ReplyParameters, Sticker},
+    types::{InputFile, InputSticker, ReplyParameters, Sticker},
 };
-use tracing::error;
 
 use crate::core::helpers::{
     common::sticker_format,
@@ -39,11 +38,7 @@ impl Display for AddStickersError {
     }
 }
 
-pub async fn parse_sticker_set_link<'a>(
-    bot: &Bot,
-    message: &Message,
-    text: &str,
-) -> Result<String, HandlerError> {
+pub async fn parse_sticker_set_link<'a>(bot: &Bot, text: &str) -> Result<String, HandlerError> {
     if let Some(link_idx) = text.find(TELEGRAM_STICKER_SET_URL) {
         let short_name_start = link_idx + TELEGRAM_STICKER_SET_URL.len();
 
@@ -57,14 +52,14 @@ pub async fn parse_sticker_set_link<'a>(
         if set_name.len() == 0 {
             return Err(HandlerError::new(InvalidSetLinkError));
         }
-        check_set_name(&bot, &message, &set_name).await?;
+        check_set_name(&bot, &set_name).await?;
 
         return Ok(set_name);
     }
     Err(HandlerError::new(InvalidSetLinkError))
 }
 
-pub async fn check_set_name(bot: &Bot, message: &Message, set_name: &str) -> HandlerResult {
+pub async fn check_set_name(bot: &Bot, set_name: &str) -> HandlerResult {
     match bot.send(GetStickerSet::new(&*set_name)).await {
         Ok(_) => Ok(EventReturn::Finish),
         Err(ref err)

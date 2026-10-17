@@ -41,7 +41,7 @@ pub async fn process_non_commands_handler<S: Storage>(
         return Ok(EventReturn::Finish);
     };
 
-    let set_name = match parse_sticker_set_link(&bot, &message, text).await {
+    let set_name = match parse_sticker_set_link(&bot, text).await {
         Ok(set_name) => set_name,
         Err(err) => match err.downcast_ref() {
             Some(InvalidSetLinkError) => {

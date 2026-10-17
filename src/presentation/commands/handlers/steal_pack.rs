@@ -74,7 +74,19 @@ pub async fn get_sticker_set_name<S: Storage>(
             }
         };
 
-        check_set_name(&bot, &message, set_name).await?;
+        match check_set_name(&bot, set_name).await {
+            Ok(set_name) => set_name,
+            Err(err) => match err.downcast_ref() {
+                Some(InvalidSetLinkError) => {
+                    return send_invalid_set_msg(&bot, message.chat().id(), message.message_id())
+                        .await;
+                }
+                None => {
+                    send_detailed_error_msg(&bot, &err.to_string(), message.chat().id()).await?;
+                    return Ok(EventReturn::Finish);
+                }
+            },
+        };
         set_name.to_string()
     } else {
         // Applying filter for stickers and text messages during handler registration
@@ -85,7 +97,7 @@ pub async fn get_sticker_set_name<S: Storage>(
 
             return Ok(EventReturn::Finish);
         }
-        match parse_sticker_set_link(&bot, &message, text).await {
+        match parse_sticker_set_link(&bot, text).await {
             Ok(set_name) => set_name,
             Err(err) => match err.downcast_ref() {
                 Some(InvalidSetLinkError) => {
