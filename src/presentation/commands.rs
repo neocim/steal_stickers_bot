@@ -4,10 +4,7 @@ use telers::{
     enums::{ChatType::Private, MessageType as MessageTypeEnum},
     errors::HandlerError,
     event::telegram::Handler,
-    filters::{
-        CallbackData as CallbackDataFilter, ChatType, Command, MessageType, State as StateFilter,
-        Text,
-    },
+    filters::{ChatType, Command, MessageType, State as StateFilter, Text},
     fsm::{MemoryStorage, Strategy},
     methods::SetMyCommands,
     middlewares::{OuterMiddleware, outer::FSMContext},

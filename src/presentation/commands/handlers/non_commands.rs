@@ -1,16 +1,10 @@
 use crate::{
     core::helpers::{
         constants::TELEGRAM_STICKER_SET_URL,
-        texts::{
-            do_you_want_to_steal, now_enter_set_name, start_message, sticker_without_pack,
-            you_can_steal_at_any_time,
-        },
+        texts::{do_you_want_to_steal, now_enter_set_name, you_can_steal_at_any_time},
     },
     presentation::commands::{
-        common::{
-            InvalidSetLinkError, check_set_name, parse_sticker_set_link, process_link_to_steal,
-            process_sticker_to_steal, send_detailed_error_msg, send_invalid_set_msg,
-        },
+        common::{process_link_to_steal, process_sticker_to_steal},
         states::{callback_data::CallbackDataPrefix, steal_sticker_set::StealStickerSetState},
     },
 };
