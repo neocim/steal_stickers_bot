@@ -78,13 +78,13 @@ impl PrivateRouterBuilder {
     {
         let router = PrivateRouterBuilder { router }
             .start_command(&["start", "help"])
+            .steal_sticker_set_command::<DB>("stealpack")
+            .add_stickers_command::<DB>("addstickers", "done", "undo")
+            .my_stickers_command::<DB>("mystickers")
+            .stats_command::<DB>("stats")
+            .get_owner_command("getowner")
             .source_command(&["src", "source"])
             .cancel_command("cancel")
-            .add_stickers_command::<DB>("addstickers", "done", "undo")
-            .steal_sticker_set_command::<DB>("stealpack")
-            .stats_command::<DB>("stats")
-            .my_stickers_command::<DB>("mystickers")
-            .get_owner_command("getowner")
             .process_non_text()
             .process_non_sticker()
             .process_non_commands()
@@ -102,34 +102,6 @@ impl PrivateRouterBuilder {
         router
     }
 
-    fn stats_command<DB>(mut self, command: &'static str) -> Self
-    where
-        DB: Database,
-        for<'a> UserRepoImpl<&'a mut DB::Connection>: UserRepo,
-        for<'a> SetRepoImpl<&'a mut DB::Connection>: SetRepo,
-    {
-        self.router = self.router.on_message(|observer| {
-            observer.registers([
-                Handler::new(stats_handler::<MemoryStorage, UoWFactory<DB>>)
-                    .filter(Command::one(command)),
-                Handler::new(process_stats_buttons::<UoWFactory<DB>>)
-                    .filter(Text::starts_with_single(CallbackDataPrefix::Stats.as_str())),
-            ])
-        });
-        self
-    }
-
-    fn process_non_commands(mut self) -> Self {
-        self.router = self.router.on_message(|observer| {
-            observer.register(
-                Handler::new(process_non_commands_handler::<MemoryStorage>)
-                    .filter(StateFilter::none())
-                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
-            )
-        });
-        self
-    }
-
     /// Executes Telegram commands `/start` and `/help`
     fn start_command(mut self, start_comands: &'static [&str]) -> Self {
         self.router = self.router.on_message(|observer| {
@@ -141,23 +113,26 @@ impl PrivateRouterBuilder {
         self
     }
 
-    /// Executes Telegram commands `/src` and `/source`
-    fn source_command(mut self, commands: &'static [&str]) -> Self {
+    /// Executes Telegram command `/stealpack`
+    fn steal_sticker_set_command<DB>(mut self, command: &'static str) -> Self
+    where
+        DB: Database,
+        for<'a> UserRepoImpl<&'a mut DB::Connection>: UserRepo,
+        for<'a> SetRepoImpl<&'a mut DB::Connection>: SetRepo,
+    {
         self.router = self.router.on_message(|observer| {
-            observer.register(
-                Handler::new(source_handler::<MemoryStorage>)
-                    .filter(Command::many(commands.iter().map(ToOwned::to_owned))),
-            )
-        });
-        self
-    }
-
-    /// Executes Telegram command `/cancel`
-    fn cancel_command(mut self, command: &'static str) -> Self {
-        self.router = self.router.on_message(|observer| {
-            observer.register(
-                Handler::new(cancel_handler::<MemoryStorage>).filter(Command::one(command)),
-            )
+            observer.registers([
+                Handler::new(steal_sticker_set_handler::<MemoryStorage>)
+                    .filter(Command::one(command))
+                    .filter(MessageType::one(MessageTypeEnum::Text)),
+                Handler::new(get_sticker_set_name::<MemoryStorage>)
+                    .filter(MessageType::one(MessageTypeEnum::Sticker))
+                    .filter(StateFilter::one(StealStickerSetState::StealStickerSetName)),
+                Handler::new(create_new_sticker_set::<MemoryStorage, UoWFactory<DB>>)
+                    .filter(MessageType::one(MessageTypeEnum::Text))
+                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert())
+                    .filter(StateFilter::one(StealStickerSetState::CreateNewStickerSet)),
+            ])
         });
         self
     }
@@ -196,30 +171,6 @@ impl PrivateRouterBuilder {
         self
     }
 
-    /// Executes Telegram command `/stealpack`
-    fn steal_sticker_set_command<DB>(mut self, command: &'static str) -> Self
-    where
-        DB: Database,
-        for<'a> UserRepoImpl<&'a mut DB::Connection>: UserRepo,
-        for<'a> SetRepoImpl<&'a mut DB::Connection>: SetRepo,
-    {
-        self.router = self.router.on_message(|observer| {
-            observer.registers([
-                Handler::new(steal_sticker_set_handler::<MemoryStorage>)
-                    .filter(Command::one(command))
-                    .filter(MessageType::one(MessageTypeEnum::Text)),
-                Handler::new(get_sticker_set_name::<MemoryStorage>)
-                    .filter(MessageType::one(MessageTypeEnum::Sticker))
-                    .filter(StateFilter::one(StealStickerSetState::StealStickerSetName)),
-                Handler::new(create_new_sticker_set::<MemoryStorage, UoWFactory<DB>>)
-                    .filter(MessageType::one(MessageTypeEnum::Text))
-                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert())
-                    .filter(StateFilter::one(StealStickerSetState::CreateNewStickerSet)),
-            ])
-        });
-        self
-    }
-
     /// Show all user stolen sticker sets
     fn my_stickers_command<DB>(mut self, command: &'static str) -> Self
     where
@@ -246,6 +197,23 @@ impl PrivateRouterBuilder {
         self
     }
 
+    fn stats_command<DB>(mut self, command: &'static str) -> Self
+    where
+        DB: Database,
+        for<'a> UserRepoImpl<&'a mut DB::Connection>: UserRepo,
+        for<'a> SetRepoImpl<&'a mut DB::Connection>: SetRepo,
+    {
+        self.router = self.router.on_message(|observer| {
+            observer.registers([
+                Handler::new(stats_handler::<MemoryStorage, UoWFactory<DB>>)
+                    .filter(Command::one(command)),
+                Handler::new(process_stats_buttons::<UoWFactory<DB>>)
+                    .filter(Text::starts_with_single(CallbackDataPrefix::Stats.as_str())),
+            ])
+        });
+        self
+    }
+
     fn get_owner_command(mut self, command: &'static str) -> Self {
         self.router = self.router.on_message(|observer| {
             observer.registers([
@@ -256,6 +224,38 @@ impl PrivateRouterBuilder {
                     .filter(MessageType::one(MessageTypeEnum::Sticker))
                     .filter(StateFilter::one(GetOwnerState::GetStickers)),
             ])
+        });
+        self
+    }
+
+    /// Executes Telegram commands `/src` and `/source`
+    fn source_command(mut self, commands: &'static [&str]) -> Self {
+        self.router = self.router.on_message(|observer| {
+            observer.register(
+                Handler::new(source_handler::<MemoryStorage>)
+                    .filter(Command::many(commands.iter().map(ToOwned::to_owned))),
+            )
+        });
+        self
+    }
+
+    /// Executes Telegram command `/cancel`
+    fn cancel_command(mut self, command: &'static str) -> Self {
+        self.router = self.router.on_message(|observer| {
+            observer.register(
+                Handler::new(cancel_handler::<MemoryStorage>).filter(Command::one(command)),
+            )
+        });
+        self
+    }
+
+    fn process_non_commands(mut self) -> Self {
+        self.router = self.router.on_message(|observer| {
+            observer.register(
+                Handler::new(process_non_commands_handler::<MemoryStorage>)
+                    .filter(StateFilter::none())
+                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
+            )
         });
         self
     }
