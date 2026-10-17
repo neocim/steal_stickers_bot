@@ -1,5 +1,6 @@
 use telers::{
     Bot, Extension,
+    callback_data::CallbackData as _,
     enums::ParseMode,
     errors::{HandlerError, TelegramErrorKind, session::ErrorKind},
     event::{EventReturn, telegram::HandlerResult},
@@ -20,7 +21,7 @@ use crate::{
         stats::{GlobalStats, GreaterThan, PersonalStats},
         texts::{global_stats_message, personal_stats_message},
     },
-    presentation::commands::states::callback_data::CallbackDataPrefix,
+    presentation::commands::states::callback_data::StatsState,
 };
 
 pub async fn stats_handler<S, UoWFactory>(
@@ -58,6 +59,7 @@ where
 pub async fn process_buttons<UoWFactory>(
     bot: Bot,
     callback_query: CallbackQuery,
+    StatsState { state }: StatsState,
     Extension(uow_factory): Extension<UoWFactory>,
 ) -> HandlerResult
 where
@@ -76,8 +78,7 @@ where
     };
     let user_id = callback_query.from.id;
 
-    // if user came from personal statistics message, change it to global statistics message to personal otherwise
-    if callback_query.data.unwrap().ends_with("Global") {
+    if state == "Global" {
         let (keyboard_markup, global_stats) = global_stats(&mut uow).await?;
 
         send_edit_message(
@@ -132,10 +133,13 @@ where
         .map_err(HandlerError::new)?;
 
     let buttons = [[
-        InlineKeyboardButton::new("Global Statistics »").callback_data(format!(
-            "{prefix}Global",
-            prefix = CallbackDataPrefix::Stats.as_str()
-        )),
+        InlineKeyboardButton::new("Global Statistics »").callback_data(
+            StatsState {
+                state: "Global".into(),
+            }
+            .pack()
+            .expect("StatsState is always packable"),
+        ),
     ]];
 
     let inline_keyboard_markup = InlineKeyboardMarkup::new(buttons);
@@ -190,10 +194,13 @@ where
     }
 
     let buttons = [[
-        InlineKeyboardButton::new("« Personal Statistics").callback_data(format!(
-            "{prefix}Personal",
-            prefix = CallbackDataPrefix::Stats.as_str()
-        )),
+        InlineKeyboardButton::new("« Personal Statistics").callback_data(
+            StatsState {
+                state: "Personal".into(),
+            }
+            .pack()
+            .expect("StatsState is always packable"),
+        ),
     ]];
 
     let inline_keyboard_markup = InlineKeyboardMarkup::new(buttons);

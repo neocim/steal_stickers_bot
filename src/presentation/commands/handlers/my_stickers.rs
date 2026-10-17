@@ -108,7 +108,7 @@ where
 pub async fn process_buttons<UoWFactory>(
     bot: Bot,
     callback_query: CallbackQuery,
-    page: MyStickersPage, // <- извлекается фильтром CallbackData
+    MyStickersPage { page }: MyStickersPage,
     Extension(uow_factory): Extension<UoWFactory>,
 ) -> HandlerResult
 where
@@ -122,7 +122,7 @@ where
         return Ok(EventReturn::Finish);
     };
 
-    let current_page_number = page.page;
+    let current_page_number = page;
 
     let sticker_sets = uow
         .set_repo()

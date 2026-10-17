@@ -32,7 +32,7 @@ use crate::{
                 non_commands::{process_non_commands_handler, process_user_agreement_buttons},
             },
             states::{
-                callback_data::{MyStickersPage, StealSetAction},
+                callback_data::{MyStickersPage, StatsState, StealSetAction},
                 get_owner::GetOwnerState,
             },
         },
@@ -223,7 +223,7 @@ impl PrivateRouterBuilder {
             .on_callback_query(|observer| {
                 observer.register(
                     Handler::new(process_stats_buttons::<UoWFactory<DB>>)
-                        .filter(Text::starts_with_single(CallbackDataPrefix::Stats.as_str())),
+                        .filter(CallbackDataFilter::<StatsState>::new()),
                 )
             });
         self

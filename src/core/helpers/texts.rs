@@ -199,7 +199,6 @@ fn current_page_message_test() {
         | <a href=\"t.me/addstickers/short_name1\">title1</a> \
         | <a href=\"t.me/addstickers/short_name2\">title2</a> \
         | <a href=\"t.me/addstickers/short_name3\">title3</a> \
-        | <a href=\"t.me/addstickers/short_name4\">title4</a> \
-        | "
+        | <a href=\"t.me/addstickers/short_name4\">title4</a>"
     );
 }
