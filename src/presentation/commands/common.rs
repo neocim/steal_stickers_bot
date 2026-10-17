@@ -88,16 +88,35 @@ pub async fn send_invalid_set_msg(bot: &Bot, chat_id: i64, message_id: i64) -> H
     return Ok(EventReturn::Finish);
 }
 
-pub async fn send_default_error_msg(bot: &Bot, chat_id: i64) -> HandlerResult {
-    bot.send(SendMessage::new(chat_id, default_error_message()))
-        .await?;
+pub async fn send_default_error_msg(bot: &Bot, chat_id: i64, message_id: i64) -> HandlerResult {
+    bot.send(
+        SendMessage::new(chat_id, default_error_message()).reply_parameters(
+            ReplyParameters::new()
+                .chat_id(chat_id)
+                .message_id(message_id),
+        ),
+    )
+    .await?;
 
     return Ok(EventReturn::Finish);
 }
 
-pub async fn send_detailed_error_msg(bot: &Bot, err: &str, chat_id: i64) -> HandlerResult {
-    bot.send(SendMessage::new(chat_id, detailed_error_message(err)).parse_mode(ParseMode::HTML))
-        .await?;
+pub async fn send_detailed_error_msg(
+    bot: &Bot,
+    err: &str,
+    chat_id: i64,
+    message_id: i64,
+) -> HandlerResult {
+    bot.send(
+        SendMessage::new(chat_id, detailed_error_message(err))
+            .parse_mode(ParseMode::HTML)
+            .reply_parameters(
+                ReplyParameters::new()
+                    .chat_id(chat_id)
+                    .message_id(message_id),
+            ),
+    )
+    .await?;
 
     return Ok(EventReturn::Finish);
 }

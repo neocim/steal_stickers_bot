@@ -82,7 +82,13 @@ pub async fn get_sticker_set_name<S: Storage>(
                         .await;
                 }
                 None => {
-                    send_detailed_error_msg(&bot, &err.to_string(), message.chat().id()).await?;
+                    send_detailed_error_msg(
+                        &bot,
+                        &err.to_string(),
+                        message.chat().id(),
+                        message.message_id(),
+                    )
+                    .await?;
                     return Ok(EventReturn::Finish);
                 }
             },
@@ -105,7 +111,13 @@ pub async fn get_sticker_set_name<S: Storage>(
                         .await;
                 }
                 None => {
-                    send_detailed_error_msg(&bot, &err.to_string(), message.chat().id()).await?;
+                    send_detailed_error_msg(
+                        &bot,
+                        &err.to_string(),
+                        message.chat().id(),
+                        message.message_id(),
+                    )
+                    .await?;
                     return Ok(EventReturn::Finish);
                 }
             },
@@ -252,8 +264,13 @@ where
                         "Bad request error occurred while creating new sticker set: "
                     );
 
-                    return send_detailed_error_msg(&bot, &err.to_string(), message.chat.id())
-                        .await;
+                    return send_detailed_error_msg(
+                        &bot,
+                        &err.to_string(),
+                        message.chat.id(),
+                        message.message_id,
+                    )
+                    .await;
                 }
             }
             err => {
@@ -263,7 +280,13 @@ where
                     "Unexpected error occurred while creating new sticker set:"
                 );
 
-                return send_detailed_error_msg(&bot, &err.to_string(), message.chat.id()).await;
+                return send_detailed_error_msg(
+                    &bot,
+                    &err.to_string(),
+                    message.chat.id(),
+                    message.message_id,
+                )
+                .await;
             }
         }
     }
@@ -276,7 +299,7 @@ where
     )
     .await
     {
-        send_detailed_error_msg(&bot, &err, message.chat.id()).await?;
+        send_detailed_error_msg(&bot, &err, message.chat.id(), message.message_id).await?;
     }
 
     let mut uow = uow_factory.create_uow();

@@ -65,7 +65,7 @@ pub async fn get_owner_id(
                 "Error occurred while getting sticker set user id: "
             );
 
-            send_default_error_msg(&bot, message.chat.id()).await?;
+            send_default_error_msg(&bot, message.chat.id(), message.message_id).await?;
 
             return Ok(EventReturn::Finish);
         }

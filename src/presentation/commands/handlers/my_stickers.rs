@@ -154,7 +154,8 @@ where
         match get_buttons(&sticker_sets, STICKER_SETS_NUMBER_PER_PAGE, &mut buttons) {
             Ok(pages) => pages,
             Err(err) => {
-                send_detailed_error_msg(&bot, &err.message.to_string(), chat_id).await?;
+                send_detailed_error_msg(&bot, &err.message.to_string(), chat_id, message_id)
+                    .await?;
 
                 return Ok(EventReturn::Finish);
             }

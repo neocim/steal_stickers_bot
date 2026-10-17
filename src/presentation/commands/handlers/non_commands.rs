@@ -29,10 +29,10 @@ pub async fn process_non_commands_handler<S: Storage>(
     let text = if let Some(text) = message.text()
         && text.contains(TELEGRAM_STICKER_SET_URL)
     {
-        text
+        process_link(&bot, message.chat().id(), message.message_id(), fsm, text)
     } else {
         bot.send(SendMessage::new(
-            message.chat().id(),
+            message.message_id(),
             // only can panic if messages uses in channels, but i'm using private filter in main function
             start_message(&message.from().expect("error while parsing user").first_name),
         ))
@@ -41,14 +41,24 @@ pub async fn process_non_commands_handler<S: Storage>(
         return Ok(EventReturn::Finish);
     };
 
+    Ok(EventReturn::Finish)
+}
+
+async fn process_link<S: Storage>(
+    bot: &Bot,
+    chat_id: i64,
+    message_id: i64,
+    fsm: Context<S>,
+    text: &str,
+) -> HandlerResult {
     let set_name = match parse_sticker_set_link(&bot, text).await {
         Ok(set_name) => set_name,
         Err(err) => match err.downcast_ref() {
             Some(InvalidSetLinkError) => {
-                return send_invalid_set_msg(&bot, message.chat().id(), message.message_id()).await;
+                return send_invalid_set_msg(&bot, chat_id, message_id).await;
             }
             None => {
-                send_detailed_error_msg(&bot, &err.to_string(), message.chat().id()).await?;
+                send_detailed_error_msg(&bot, &err.to_string(), chat_id, message_id).await?;
                 return Ok(EventReturn::Finish);
             }
         },
@@ -63,10 +73,10 @@ pub async fn process_non_commands_handler<S: Storage>(
         .map_err(Into::into)?;
 
     bot.send(
-        SendMessage::new(message.chat().id(), now_enter_set_name()).reply_parameters(
+        SendMessage::new(chat_id, now_enter_set_name()).reply_parameters(
             ReplyParameters::new()
-                .chat_id(message.chat().id())
-                .message_id(message.message_id()),
+                .chat_id(chat_id)
+                .message_id(message_id),
         ),
     )
     .await?;

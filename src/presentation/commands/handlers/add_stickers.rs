@@ -126,7 +126,7 @@ where
             "Error occurred while getting sticker set name to steal: "
         );
 
-        send_default_error_msg(&bot, message.chat.id()).await?;
+        send_default_error_msg(&bot, message.chat.id(), message.message_id).await?;
 
         return Ok(EventReturn::Finish);
     }
@@ -171,7 +171,13 @@ where
                 "Error occurred while getting sticker set user id: "
             );
 
-            send_detailed_error_msg(&bot, &err.to_string(), message.chat.id()).await?;
+            send_detailed_error_msg(
+                &bot,
+                &err.to_string(),
+                message.chat.id(),
+                message.message_id,
+            )
+            .await?;
 
             return Ok(EventReturn::Finish);
         }
@@ -473,7 +479,7 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
     if let Err(AddStickersError::Other(err)) =
         add_stickers(&bot, user_id, sticker_set_name.as_ref(), stickers).await
     {
-        send_detailed_error_msg(&bot, &err, message.chat.id()).await?;
+        send_detailed_error_msg(&bot, &err, message.chat.id(), message.message_id).await?;
     }
 
     // delete unnecessary message
