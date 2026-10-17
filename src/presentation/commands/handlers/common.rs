@@ -8,7 +8,7 @@ use telers::{
 pub async fn process_non_sticker_handler(bot: Bot, message: Message) -> HandlerResult {
     bot.send(SendMessage::new(
         message.chat().id(),
-        "Please send me a sticker:",
+        "Please send a sticker:",
     ))
     .await?;
 
@@ -18,7 +18,7 @@ pub async fn process_non_sticker_handler(bot: Bot, message: Message) -> HandlerR
 pub async fn process_non_text_handler(bot: Bot, message: Message) -> HandlerResult {
     bot.send(SendMessage::new(
         message.chat().id(),
-        "Please send me a text message:",
+        "Please send a text message:",
     ))
     .await?;
 

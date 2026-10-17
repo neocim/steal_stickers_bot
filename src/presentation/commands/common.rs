@@ -25,6 +25,10 @@ pub enum AddStickersError {
     Other(Cow<'static, str>),
 }
 
+#[derive(Debug, thiserror::Error)]
+#[error("Sticker set link invalid")]
+pub struct ParseSetLinkError;
+
 impl Display for AddStickersError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -39,7 +43,7 @@ pub async fn parse_sticker_set_link<'a>(
     bot: &Bot,
     message: &Message,
     text: &str,
-) -> Result<&'a str, HandlerError> {
+) -> Result<String, HandlerError> {
     if let Some(link_idx) = text.find(TELEGRAM_STICKER_SET_URL) {
         let short_name_start = link_idx + TELEGRAM_STICKER_SET_URL.len();
 
@@ -50,36 +54,26 @@ pub async fn parse_sticker_set_link<'a>(
             .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
             .collect();
 
-        if set_name.len() < 1 {
-            bot.send(
-                SendMessage::new(message.chat().id(), invalid_set()).reply_parameters(
-                    ReplyParameters::new()
-                        .chat_id(message.chat().id())
-                        .message_id(message.message_id()),
-                ),
-            )
-            .await?;
+        if set_name.len() == 0 {
+            return Err(HandlerError::new(ParseSetLinkError));
         }
 
         check_set_name(&bot, &message, &set_name).await?;
+        return Ok(set_name);
     }
-    Err(HandlerError::from_display("Sticker set link invalid"))
+    Err(HandlerError::new(ParseSetLinkError))
 }
 
 pub async fn check_set_name(bot: &Bot, message: &Message, set_name: &str) -> HandlerResult {
     if let Err(ref error) = bot.send(GetStickerSet::new(&*set_name)).await {
         if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if **message == *"Bad Request: STICKERSET_INVALID")
         {
-            bot.send(
-                SendMessage::new(message.chat().id(), invalid_set()).reply_parameters(
-                    ReplyParameters::new()
-                        .chat_id(message.chat().id())
-                        .message_id(message.message_id()),
-                ),
+            return send_invalid_set_msg(
+                &bot,
+                message.chat_id().expect("Chat without ID"),
+                message.message_id(),
             )
-            .await?;
-
-            return Ok(EventReturn::Finish);
+            .await;
         }
 
         error!(
@@ -92,6 +86,19 @@ pub async fn check_set_name(bot: &Bot, message: &Message, set_name: &str) -> Han
         return Ok(EventReturn::Finish);
     }
     Ok(EventReturn::Finish)
+}
+
+pub async fn send_invalid_set_msg(bot: &Bot, chat_id: i64, message_id: i64) -> HandlerResult {
+    bot.send(
+        SendMessage::new(message_id, invalid_set()).reply_parameters(
+            ReplyParameters::new()
+                .chat_id(chat_id)
+                .message_id(message_id),
+        ),
+    )
+    .await?;
+
+    return Ok(EventReturn::Finish);
 }
 
 pub async fn send_default_error_msg(bot: &Bot, chat_id: i64) -> HandlerResult {

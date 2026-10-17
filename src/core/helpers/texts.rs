@@ -20,8 +20,8 @@ pub fn invalid_set() -> &'static str {
     "This sticker set is invalid. Try to send another link or sticker."
 }
 
-pub fn invalid_or_empty_set() -> &'static str {
-    "This sticker set is empty or you sent invalid sticker set link. Try to send another link or sticker."
+pub fn link_or_sticker() -> &'static str {
+    "Please send a link to a set of stickers or a sticker:"
 }
 
 pub fn sticker_without_pack() -> &'static str {

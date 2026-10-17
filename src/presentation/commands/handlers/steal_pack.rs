@@ -18,13 +18,14 @@ use crate::{
     core::helpers::{
         constants::{
             CREATE_SET_IN_ONE_GO_LENGTH_LIMIT, MAX_SET_TITLE_LENGTH, MIN_SET_TITLE_LENGTH,
+            TELEGRAM_STICKER_SET_URL,
         },
-        texts::{invalid_or_empty_set, now_enter_set_name, sticker_without_pack},
+        texts::{link_or_sticker, now_enter_set_name, sticker_without_pack},
     },
     presentation::commands::{
         common::{
-            AddStickersError, add_stickers, check_set_name, send_default_error_msg,
-            send_detailed_error_msg,
+            AddStickersError, ParseSetLinkError, add_stickers, check_set_name,
+            parse_sticker_set_link, send_detailed_error_msg, send_invalid_set_msg,
         },
         states::steal_sticker_set::StealStickerSetState,
     },
@@ -61,7 +62,7 @@ pub async fn get_sticker_set_name<S: Storage>(
 ) -> HandlerResult {
     let set_name = if let Some(sticker) = message.sticker() {
         let set_name = match sticker.set_name() {
-            Some(sticker_set_name) => sticker_set_name,
+            Some(set_name) => set_name,
             None => {
                 bot.send(SendMessage::new(
                     message.chat().id(),
@@ -74,11 +75,38 @@ pub async fn get_sticker_set_name<S: Storage>(
         };
 
         check_set_name(&bot, &message, set_name).await?;
-        set_name
+        set_name.to_string()
     } else {
-        let set_name = message.text().unwrap();
-        check_set_name(&bot, &message, set_name).await?;
-        set_name
+        // Applying filter for stickers and text messages during handler registration
+        let text = message.text().expect("Provided message is not a text");
+        if let None = text.find(TELEGRAM_STICKER_SET_URL) {
+            bot.send(
+                SendMessage::new(message.chat().id(), link_or_sticker()).reply_parameters(
+                    ReplyParameters::new()
+                        .chat_id(message.chat_id().expect("Chat without ID"))
+                        .message_id(message.message_id()),
+                ),
+            )
+            .await?;
+        }
+        match parse_sticker_set_link(&bot, &message, text).await {
+            Ok(set_name) => set_name,
+            Err(err) => match err.downcast_ref() {
+                Some(ParseSetLinkError) => {
+                    return send_invalid_set_msg(
+                        &bot,
+                        message.chat_id().expect("Chat without ID"),
+                        message.message_id(),
+                    )
+                    .await;
+                }
+                None => {
+                    send_detailed_error_msg(&bot, &err.to_string(), message.chat_id().unwrap())
+                        .await?;
+                    return Ok(EventReturn::Finish);
+                }
+            },
+        }
     };
 
     fsm.set_value("steal_sticker_set_name", set_name)
