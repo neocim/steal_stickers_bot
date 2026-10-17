@@ -69,7 +69,7 @@ const ALL_COMMANDS: &'static [&str] = &[
 ];
 
 impl PrivateRouterBuilder {
-    pub fn init<DB>(router: Router, pool: Pool<DB>) -> Router
+    pub fn build<DB>(router: Router, pool: Pool<DB>) -> Router
     where
         DB: Database,
         for<'a> UserRepoImpl<&'a mut DB::Connection>: UserRepo,

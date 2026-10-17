@@ -26,7 +26,7 @@ pub async fn start_bot(bot: Bot, pool: Pool<Postgres>, client: Client) {
 }
 
 fn init_router(bot: Bot, pool: Pool<Postgres>) -> Router {
-    let private_router = PrivateRouterBuilder::init(Router::new("private"), pool.clone());
+    let private_router = PrivateRouterBuilder::build(Router::new("private"), pool.clone());
     let main_router = Router::new("main")
         .include(private_router)
         .on_startup(|observer| {
