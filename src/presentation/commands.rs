@@ -4,7 +4,10 @@ use telers::{
     enums::{ChatType::Private, MessageType as MessageTypeEnum},
     errors::HandlerError,
     event::telegram::Handler,
-    filters::{ChatType, Command, MessageType, State as StateFilter, Text},
+    filters::{
+        CallbackData as CallbackDataFilter, ChatType, Command, MessageType, State as StateFilter,
+        Text,
+    },
     fsm::{MemoryStorage, Strategy},
     methods::SetMyCommands,
     middlewares::{OuterMiddleware, outer::FSMContext},
@@ -27,7 +30,7 @@ use crate::{
                 add_stickers::undo_last_sticker,
                 common::process_non_text_or_stickers_handler,
                 get_owner::{get_owner_handler, get_owner_id},
-                non_commands::process_non_commands_handler,
+                non_commands::{process_non_commands_handler, process_user_agreement_buttons},
             },
             states::{callback_data::CallbackDataPrefix, get_owner::GetOwnerState},
         },
@@ -209,14 +212,20 @@ impl PrivateRouterBuilder {
         for<'a> UserRepoImpl<&'a mut DB::Connection>: UserRepo,
         for<'a> SetRepoImpl<&'a mut DB::Connection>: SetRepo,
     {
-        self.router = self.router.on_message(|observer| {
-            observer.registers([
-                Handler::new(stats_handler::<MemoryStorage, UoWFactory<DB>>)
-                    .filter(Command::one(command)),
-                Handler::new(process_stats_buttons::<UoWFactory<DB>>)
-                    .filter(Text::starts_with_single(CallbackDataPrefix::Stats.as_str())),
-            ])
-        });
+        self.router = self
+            .router
+            .on_message(|observer| {
+                observer.register(
+                    Handler::new(stats_handler::<MemoryStorage, UoWFactory<DB>>)
+                        .filter(Command::one(command)),
+                )
+            })
+            .on_callback_query(|observer| {
+                observer.register(
+                    Handler::new(process_stats_buttons::<UoWFactory<DB>>)
+                        .filter(Text::starts_with_single(CallbackDataPrefix::Stats.as_str())),
+                )
+            });
         self
     }
 
@@ -256,13 +265,25 @@ impl PrivateRouterBuilder {
     }
 
     fn process_non_commands(mut self) -> Self {
-        self.router = self.router.on_message(|observer| {
-            observer.register(
-                Handler::new(process_non_commands_handler::<MemoryStorage>)
-                    .filter(StateFilter::none())
-                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
-            )
-        });
+        self.router = self
+            .router
+            .on_callback_query(|observer| {
+                observer
+                    .register(Handler::new(
+                        process_user_agreement_buttons::<MemoryStorage>,
+                    ))
+                    .filter(Text::starts_with_single(
+                        CallbackDataPrefix::StealSet.as_str(),
+                    ))
+            })
+            .on_message(|observer| {
+                observer.register(
+                    Handler::new(process_non_commands_handler::<MemoryStorage>)
+                        .filter(StateFilter::none())
+                        .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
+                )
+            });
+
         self
     }
 

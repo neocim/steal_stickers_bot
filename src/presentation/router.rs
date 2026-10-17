@@ -1,6 +1,6 @@
 use grammers_client::Client;
 use sqlx::{Pool, Postgres};
-use telers::{Bot, Dispatcher, Router, event::simple};
+use telers::{Bot, Dispatcher, Router, enums::UpdateType, event::simple};
 use tracing::debug;
 
 use crate::{
@@ -14,7 +14,7 @@ pub async fn start_bot(bot: Bot, pool: Pool<Postgres>, client: Client) {
     let dispatcher = Dispatcher::builder()
         .main_router(router.clone().configure_default())
         .bot(bot)
-        .allowed_updates(router.resolve_used_update_types())
+        .allowed_updates([UpdateType::Message, UpdateType::CallbackQuery])
         .extension(client)
         .extension(UoWFactory::new(pool))
         .build();

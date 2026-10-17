@@ -26,6 +26,10 @@ pub fn do_you_want_to_steal(set_name: &str) -> String {
     )
 }
 
+pub fn you_can_steal_at_any_time() -> &'static str {
+    "Well, you can steal this and any other set of stickers at any time."
+}
+
 pub fn invalid_set() -> &'static str {
     "This sticker set is invalid. Try to send another link or sticker."
 }
@@ -45,7 +49,7 @@ pub fn user_doesnt_has_stickers_yet() -> &'static str {
 
 pub fn detailed_error_message(err: &str) -> String {
     format!(
-        "Sorry, an unexpected error has occurred. Please, contact the bot owner with this error:\n{}",
+        "Sorry, an unexpected error has occurred. Please, contact the bot owner with this error:{}",
         html_blockquote(err)
     )
 }

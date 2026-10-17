@@ -131,7 +131,7 @@ where
         .await
         .map_err(HandlerError::new)?;
 
-    let buttons = vec![vec![
+    let buttons = [[
         InlineKeyboardButton::new("Global Statistics »").callback_data(format!(
             "{prefix}Global",
             prefix = CallbackDataPrefix::Stats.as_str()
@@ -189,7 +189,7 @@ where
         }
     }
 
-    let buttons = vec![vec![
+    let buttons = [[
         InlineKeyboardButton::new("« Personal Statistics").callback_data(format!(
             "{prefix}Personal",
             prefix = CallbackDataPrefix::Stats.as_str()

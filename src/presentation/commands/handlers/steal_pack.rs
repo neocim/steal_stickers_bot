@@ -291,15 +291,17 @@ where
         }
     }
 
-    if let Err(AddStickersError::Other(err)) = add_stickers(
-        &bot,
-        user_id,
-        new_set_name.as_ref(),
-        steal_stickers_from_sticker_set[limit_sticker_set_length..].into(),
-    )
-    .await
-    {
-        send_detailed_error_msg(&bot, &err, message.chat.id(), message.message_id).await?;
+    if steal_stickers_from_sticker_set[limit_sticker_set_length..].len() > 0 {
+        if let Err(AddStickersError::Other(err)) = add_stickers(
+            &bot,
+            user_id,
+            new_set_name.as_ref(),
+            steal_stickers_from_sticker_set[limit_sticker_set_length..].into(),
+        )
+        .await
+        {
+            send_detailed_error_msg(&bot, &err, message.chat.id(), message.message_id).await?;
+        }
     }
 
     let mut uow = uow_factory.create_uow();
