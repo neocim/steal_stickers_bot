@@ -31,7 +31,10 @@ use crate::{
                 get_owner::{get_owner_handler, get_owner_id},
                 non_commands::{process_non_commands_handler, process_user_agreement_buttons},
             },
-            states::{callback_data::StealSetAction, get_owner::GetOwnerState},
+            states::{
+                callback_data::{MyStickersPage, StealSetAction},
+                get_owner::GetOwnerState,
+            },
         },
         middlewares::CreateUserMiddleware,
     },
@@ -196,9 +199,8 @@ impl PrivateRouterBuilder {
             })
             .on_callback_query(|observer| {
                 observer.register(
-                    Handler::new(process_my_stickers_buttons::<UoWFactory<DB>>).filter(
-                        Text::starts_with_single(CallbackDataPrefix::MyStickers.as_str()),
-                    ),
+                    Handler::new(process_my_stickers_buttons::<UoWFactory<DB>>)
+                        .filter(CallbackDataFilter::<MyStickersPage>::new()),
                 )
             });
         self

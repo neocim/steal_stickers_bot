@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use telers::{
     Bot, Extension,
+    callback_data::CallbackData as _,
     enums::ParseMode,
     errors::{HandlerError, TelegramErrorKind, session::ErrorKind},
     event::{EventReturn, telegram::HandlerResult},
@@ -24,7 +25,7 @@ use crate::{
     },
     domain::entities::set::Set,
     presentation::commands::{
-        common::send_detailed_error_msg, states::callback_data::CallbackDataPrefix,
+        common::send_detailed_error_msg, states::callback_data::MyStickersPage,
     },
 };
 
@@ -104,10 +105,10 @@ where
 
     Ok(EventReturn::Finish)
 }
-
 pub async fn process_buttons<UoWFactory>(
     bot: Bot,
     callback_query: CallbackQuery,
+    page: MyStickersPage, // <- извлекается фильтром CallbackData
     Extension(uow_factory): Extension<UoWFactory>,
 ) -> HandlerResult
 where
@@ -116,27 +117,12 @@ where
     let mut uow = uow_factory.create_uow();
 
     let (chat_id, message_id) = if let Some(message) = callback_query.message {
-        if let Some(chat_id) = message.chat_id() {
-            (chat_id, message.message_id())
-        } else {
-            return Ok(EventReturn::Finish);
-        }
+        (message.chat().id(), message.message_id())
     } else {
         return Ok(EventReturn::Finish);
     };
 
-    // i guarantee that there will be `Some()`
-    let message_data = callback_query.data.unwrap();
-    let mut message_data = message_data.chars();
-
-    message_data
-        .nth(CallbackDataPrefix::MyStickers.as_str().len() - 1)
-        .expect("Failed to eat callback data prefix");
-
-    let current_page_number = match message_data.as_str().parse::<usize>() {
-        Ok(page_number) => page_number,
-        Err(_) => return Ok(EventReturn::Finish),
-    };
+    let current_page_number = page.page;
 
     let sticker_sets = uow
         .set_repo()
@@ -156,7 +142,6 @@ where
             Err(err) => {
                 send_detailed_error_msg(&bot, &err.message.to_string(), chat_id, message_id)
                     .await?;
-
                 return Ok(EventReturn::Finish);
             }
         };
@@ -205,34 +190,24 @@ fn get_buttons(
             .enumerate()
             .filter(|(index, _)| index % sticker_sets_number_per_page == 0)
             .for_each(|_| {
-                // create a new row every 5 buttons
+                let page = page_count + 1;
+                let button = InlineKeyboardButton::new(format!("Page {page}")).callback_data(
+                    MyStickersPage {
+                        page: page as usize,
+                    }
+                    .pack()
+                    .expect("MyStickersPage is always packable"),
+                );
+
                 if page_count % 5 == 0 {
                     page_count += 1;
                     current_row_index += 1;
-
-                    buttons.push(vec![
-                        InlineKeyboardButton::new(format!("Page {page_count}",)).callback_data(
-                            format!(
-                                "{prefix}{page_count}",
-                                prefix = CallbackDataPrefix::MyStickers.as_str()
-                            ),
-                        ),
-                    ])
-                // else push button into current row
+                    buttons.push(vec![button]);
                 } else {
                     page_count += 1;
-
-                    buttons[current_row_index - 1].push(
-                        InlineKeyboardButton::new(format!("Page {page_count}",)).callback_data(
-                            format!(
-                                "{prefix}{page_count}",
-                                prefix = CallbackDataPrefix::MyStickers.as_str()
-                            ),
-                        ),
-                    );
+                    buttons[current_row_index - 1].push(button);
                 }
             })
-    // otherwise user does not have sticker sets stolen by this bot
     } else {
         return Err(GetButtonsError::new(user_doesnt_has_stickers_yet()));
     };
