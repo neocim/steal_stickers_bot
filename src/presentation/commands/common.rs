@@ -3,21 +3,23 @@ use std::{borrow::Cow, fmt::Display, time::Duration};
 use telers::{
     Bot,
     enums::ParseMode,
-    errors::{TelegramErrorKind, session::ErrorKind},
+    errors::{HandlerError, TelegramErrorKind, session::ErrorKind},
     event::{EventReturn, telegram::HandlerResult},
-    methods::{AddStickerToSet, SendMessage},
-    types::{InputFile, InputSticker, Sticker},
+    methods::{AddStickerToSet, GetStickerSet, SendMessage},
+    types::{InputFile, InputSticker, Message, ReplyParameters, Sticker},
 };
+use tracing::error;
 
 use crate::core::helpers::{
     common::sticker_format,
-    texts::{default_error_message, detailed_error_message},
+    constants::{TELEGRAM_SET_SHORT_NAME_MAX_LENGTH, TELEGRAM_STICKER_SET_URL},
+    texts::{default_error_message, detailed_error_message, invalid_set},
 };
 
 const SLEEP_TIME: u64 = 1500;
 
 #[derive(Debug, Clone, thiserror::Error)]
-pub(crate) enum AddStickersError {
+pub enum AddStickersError {
     StickerSetInvalid,
     StickerSetDeleted,
     Other(Cow<'static, str>),
@@ -31,6 +33,65 @@ impl Display for AddStickersError {
             Self::Other(err) => write!(f, "Error while adding stickers: {err}"),
         }
     }
+}
+
+pub async fn parse_sticker_set_link<'a>(
+    bot: &Bot,
+    message: &Message,
+    text: &str,
+) -> Result<&'a str, HandlerError> {
+    if let Some(link_idx) = text.find(TELEGRAM_STICKER_SET_URL) {
+        let short_name_start = link_idx + TELEGRAM_STICKER_SET_URL.len();
+
+        let set_name: String = text
+            .chars()
+            .skip(short_name_start)
+            .take(TELEGRAM_SET_SHORT_NAME_MAX_LENGTH)
+            .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+            .collect();
+
+        if set_name.len() < 1 {
+            bot.send(
+                SendMessage::new(message.chat().id(), invalid_set()).reply_parameters(
+                    ReplyParameters::new()
+                        .chat_id(message.chat().id())
+                        .message_id(message.message_id()),
+                ),
+            )
+            .await?;
+        }
+
+        check_set_name(&bot, &message, &set_name).await?;
+    }
+    Err(HandlerError::from_display("Sticker set link invalid"))
+}
+
+pub async fn check_set_name(bot: &Bot, message: &Message, set_name: &str) -> HandlerResult {
+    if let Err(ref error) = bot.send(GetStickerSet::new(&*set_name)).await {
+        if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if **message == *"Bad Request: STICKERSET_INVALID")
+        {
+            bot.send(
+                SendMessage::new(message.chat().id(), invalid_set()).reply_parameters(
+                    ReplyParameters::new()
+                        .chat_id(message.chat().id())
+                        .message_id(message.message_id()),
+                ),
+            )
+            .await?;
+
+            return Ok(EventReturn::Finish);
+        }
+
+        error!(
+            ?error,
+            "Error occurred while getting sticker set name to steal: "
+        );
+
+        send_detailed_error_msg(&bot, &error.to_string(), message.chat().id()).await?;
+
+        return Ok(EventReturn::Finish);
+    }
+    Ok(EventReturn::Finish)
 }
 
 pub async fn send_default_error_msg(bot: &Bot, chat_id: i64) -> HandlerResult {

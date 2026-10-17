@@ -126,7 +126,10 @@ impl PrivateRouterBuilder {
                     .filter(Command::one(command))
                     .filter(MessageType::one(MessageTypeEnum::Text)),
                 Handler::new(get_sticker_set_name::<MemoryStorage>)
-                    .filter(MessageType::one(MessageTypeEnum::Sticker))
+                    .filter(MessageType::many([
+                        MessageTypeEnum::Sticker,
+                        MessageTypeEnum::Text,
+                    ]))
                     .filter(StateFilter::one(StealStickerSetState::StealStickerSetName)),
                 Handler::new(create_new_sticker_set::<MemoryStorage, UoWFactory<DB>>)
                     .filter(MessageType::one(MessageTypeEnum::Text))

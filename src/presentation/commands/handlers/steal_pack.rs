@@ -5,7 +5,7 @@ use telers::{
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
     methods::{CreateNewStickerSet, DeleteMessage, GetMe, GetStickerSet, SendMessage},
-    types::{FileId, InputFile, InputSticker, MessageSticker, MessageText, ReplyParameters},
+    types::{FileId, InputFile, InputSticker, Message, MessageText, ReplyParameters},
     utils::text::{html_code, html_quote},
 };
 use tracing::error;
@@ -19,10 +19,13 @@ use crate::{
         constants::{
             CREATE_SET_IN_ONE_GO_LENGTH_LIMIT, MAX_SET_TITLE_LENGTH, MIN_SET_TITLE_LENGTH,
         },
-        texts::{now_enter_set_name, sticker_without_pack},
+        texts::{invalid_or_empty_set, now_enter_set_name, sticker_without_pack},
     },
     presentation::commands::{
-        common::{AddStickersError, add_stickers, send_default_error_msg, send_detailed_error_msg},
+        common::{
+            AddStickersError, add_stickers, check_set_name, send_default_error_msg,
+            send_detailed_error_msg,
+        },
         states::steal_sticker_set::StealStickerSetState,
     },
 };
@@ -44,7 +47,7 @@ pub async fn steal_sticker_set_handler<S: Storage>(
 
     bot.send(SendMessage::new(
         message.chat.id(),
-        "Send me a sticker and I will steal this sticker pack for you:",
+        "Send me a sticker or sticker set link and I will steal this sticker pack for you:",
     ))
     .await?;
 
@@ -53,37 +56,30 @@ pub async fn steal_sticker_set_handler<S: Storage>(
 
 pub async fn get_sticker_set_name<S: Storage>(
     bot: Bot,
-    message: MessageSticker,
+    message: Message,
     fsm: Context<S>,
 ) -> HandlerResult {
-    let set_name = match message.sticker.set_name() {
-        Some(sticker_set_name) => sticker_set_name,
-        None => {
-            bot.send(SendMessage::new(message.chat.id(), sticker_without_pack()))
+    let set_name = if let Some(sticker) = message.sticker() {
+        let set_name = match sticker.set_name() {
+            Some(sticker_set_name) => sticker_set_name,
+            None => {
+                bot.send(SendMessage::new(
+                    message.chat().id(),
+                    sticker_without_pack(),
+                ))
                 .await?;
 
-            return Ok(EventReturn::Finish);
-        }
+                return Ok(EventReturn::Finish);
+            }
+        };
+
+        check_set_name(&bot, &message, set_name).await?;
+        set_name
+    } else {
+        let set_name = message.text().unwrap();
+        check_set_name(&bot, &message, set_name).await?;
+        set_name
     };
-
-    if let Err(ref error) = bot.send(GetStickerSet::new(&*set_name)).await {
-        if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if **message == *"Bad Request: STICKERSET_INVALID")
-        {
-            bot.send(SendMessage::new(message.chat.id(), sticker_without_pack()))
-                .await?;
-
-            return Ok(EventReturn::Finish);
-        }
-
-        error!(
-            ?error,
-            "Error occurred while getting sticker set name to steal: "
-        );
-
-        send_default_error_msg(&bot, message.chat.id()).await?;
-
-        return Ok(EventReturn::Finish);
-    }
 
     fsm.set_value("steal_sticker_set_name", set_name)
         .await
@@ -94,10 +90,10 @@ pub async fn get_sticker_set_name<S: Storage>(
         .map_err(Into::into)?;
 
     bot.send(
-        SendMessage::new(message.chat.id(), now_enter_set_name()).reply_parameters(
+        SendMessage::new(message.chat().id(), now_enter_set_name()).reply_parameters(
             ReplyParameters::new()
-                .chat_id(message.chat.id())
-                .message_id(message.message_id),
+                .chat_id(message.chat().id())
+                .message_id(message.message_id()),
         ),
     )
     .await?;
