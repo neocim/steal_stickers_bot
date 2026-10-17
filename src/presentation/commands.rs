@@ -64,6 +64,7 @@ const ALL_COMMANDS: &'static [&str] = &[
     "undo",
     "stealpack",
     "mystickers",
+    "cancel",
     "stats",
     "getowner",
 ];
@@ -78,13 +79,13 @@ impl PrivateRouterBuilder {
     {
         let router = PrivateRouterBuilder { router }
             .start_command(&["start", "help"])
-            .steal_sticker_set_command::<DB>("stealpack")
             .add_stickers_command::<DB>("addstickers", "done", "undo")
             .my_stickers_command::<DB>("mystickers")
             .stats_command::<DB>("stats")
             .get_owner_command("getowner")
             .source_command(&["src", "source"])
             .cancel_command("cancel")
+            .steal_sticker_set_command::<DB>("stealpack")
             .process_non_text()
             .process_non_sticker()
             .process_non_commands()
