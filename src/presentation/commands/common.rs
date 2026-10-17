@@ -27,7 +27,7 @@ pub enum AddStickersError {
 
 #[derive(Debug, thiserror::Error)]
 #[error("Sticker set link invalid")]
-pub struct ParseSetLinkError;
+pub struct InvalidSetLinkError;
 
 impl Display for AddStickersError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -55,32 +55,29 @@ pub async fn parse_sticker_set_link<'a>(
             .collect();
 
         if set_name.len() == 0 {
-            return Err(HandlerError::new(ParseSetLinkError));
+            return Err(HandlerError::new(InvalidSetLinkError));
         }
-
         check_set_name(&bot, &message, &set_name).await?;
+
         return Ok(set_name);
     }
-    Err(HandlerError::new(ParseSetLinkError))
+    Err(HandlerError::new(InvalidSetLinkError))
 }
 
 pub async fn check_set_name(bot: &Bot, message: &Message, set_name: &str) -> HandlerResult {
-    if let Err(ref error) = bot.send(GetStickerSet::new(&*set_name)).await {
-        if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if **message == *"Bad Request: STICKERSET_INVALID")
+    match bot.send(GetStickerSet::new(&*set_name)).await {
+        Ok(_) => Ok(EventReturn::Finish),
+        Err(ref err)
+            if matches!(
+                err,
+                ErrorKind::Telegram(TelegramErrorKind::BadRequest { message })
+                    if **message == *"Bad Request: STICKERSET_INVALID"
+            ) =>
         {
-            return send_invalid_set_msg(&bot, message.chat().id(), message.message_id()).await;
+            Err(HandlerError::new(InvalidSetLinkError))
         }
-
-        error!(
-            ?error,
-            "Error occurred while getting sticker set name to steal: "
-        );
-
-        send_detailed_error_msg(&bot, &error.to_string(), message.chat().id()).await?;
-
-        return Ok(EventReturn::Finish);
+        Err(err) => Err(err.into()),
     }
-    Ok(EventReturn::Finish)
 }
 
 pub async fn send_invalid_set_msg(bot: &Bot, chat_id: i64, message_id: i64) -> HandlerResult {

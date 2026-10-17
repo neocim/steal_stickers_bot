@@ -24,7 +24,7 @@ use crate::{
     },
     presentation::commands::{
         common::{
-            AddStickersError, ParseSetLinkError, add_stickers, check_set_name,
+            AddStickersError, InvalidSetLinkError, add_stickers, check_set_name,
             parse_sticker_set_link, send_detailed_error_msg, send_invalid_set_msg,
         },
         states::steal_sticker_set::StealStickerSetState,
@@ -88,7 +88,7 @@ pub async fn get_sticker_set_name<S: Storage>(
         match parse_sticker_set_link(&bot, &message, text).await {
             Ok(set_name) => set_name,
             Err(err) => match err.downcast_ref() {
-                Some(ParseSetLinkError) => {
+                Some(InvalidSetLinkError) => {
                     return send_invalid_set_msg(&bot, message.chat().id(), message.message_id())
                         .await;
                 }
