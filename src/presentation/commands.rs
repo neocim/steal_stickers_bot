@@ -26,6 +26,7 @@ use crate::{
             handlers::{
                 add_stickers::undo_last_sticker,
                 get_owner::{get_owner_handler, get_owner_id},
+                non_commands::process_non_commands_handler,
             },
             states::{callback_data::CallbackDataPrefix, get_owner::GetOwnerState},
         },
@@ -86,7 +87,7 @@ impl PrivateRouterBuilder {
             .get_owner_command("getowner")
             .process_non_text()
             .process_non_sticker()
-            .process_non_command(ALL_COMMANDS)
+            .process_non_commands()
             .router;
 
         let router = router.on_all(|observer| {
@@ -118,13 +119,12 @@ impl PrivateRouterBuilder {
         self
     }
 
-    /// If the user simply writes to the bot without calling any commands, the bot will call specified function
-    fn process_non_command(mut self, ignore_commands: &'static [&str]) -> Self {
+    fn process_non_commands(mut self) -> Self {
         self.router = self.router.on_message(|observer| {
             observer.register(
-                Handler::new(start_handler::<MemoryStorage>)
+                Handler::new(process_non_commands_handler::<MemoryStorage>)
                     .filter(StateFilter::none())
-                    .filter(Command::many(ignore_commands.iter().map(ToOwned::to_owned)).invert()),
+                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
             )
         });
         self
