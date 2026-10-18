@@ -13,14 +13,14 @@ pub fn default_error_message() -> &'static str {
 }
 
 pub fn now_enter_set_name() -> &'static str {
-    "Now enter name for your new sticker pack (1-64 characters):"
+    "Now enter a name for your new sticker pack (1-64 characters):"
 }
 
 pub fn do_you_want_to_steal(set_name: &str) -> String {
     format!(
-        "Do you want to steal {set} sticker set?",
+        "Do you want to steal this {set}?",
         set = html_text_link(
-            html_quote("this"),
+            html_quote("sticker pack"),
             format!("{TELEGRAM_STICKER_SET_URL}{set_name}")
         )
     )
@@ -35,28 +35,28 @@ pub fn invalid_set() -> &'static str {
 }
 
 pub fn link_or_sticker() -> &'static str {
-    "Please send a valid sticker set link or a sticker:"
+    "Please send a valid sticker pack link or a sticker."
 }
 
 pub fn sticker_without_pack() -> &'static str {
-    "This sticker is without sticker pack or this pack has been deleted. Try to send another sticker pack."
+    "This sticker doesn't belong to any sticker pack, or that pack has been deleted. Try sending another sticker or link."
 }
 
 pub fn user_doesnt_has_stickers_yet() -> &'static str {
     "You don't have a single stolen sticker pack. \
-     Steal at least one sticker pack using the /stealpack and only then use this command."
+    Steal at least one sticker pack using /stealpack, and then try this command again."
 }
 
 pub fn detailed_error_message(err: &str) -> String {
     format!(
-        "Sorry, an unexpected error has occurred. Please, contact the bot owner with this error:{}",
+        "Sorry, an unexpected error has occurred. Please contact the bot owner and provide this error:\n{}",
         html_blockquote(err)
     )
 }
 
 pub fn added_stickers_message(set_name: &str, set_title: &str) -> String {
     format!(
-        "Sticker(s) have been added into {set}!",
+        "Sticker(s) have been added to {set}.",
         set = html_text_link(
             html_quote(set_title),
             format!("{TELEGRAM_STICKER_SET_URL}{set_name}")
@@ -70,38 +70,36 @@ pub fn stolen_set_message(
     sticker_set_link: &str,
 ) -> String {
     format!(
-        "
-        Now you have your own sticker pack {new_ss_url}. \
-        If you want, you can add any stickers to this pack using /addstickers. \
-        You can also manage your new sticker pack, using official Telegram bot @Stickers, and to do it, \
-        you should use short name of your sticker pack: {sticker_set_name}
-        ",
+        "Now you have your own sticker pack {new_ss_url}. \
+        If you want, you can add stickers to it using /addstickers. \
+        You can also manage it with the official @Stickers bot — \
+        just use the short name of your pack: {sticker_set_name}",
         new_ss_url = html_text_link(html_quote(sticker_set_title), sticker_set_link),
         sticker_set_name = html_code(sticker_set_name)
     )
 }
-
 pub fn start_message(username: &str) -> String {
     format!(
-        "Hi, {username}! I can steal any set of stickers for you! \
-        To do it, just send me a sticker OR a link to a set of stickers and I'll make it yours! \
-        You can see all your stolen stickers using /mystickers. \
-        Also, after you have stolen a set of stickers, you may need to add new stickers to it, and to do this, use /addstickers. \
+        "Hi, {username}! I can steal any sticker pack for you. \
+        Just send me a sticker or a link to a sticker pack and I'll make it yours. \
+        Use /mystickers to see all your stolen packs. \
+        If you want to add new stickers to a pack you've stolen, use /addstickers. \
         Use /help to see the full list of commands.",
     )
 }
 
 pub fn help_message() -> &'static str {
     "List of commands:\n\n\
-    /stealpack - Steal sticker pack\n\
-    /addstickers - Add stickers to a sticker pack stolen by me\n\
-    /mystickers - List of your stolen stickers\n\
-    /stats - See the bot statistics\n\n\
-    /help - Show this message\n\
-    /getowner - Get the owner ID of the sticker pack\n\
-    /cancel - Cancel last command\n\
-    /source or /src - Show source code of the bot"
+    /stealpack — steal a sticker pack\n\
+    /addstickers — add stickers to a pack you've stolen\n\
+    /mystickers — list your stolen packs\n\
+    /stats — see bot statistics\n\
+    /getowner — get the owner ID of a sticker pack\n\
+    /cancel — cancel the current command\n\
+    /source or /src — show the bot's source code\n\
+    /help — show this message"
 }
+
 pub fn current_page_message(
     current_page: usize,
     pages_number: u32,
@@ -172,13 +170,13 @@ pub fn global_stats_message(global_stats: GlobalStats) -> String {
         ",
         global_statistics_text = html_bold("Global statistics"),
         total_stolen = html_code(global_stats.total_stolen.to_string()),
-        first = html_code(GreaterThan::FirstLevel.to_string()),
+        first = GreaterThan::FirstLevel.to_string(),
         first_count = html_code(global_stats.first_count.to_string()),
-        second = html_code(GreaterThan::SecondLevel.to_string()),
+        second = GreaterThan::SecondLevel.to_string(),
         second_count = html_code(global_stats.second_count.to_string()),
-        third = html_code(GreaterThan::ThirdLevel.to_string()),
+        third = GreaterThan::ThirdLevel.to_string(),
         third_count = html_code(global_stats.third_count.to_string()),
-        fourth = html_code(GreaterThan::FourthLevel.to_string()),
+        fourth = GreaterThan::FourthLevel.to_string(),
         fourth_count = html_code(global_stats.fourth_count.to_string())
     )
 }

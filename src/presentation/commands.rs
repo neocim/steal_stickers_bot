@@ -30,7 +30,6 @@ use crate::{
             handlers::{
                 add_stickers::undo_last_sticker,
                 get_owner::{get_owner_handler, get_owner_id},
-                non_commands::process_non_commands_handler,
                 process_non::process_non_text_or_stickers_handler,
                 start::help_handler,
                 steal_pack::{
@@ -292,7 +291,7 @@ impl PrivateRouterBuilder {
     fn process_non_commands(mut self) -> Self {
         self.router = self.router.on_message(|observer| {
             observer.register(
-                Handler::new(process_non_commands_handler::<MemoryStorage>)
+                Handler::new(start_handler::<MemoryStorage>)
                     .filter(ChatType::one(Private))
                     .filter(StateFilter::none())
                     .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
