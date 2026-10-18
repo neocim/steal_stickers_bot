@@ -11,7 +11,7 @@ use telers::{
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
     methods::{DeleteMessage, GetMe, GetStickerSet, SendMessage, SendSticker},
-    types::{FileId, InputFile, MessageSticker, MessageText, ReplyParameters, Sticker},
+    types::{FileId, InputFile, Message, MessageSticker, MessageText, ReplyParameters, Sticker},
 };
 use tracing::error;
 
@@ -22,20 +22,21 @@ use crate::{
     },
     core::helpers::{
         common::set_created_by,
-        constants::MAX_STICKER_SET_LENGTH,
+        constants::{MAX_STICKER_SET_LENGTH, TELEGRAM_STICKER_SET_URL},
         texts::{
             added_stickers_message, adding_stickers, all_stickers_removed_done,
-            all_stickers_removed_undo, ask_for_sticker_from_pack, ask_for_stickers_to_add,
-            no_stickers_sent_done, not_pack_owner, nothing_to_remove, pack_current_length,
-            pack_deleted, pack_full, pack_not_stolen_by_bot, sticker_limit_reached,
-            sticker_processed, sticker_removed_from_list, sticker_without_emoji,
-            sticker_without_pack, user_doesnt_has_stickers_yet,
+            all_stickers_removed_undo, ask_for_stickers_to_add, ask_stolen_sticker_or_link,
+            link_or_sticker, no_stickers_sent_done, not_pack_owner, nothing_to_remove,
+            pack_current_length, pack_deleted, pack_full, pack_not_stolen_by_bot,
+            sticker_limit_reached, sticker_processed, sticker_removed_from_list,
+            sticker_without_emoji, sticker_without_pack, user_doesnt_has_stickers_yet,
         },
     },
     presentation::{
         commands::{
             common::{
-                AddStickersError, add_stickers, send_default_error_msg, send_detailed_error_msg,
+                AddStickersError, InvalidSetLinkError, add_stickers, parse_sticker_set_link,
+                send_default_error_msg, send_detailed_error_msg, send_invalid_set_msg,
             },
             states::add_stickers::AddStickerState,
         },
@@ -85,16 +86,15 @@ where
 
     bot.send(SendMessage::new(
         message.chat.id(),
-        ask_for_sticker_from_pack(),
+        ask_stolen_sticker_or_link(),
     ))
     .await?;
 
     Ok(EventReturn::Finish)
 }
-
 pub async fn get_stolen_sticker_set<S, UoWFactory>(
     bot: Bot,
-    message: MessageSticker,
+    message: Message,
     fsm: Context<S>,
     Extension(client): Extension<Client>,
 ) -> HandlerResult
@@ -102,23 +102,65 @@ where
     UoWFactory: UoWFactoryTrait,
     S: Storage,
 {
-    let sticker_set_name = match message.sticker.set_name() {
-        Some(sticker_set_name) => sticker_set_name,
-        None => {
-            bot.send(SendMessage::new(message.chat.id(), sticker_without_pack()))
+    // Извлекаем shortname пака либо из стикера, либо из ссылки в тексте
+    let sticker_set_name: String = if let Some(sticker) = message.sticker() {
+        match sticker.set_name() {
+            Some(name) => name.to_string(),
+            None => {
+                bot.send(SendMessage::new(
+                    message.chat().id(),
+                    sticker_without_pack(),
+                ))
+                .await?;
+
+                return Ok(EventReturn::Finish);
+            }
+        }
+    } else {
+        let text = message.text().expect("Provided message is not a text");
+
+        if text.find(TELEGRAM_STICKER_SET_URL).is_none() {
+            bot.send(SendMessage::new(message.chat().id(), link_or_sticker()))
                 .await?;
 
             return Ok(EventReturn::Finish);
         }
+
+        match parse_sticker_set_link(&bot, text).await {
+            Ok(name) => name.to_string(),
+            Err(err) => match err.downcast_ref() {
+                Some(InvalidSetLinkError) => {
+                    return send_invalid_set_msg(&bot, message.chat().id(), message.message_id())
+                        .await;
+                }
+                None => {
+                    send_detailed_error_msg(
+                        &bot,
+                        &err.to_string(),
+                        message.chat().id(),
+                        message.message_id(),
+                    )
+                    .await?;
+
+                    return Ok(EventReturn::Finish);
+                }
+            },
+        }
     };
 
-    let result = bot.send(GetStickerSet::new(&*sticker_set_name)).await;
+    // Проверяем, что пак существует и доступен
+    let result = bot
+        .send(GetStickerSet::new(sticker_set_name.as_str()))
+        .await;
 
     if let Err(ref error) = result {
         if matches!(error, ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) if message.as_ref() == "Bad Request: STICKERSET_INVALID")
         {
-            bot.send(SendMessage::new(message.chat.id(), sticker_without_pack()))
-                .await?;
+            bot.send(SendMessage::new(
+                message.chat().id(),
+                sticker_without_pack(),
+            ))
+            .await?;
 
             return Ok(EventReturn::Finish);
         }
@@ -128,12 +170,11 @@ where
             "Error occurred while getting sticker set name to steal: "
         );
 
-        send_default_error_msg(&bot, message.chat.id(), message.message_id).await?;
+        send_default_error_msg(&bot, message.chat().id(), message.message_id()).await?;
 
         return Ok(EventReturn::Finish);
     }
 
-    // we checked above for errors
     let sticker_set = result.unwrap();
 
     let bot_username = bot
@@ -142,9 +183,9 @@ where
         .username
         .expect("bot without username :/");
 
-    if !set_created_by(sticker_set_name.as_ref(), bot_username.as_ref()) {
+    if !set_created_by(sticker_set_name.as_str(), bot_username.as_ref()) {
         bot.send(SendMessage::new(
-            message.chat.id(),
+            message.chat().id(),
             pack_not_stolen_by_bot(),
         ))
         .await?;
@@ -156,7 +197,7 @@ where
         Ok(id) => id,
         Err(TGError::InvocationError(InvocationError::Rpc(err))) => {
             if err.name == "STICKERSET_INVALID" {
-                bot.send(SendMessage::new(message.chat.id(), pack_deleted()))
+                bot.send(SendMessage::new(message.chat().id(), pack_deleted()))
                     .await?;
             }
 
@@ -172,8 +213,8 @@ where
             send_detailed_error_msg(
                 &bot,
                 &err.to_string(),
-                message.chat.id(),
-                message.message_id,
+                message.chat().id(),
+                message.message_id(),
             )
             .await?;
 
@@ -182,10 +223,10 @@ where
     };
 
     // only panic if messages uses in channels, but i'm using private filter
-    let user_id = message.from.expect("user not specified").id;
+    let user_id = message.from().expect("user not specified").id;
 
     if user_id != sticker_set_user_id {
-        bot.send(SendMessage::new(message.chat.id(), not_pack_owner()))
+        bot.send(SendMessage::new(message.chat().id(), not_pack_owner()))
             .await?;
 
         return Ok(EventReturn::Finish);
@@ -196,23 +237,23 @@ where
     let message_delete = if MAX_STICKER_SET_LENGTH - set_length > 0 {
         bot.send(
             SendMessage::new(
-                message.chat.id(),
+                message.chat().id(),
                 pack_current_length(set_length, MAX_STICKER_SET_LENGTH - set_length),
             )
             .parse_mode(ParseMode::HTML)
             .reply_parameters(
                 ReplyParameters::new()
-                    .chat_id(message.chat.id())
-                    .message_id(message.message_id),
+                    .chat_id(message.chat().id())
+                    .message_id(message.message_id()),
             ),
         )
         .await?
     } else {
         bot.send(
-            SendMessage::new(message.chat.id(), pack_full()).reply_parameters(
+            SendMessage::new(message.chat().id(), pack_full()).reply_parameters(
                 ReplyParameters::new()
-                    .chat_id(message.chat.id())
-                    .message_id(message.message_id),
+                    .chat_id(message.chat().id())
+                    .message_id(message.message_id()),
             ),
         )
         .await?;
@@ -232,7 +273,7 @@ where
         .map_err(Into::into)?;
 
     bot.send(SendMessage::new(
-        message.chat.id(),
+        message.chat().id(),
         ask_for_stickers_to_add(),
     ))
     .await?;

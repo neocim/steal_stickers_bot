@@ -188,7 +188,10 @@ impl PrivateRouterBuilder {
                     .filter(MessageType::one(MessageTypeEnum::Text)),
                 Handler::new(get_stolen_sticker_set::<MemoryStorage, UoWFactory<DB>>)
                     .filter(ChatType::one(Private))
-                    .filter(MessageType::one(MessageTypeEnum::Sticker))
+                    .filter(MessageType::many([
+                        MessageTypeEnum::Sticker,
+                        MessageTypeEnum::Text,
+                    ]))
                     .filter(StateFilter::one(AddStickerState::GetStolenStickerSet)),
                 Handler::new(get_stickers_to_add::<MemoryStorage, UoWFactory<DB>>)
                     .filter(MessageType::one(MessageTypeEnum::Sticker))

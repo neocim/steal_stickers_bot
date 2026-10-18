@@ -75,9 +75,9 @@ pub fn user_doesnt_has_stickers_yet() -> &'static str {
     Steal at least one sticker pack using /stealpack, and then try this command again."
 }
 
-pub fn ask_for_sticker_from_pack() -> &'static str {
-    "Send me a sticker from the sticker pack you want to add stickers to. \
-    You can list your stolen packs with /mystickers."
+pub fn ask_stolen_sticker_or_link() -> &'static str {
+    "Send me a sticker or a link to one of your stolen sticker packs. \
+    You can list them with /mystickers."
 }
 
 pub fn pack_not_stolen_by_bot() -> &'static str {
