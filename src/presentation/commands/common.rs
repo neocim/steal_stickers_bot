@@ -54,8 +54,7 @@ pub async fn process_link_to_steal<S: Storage>(
                 return send_invalid_set_msg(&bot, chat_id, message_id).await;
             }
             None => {
-                send_detailed_error_msg(&bot, &err.to_string(), chat_id, message_id).await?;
-                return Ok(EventReturn::Finish);
+                return send_detailed_error_msg(&bot, &err.to_string(), chat_id, message_id).await;
             }
         },
     };

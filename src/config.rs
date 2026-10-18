@@ -12,7 +12,6 @@ pub fn init_tracing_subscriber_from_config(config: &ConfigToml) {
         .with(fmt::layer())
         .with(
             EnvFilter::new(log_level)
-                .add_directive("telers=trace".parse().expect("Invalid directive"))
                 .add_directive("hyper=warn".parse().expect("Invalid directive"))
                 .add_directive("reqwest=warn".parse().expect("Invalid directive"))
                 .add_directive("grammers=warn".parse().expect("Invalid directive"))

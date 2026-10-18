@@ -142,8 +142,8 @@ impl PrivateRouterBuilder {
                 Handler::new(create_new_sticker_set::<MemoryStorage, UoWFactory<DB>>)
                     .filter(ChatType::one(Private))
                     .filter(MessageType::one(MessageTypeEnum::Text))
-                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert())
-                    .filter(StateFilter::one(StealStickerSetState::CreateNewStickerSet)),
+                    .filter(StateFilter::one(StealStickerSetState::CreateNewStickerSet))
+                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
             ])
         });
         self
