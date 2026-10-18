@@ -27,9 +27,9 @@ use crate::{
         commands::{
             handlers::{
                 add_stickers::undo_last_sticker,
-                common::process_non_text_or_stickers_handler,
                 get_owner::{get_owner_handler, get_owner_id},
                 non_commands::process_non_commands_handler,
+                process_non::process_non_text_or_stickers_handler,
                 steal_pack::process_user_agreement_buttons,
             },
             states::{
@@ -49,8 +49,8 @@ use handlers::{
     },
     bot_src::source_handler,
     cancel::cancel_handler,
-    common::{process_non_sticker_handler, process_non_text_handler},
     my_stickers::{my_stickers_handler, process_buttons as process_my_stickers_buttons},
+    process_non::{process_non_sticker_handler, process_non_text_handler},
     start::start_handler,
     stats::{process_buttons as process_stats_buttons, stats_handler},
     steal_pack::{create_new_sticker_set, get_sticker_set_name, steal_sticker_set_handler},
