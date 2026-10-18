@@ -12,7 +12,6 @@ use telers::{
     fsm::{Context, Storage},
     methods::{DeleteMessage, GetMe, GetStickerSet, SendMessage, SendSticker},
     types::{FileId, InputFile, MessageSticker, MessageText, ReplyParameters, Sticker},
-    utils::text::{html_code, html_text_link},
 };
 use tracing::error;
 
@@ -24,7 +23,14 @@ use crate::{
     core::helpers::{
         common::set_created_by,
         constants::MAX_STICKER_SET_LENGTH,
-        texts::{added_stickers_message, sticker_without_pack, user_doesnt_has_stickers_yet},
+        texts::{
+            added_stickers_message, adding_stickers, all_stickers_removed_done,
+            all_stickers_removed_undo, ask_for_sticker_from_pack, ask_for_stickers_to_add,
+            no_stickers_sent_done, not_pack_owner, nothing_to_remove, pack_current_length,
+            pack_deleted, pack_full, pack_not_stolen_by_bot, sticker_limit_reached,
+            sticker_processed, sticker_removed_from_list, sticker_without_emoji,
+            sticker_without_pack, user_doesnt_has_stickers_yet,
+        },
     },
     presentation::{
         commands::{
@@ -77,14 +83,10 @@ where
         .await
         .map_err(Into::into)?;
 
-    bot.send(
-        SendMessage::new(
-            message.chat.id(),
-            "Send me a sticker from your stolen sticker pack that you want to add stickers to. \
-                You can see all your stolen sticker packs using /mystickers.",
-        )
-        .parse_mode(ParseMode::HTML),
-    )
+    bot.send(SendMessage::new(
+        message.chat.id(),
+        ask_for_sticker_from_pack(),
+    ))
     .await?;
 
     Ok(EventReturn::Finish)
@@ -143,8 +145,7 @@ where
     if !set_created_by(sticker_set_name.as_ref(), bot_username.as_ref()) {
         bot.send(SendMessage::new(
             message.chat.id(),
-            "This sticker pack wasn't stolen by me, which means that I cannot add stickers to it according to Telegram rules. \
-            You can view all your stolen stickers using /mystickers or steal this pack using /stealpack.",
+            pack_not_stolen_by_bot(),
         ))
         .await?;
 
@@ -155,11 +156,8 @@ where
         Ok(id) => id,
         Err(TGError::InvocationError(InvocationError::Rpc(err))) => {
             if err.name == "STICKERSET_INVALID" {
-                bot.send(SendMessage::new(
-                    message.chat.id(),
-                    "It seems this sticker pack has been deleted. Try to send another sticker pack.",
-                ))
-                .await?;
+                bot.send(SendMessage::new(message.chat.id(), pack_deleted()))
+                    .await?;
             }
 
             return Ok(EventReturn::Finish);
@@ -187,15 +185,8 @@ where
     let user_id = message.from.expect("user not specified").id;
 
     if user_id != sticker_set_user_id {
-        bot.send(
-            SendMessage::new(
-                message.chat.id(),
-                "You are not the owner of this sticker pack. \
-                Please send me your sticker pack that stolen by me, or steal this pack using /stealpack.",
-            )
-            .parse_mode(ParseMode::HTML),
-        )
-        .await?;
+        bot.send(SendMessage::new(message.chat.id(), not_pack_owner()))
+            .await?;
 
         return Ok(EventReturn::Finish);
     }
@@ -206,23 +197,19 @@ where
         bot.send(
             SendMessage::new(
                 message.chat.id(),
-                format!("Current length of this sticker pack is {set_length_code}. You can add {remaining} more stickers.",
-                set_length_code = html_code(set_length.to_string()),
-                remaining = html_code((MAX_STICKER_SET_LENGTH - set_length).to_string())
-            )).parse_mode(ParseMode::HTML)
-            .reply_parameters(ReplyParameters::new().chat_id(message.chat.id()).message_id(message.message_id)),
-    )
+                pack_current_length(set_length, MAX_STICKER_SET_LENGTH - set_length),
+            )
+            .parse_mode(ParseMode::HTML)
+            .reply_parameters(
+                ReplyParameters::new()
+                    .chat_id(message.chat.id())
+                    .message_id(message.message_id),
+            ),
+        )
         .await?
     } else {
         bot.send(
-            SendMessage::new(
-                message.chat.id(),
-                format!(
-                    "This sticker pack is completely filled. \
-                Remove a few stickers from it and only then use /addstickers again."
-                ),
-            )
-            .reply_parameters(
+            SendMessage::new(message.chat.id(), pack_full()).reply_parameters(
                 ReplyParameters::new()
                     .chat_id(message.chat.id())
                     .message_id(message.message_id),
@@ -246,9 +233,7 @@ where
 
     bot.send(SendMessage::new(
         message.chat.id(),
-        "Now send me the stickers that you want to add to your sticker pack. \
-        When you're ready, use /done to add all selected stickers to the sticker pack. \
-        You can also remove last sent sticker from the add list using /undo.",
+        ask_for_stickers_to_add(),
     ))
     .await?;
 
@@ -283,11 +268,7 @@ where
 
     if sticker_to_add.emoji().is_none() {
         bot.send(
-            SendMessage::new(
-                message.chat.id(),
-                "This sticker doesn't have an emoji, so it can't be added. Try send another sticker.",
-            )
-            .reply_parameters(
+            SendMessage::new(message.chat.id(), sticker_without_emoji()).reply_parameters(
                 ReplyParameters::new()
                     .chat_id(message.chat.id())
                     .message_id(message.message_id),
@@ -307,12 +288,13 @@ where
             let stickers_vec_len = stickers_vec.len();
 
             if sticker_set_length + stickers_vec_len >= MAX_STICKER_SET_LENGTH {
-                bot.send(SendMessage::new(
-                    message.chat.id(),
-                    format!("The amount of stickers has reached {max_len}. Use /done to add all the selected stickers, or \
-                    /undo if you want to remove the latest stickers from the add list. All the following sent stickers will be ignored.", 
-                    max_len = html_code(MAX_STICKER_SET_LENGTH.to_string())),
-                ).parse_mode(ParseMode::HTML))
+                bot.send(
+                    SendMessage::new(
+                        message.chat.id(),
+                        sticker_limit_reached(MAX_STICKER_SET_LENGTH),
+                    )
+                    .parse_mode(ParseMode::HTML),
+                )
                 .await?;
 
                 return Ok(EventReturn::Finish);
@@ -329,11 +311,7 @@ where
         .map_err(Into::into)?;
 
     bot.send(
-        SendMessage::new(
-            message.chat.id(),
-            "Sticker processed! Send the next one or use the /done or /undo commands.",
-        )
-        .reply_parameters(
+        SendMessage::new(message.chat.id(), sticker_processed()).reply_parameters(
             ReplyParameters::new()
                 .chat_id(message.chat.id())
                 .message_id(message.message_id),
@@ -356,11 +334,8 @@ pub async fn undo_last_sticker<S: Storage>(
     {
         Some(stickers_vec) => stickers_vec,
         None => {
-            bot.send(SendMessage::new(
-                message.chat.id(),
-                "There is nothing to remove.",
-            ))
-            .await?;
+            bot.send(SendMessage::new(message.chat.id(), nothing_to_remove()))
+                .await?;
 
             return Ok(EventReturn::Finish);
         }
@@ -369,11 +344,8 @@ pub async fn undo_last_sticker<S: Storage>(
     let sticker = match stickers_vec.pop() {
         Some(sticker) => sticker,
         None => {
-            bot.send(SendMessage::new(
-                message.chat.id(),
-                "There is nothing to remove.",
-            ))
-            .await?;
+            bot.send(SendMessage::new(message.chat.id(), nothing_to_remove()))
+                .await?;
 
             return Ok(EventReturn::Finish);
         }
@@ -393,19 +365,16 @@ pub async fn undo_last_sticker<S: Storage>(
         .await?;
 
     bot.send(
-        SendMessage::new(
-            message.chat.id(),
-            "This sticker was removed from the add list. You can try use /done or /undo again.",
-        )
-        .reply_parameters(ReplyParameters::new().message_id(sticker_message.message_id()))
-        .chat_id(sticker_message.chat().id()),
+        SendMessage::new(message.chat.id(), sticker_removed_from_list())
+            .reply_parameters(ReplyParameters::new().message_id(sticker_message.message_id()))
+            .chat_id(sticker_message.chat().id()),
     )
     .await?;
 
     if user_removed_all_stickers {
         bot.send(SendMessage::new(
             message.chat.id(),
-            "It looks like you've removed all the stickers from the add list. Before use /done or /undo again, you should send at least one sticker.",
+            all_stickers_removed_undo(),
         ))
         .await?;
     }
@@ -435,7 +404,7 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
         Some(stickers_vec) if stickers_vec.len() == 0 => {
             bot.send(SendMessage::new(
                 message.chat.id(),
-                "You've removed all the stickers. Send the stickers and only then use /done command.",
+                all_stickers_removed_done(),
             ))
             .await?;
 
@@ -443,11 +412,8 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
         }
         Some(stickers_vec) => stickers_vec,
         None => {
-            bot.send(SendMessage::new(
-                message.chat.id(),
-                "You haven't sent a single sticker! Send the stickers and only then use the /done command.",
-            ))
-            .await?;
+            bot.send(SendMessage::new(message.chat.id(), no_stickers_sent_done()))
+                .await?;
 
             return Ok(EventReturn::Finish);
         }
@@ -458,19 +424,11 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
     // only panic if messages uses in channels, but i'm using private filter in main function
     let user_id = message.from.expect("Error while parsing user").id;
 
-    let these_or_this = if stickers.len() == 1 {
-        "is sticker"
-    } else {
-        "ese stickers"
-    };
     let message_delete = bot
         .send(
             SendMessage::new(
                 message.chat.id(),
-                format!(
-                "Done! Trying to add th{these_or_this} to {your} sticker pack.. \
-                It may take up to a several minutes, if you have selected a lot of stickers to add.",
-                your = html_text_link("your", &sticker_set_name)),
+                adding_stickers(stickers.len(), &sticker_set_name),
             )
             .parse_mode(ParseMode::HTML),
         )

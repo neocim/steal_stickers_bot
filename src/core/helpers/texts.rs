@@ -47,6 +47,95 @@ pub fn user_doesnt_has_stickers_yet() -> &'static str {
     Steal at least one sticker pack using /stealpack, and then try this command again."
 }
 
+pub fn ask_for_sticker_from_pack() -> &'static str {
+    "Send me a sticker from the sticker pack you want to add stickers to. \
+     You can list your stolen packs with /mystickers."
+}
+
+pub fn pack_not_stolen_by_bot() -> &'static str {
+    "This sticker pack wasn't stolen by this bot, so I can't add stickers to it — \
+     Telegram only allows modifying packs the bot created. \
+     Use /mystickers to list your stolen packs, or /stealpack to steal this one."
+}
+
+pub fn pack_deleted() -> &'static str {
+    "It looks like this sticker pack has been deleted. Try sending another one."
+}
+
+pub fn not_pack_owner() -> &'static str {
+    "You're not the owner of this sticker pack. \
+     Send me a pack that this bot stole for you, or use /stealpack to steal this one."
+}
+
+pub fn pack_current_length(current: usize, remaining: usize) -> String {
+    format!(
+        "This sticker pack currently has {current} stickers. You can add {remaining} more.",
+        current = html_code(current.to_string()),
+        remaining = html_code(remaining.to_string()),
+    )
+}
+
+pub fn pack_full() -> &'static str {
+    "This sticker pack is full. \
+     Remove a few stickers and then try /addstickers again."
+}
+
+pub fn ask_for_stickers_to_add() -> &'static str {
+    "Now send me the stickers you want to add to your pack. \
+    When you're ready, use /done to add them all. \
+    You can remove the last sticker from the list with /undo."
+}
+
+pub fn sticker_without_emoji() -> &'static str {
+    "This sticker has no emoji, so it can't be added. Try sending another one."
+}
+
+pub fn sticker_limit_reached(max_len: usize) -> String {
+    format!(
+        "You've reached the limit of {max_len} stickers. \
+        Use /done to add the selected ones, or /undo to remove the latest. \
+        Any further stickers will be ignored.",
+        max_len = html_code(max_len.to_string()),
+    )
+}
+
+pub fn sticker_processed() -> &'static str {
+    "Sticker added to the list. Send another, or use /done or /undo."
+}
+
+pub fn nothing_to_remove() -> &'static str {
+    "Nothing to remove."
+}
+
+pub fn sticker_removed_from_list() -> &'static str {
+    "Sticker removed from the list. You can now use /done or /undo."
+}
+
+pub fn all_stickers_removed_undo() -> &'static str {
+    "You've removed all stickers from the list. \
+     Send at least one sticker before using /done or /undo."
+}
+
+pub fn all_stickers_removed_done() -> &'static str {
+    "You've removed all the stickers. Send some stickers, then use /done."
+}
+
+pub fn no_stickers_sent_done() -> &'static str {
+    "You haven't sent any stickers yet. Send some, then use /done."
+}
+
+pub fn adding_stickers(count: usize, sticker_set_name: &str) -> String {
+    let sticker_word = if count == 1 { "sticker" } else { "stickers" };
+
+    format!(
+        "Adding {count} {sticker_word} to {your} pack.. \
+         This may take a few minutes if you selected a lot of stickers.",
+        count = count,
+        sticker_word = sticker_word,
+        your = html_text_link("your", sticker_set_name),
+    )
+}
+
 pub fn detailed_error_message(err: &str) -> String {
     format!(
         "Sorry, an unexpected error has occurred. Please contact the bot owner and provide this error:\n{}",
