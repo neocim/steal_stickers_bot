@@ -29,7 +29,8 @@ use crate::{
                 add_stickers::undo_last_sticker,
                 common::process_non_text_or_stickers_handler,
                 get_owner::{get_owner_handler, get_owner_id},
-                non_commands::{process_non_commands_handler, process_user_agreement_buttons},
+                non_commands::process_non_commands_handler,
+                steal_pack::process_user_agreement_buttons,
             },
             states::{
                 callback_data::{MyStickersPage, StatsState, StealSetAction},
@@ -128,24 +129,32 @@ impl PrivateRouterBuilder {
         for<'a> UserRepoImpl<&'a mut DB::Connection>: UserRepo,
         for<'a> SetRepoImpl<&'a mut DB::Connection>: SetRepo,
     {
-        self.router = self.router.on_message(|observer| {
-            observer.registers([
-                Handler::new(steal_sticker_set_handler::<MemoryStorage>)
-                    .filter(Command::one(command))
-                    .filter(MessageType::one(MessageTypeEnum::Text)),
-                Handler::new(get_sticker_set_name::<MemoryStorage>)
-                    .filter(MessageType::many([
-                        MessageTypeEnum::Sticker,
-                        MessageTypeEnum::Text,
-                    ]))
-                    .filter(StateFilter::one(StealStickerSetState::StealStickerSetName)),
-                Handler::new(create_new_sticker_set::<MemoryStorage, UoWFactory<DB>>)
-                    .filter(ChatType::one(Private))
-                    .filter(MessageType::one(MessageTypeEnum::Text))
-                    .filter(StateFilter::one(StealStickerSetState::CreateNewStickerSet))
-                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
-            ])
-        });
+        self.router = self
+            .router
+            .on_message(|observer| {
+                observer.registers([
+                    Handler::new(steal_sticker_set_handler::<MemoryStorage>)
+                        .filter(Command::one(command))
+                        .filter(MessageType::one(MessageTypeEnum::Text)),
+                    Handler::new(get_sticker_set_name::<MemoryStorage>)
+                        .filter(MessageType::many([
+                            MessageTypeEnum::Sticker,
+                            MessageTypeEnum::Text,
+                        ]))
+                        .filter(StateFilter::one(StealStickerSetState::StealStickerSetName)),
+                    Handler::new(create_new_sticker_set::<MemoryStorage, UoWFactory<DB>>)
+                        .filter(ChatType::one(Private))
+                        .filter(MessageType::one(MessageTypeEnum::Text))
+                        .filter(StateFilter::one(StealStickerSetState::CreateNewStickerSet))
+                        .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
+                ])
+            })
+            .on_callback_query(|observer| {
+                observer.register(
+                    Handler::new(process_user_agreement_buttons::<MemoryStorage>)
+                        .filter(CallbackDataFilter::<StealSetAction>::new()),
+                )
+            });
         self
     }
 
@@ -269,22 +278,14 @@ impl PrivateRouterBuilder {
     }
 
     fn process_non_commands(mut self) -> Self {
-        self.router = self
-            .router
-            .on_message(|observer| {
-                observer.register(
-                    Handler::new(process_non_commands_handler::<MemoryStorage>)
-                        .filter(ChatType::one(Private))
-                        .filter(StateFilter::none())
-                        .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
-                )
-            })
-            .on_callback_query(|observer| {
-                observer.register(
-                    Handler::new(process_user_agreement_buttons::<MemoryStorage>)
-                        .filter(CallbackDataFilter::<StealSetAction>::new()),
-                )
-            });
+        self.router = self.router.on_message(|observer| {
+            observer.register(
+                Handler::new(process_non_commands_handler::<MemoryStorage>)
+                    .filter(ChatType::one(Private))
+                    .filter(StateFilter::none())
+                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
+            )
+        });
 
         self
     }

@@ -40,69 +40,6 @@ impl Display for AddStickersError {
     }
 }
 
-pub async fn process_link_to_steal<S: Storage>(
-    bot: &Bot,
-    chat_id: i64,
-    message_id: i64,
-    fsm: &Context<S>,
-    text: &str,
-) -> HandlerResult {
-    let set_name = match parse_sticker_set_link(&bot, text).await {
-        Ok(set_name) => set_name,
-        Err(err) => match err.downcast_ref() {
-            Some(InvalidSetLinkError) => {
-                return send_invalid_set_msg(&bot, chat_id, message_id).await;
-            }
-            None => {
-                return send_detailed_error_msg(&bot, &err.to_string(), chat_id, message_id).await;
-            }
-        },
-    };
-
-    fsm.set_value("steal_sticker_set_name", set_name)
-        .await
-        .map_err(Into::into)?;
-
-    Ok(EventReturn::Finish)
-}
-
-pub async fn process_sticker_to_steal<S: Storage>(
-    bot: &Bot,
-    chat_id: i64,
-    message_id: i64,
-    fsm: &Context<S>,
-    sticker: &Sticker,
-) -> HandlerResult {
-    let set_name = match sticker.set_name() {
-        Some(set_name) => set_name,
-        None => {
-            bot.send(SendMessage::new(chat_id, sticker_without_pack()))
-                .await?;
-
-            return Ok(EventReturn::Finish);
-        }
-    };
-
-    match check_set_name(&bot, set_name).await {
-        Ok(set_name) => set_name,
-        Err(err) => match err.downcast_ref() {
-            Some(InvalidSetLinkError) => {
-                return send_invalid_set_msg(&bot, chat_id, message_id).await;
-            }
-            None => {
-                send_detailed_error_msg(&bot, &err.to_string(), chat_id, message_id).await?;
-                return Ok(EventReturn::Finish);
-            }
-        },
-    };
-
-    fsm.set_value("steal_sticker_set_name", set_name.to_string())
-        .await
-        .map_err(Into::into)?;
-
-    Ok(EventReturn::Finish)
-}
-
 pub async fn parse_sticker_set_link<'a>(bot: &Bot, text: &str) -> Result<String, HandlerError> {
     if let Some(link_idx) = text.find(TELEGRAM_STICKER_SET_URL) {
         let short_name_start = link_idx + TELEGRAM_STICKER_SET_URL.len();
