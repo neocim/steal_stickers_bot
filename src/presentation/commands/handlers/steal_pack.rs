@@ -9,7 +9,6 @@ use telers::{
         FileId, InputFile, InputSticker, KeyboardButton, Message, MessageSticker, MessageText,
         ReplyKeyboardMarkup, ReplyParameters, Sticker,
     },
-    utils::text::{html_code, html_quote},
 };
 use tracing::error;
 
@@ -24,7 +23,8 @@ use crate::{
             TELEGRAM_STICKER_SET_URL,
         },
         texts::{
-            do_you_want_to_steal, link_or_sticker, now_enter_set_name, sticker_without_pack,
+            ask_for_sticker_or_link, do_you_want_to_steal, link_or_sticker, now_enter_set_name,
+            set_title_too_long, set_title_too_short, stealing_pack_started, sticker_without_pack,
             you_can_steal_at_any_time,
         },
     },
@@ -54,7 +54,7 @@ pub async fn steal_sticker_set_handler<S: Storage>(
 
     bot.send(SendMessage::new(
         message.chat.id(),
-        "Send me a sticker or sticker set link and I will steal this sticker pack for you:",
+        ask_for_sticker_or_link(),
     ))
     .await?;
 
@@ -165,27 +165,20 @@ where
     // if user enter wrong sticker set title, process it
     let new_set_title = if message.text.len() > 64 {
         bot.send(
-            SendMessage::new(
-                message.chat.id(),
-                format!(
-                    "Too long name! Please enter a name up to {max_len} characters long:",
-                    max_len = html_code(MAX_SET_TITLE_LENGTH.to_string())
-                ),
-            )
-            .parse_mode(ParseMode::HTML),
+            SendMessage::new(message.chat.id(), set_title_too_long(MAX_SET_TITLE_LENGTH))
+                .parse_mode(ParseMode::HTML),
         )
         .await?;
 
         return Ok(EventReturn::Finish);
     } else if message.text.len() < 1 {
-        bot.send(SendMessage::new(
-            message.chat.id(),
-            format!(
-                "Too short name! Please enter a name between {min_len} and {max_len} characters long:",
-                min_len = html_code(MIN_SET_TITLE_LENGTH.to_string()),
-                max_len = html_code(MAX_SET_TITLE_LENGTH.to_string())
-            ),
-        ).parse_mode(ParseMode::HTML))
+        bot.send(
+            SendMessage::new(
+                message.chat.id(),
+                set_title_too_short(MIN_SET_TITLE_LENGTH, MAX_SET_TITLE_LENGTH),
+            )
+            .parse_mode(ParseMode::HTML),
+        )
         .await?;
 
         return Ok(EventReturn::Finish);
@@ -221,15 +214,15 @@ where
     // prepare name for new sticker set and link to use it in message later
     let (mut new_set_name, mut new_set_link) = generate_sticker_set_name_and_link(&bot_username);
 
-    let message_delete = bot.send(SendMessage::new(
-        message.chat.id(),
-        format!(
-            "Stealing sticker pack with name {title} for you.. It may take up to a several minutes, if this sticker pack \
-            containing more than {CREATE_SET_IN_ONE_GO_LENGTH_LIMIT} stickers.",
-            title = html_code(html_quote(&new_set_title))
-        ),
-    ).parse_mode(ParseMode::HTML))
-    .await?;
+    let message_delete = bot
+        .send(
+            SendMessage::new(
+                message.chat.id(),
+                stealing_pack_started(&new_set_title, CREATE_SET_IN_ONE_GO_LENGTH_LIMIT),
+            )
+            .parse_mode(ParseMode::HTML),
+        )
+        .await?;
 
     let limit_sticker_set_length =
         if steal_stickers_from_sticker_set.len() > CREATE_SET_IN_ONE_GO_LENGTH_LIMIT {

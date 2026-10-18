@@ -16,6 +16,34 @@ pub fn now_enter_set_name() -> &'static str {
     "Now enter a name for your new sticker pack (1-64 characters):"
 }
 
+pub fn ask_for_sticker_or_link() -> &'static str {
+    "Send me a sticker or a sticker pack link and I'll steal this sticker pack for you:"
+}
+
+pub fn set_title_too_long(max_len: usize) -> String {
+    format!(
+        "Too long name! Please enter a name up to {max_len} characters long:",
+        max_len = html_code(max_len.to_string()),
+    )
+}
+
+pub fn set_title_too_short(min_len: usize, max_len: usize) -> String {
+    format!(
+        "Too short name! Please enter a name between {min_len} and {max_len} characters long:",
+        min_len = html_code(min_len.to_string()),
+        max_len = html_code(max_len.to_string()),
+    )
+}
+
+pub fn stealing_pack_started(title: &str, one_go_limit: usize) -> String {
+    format!(
+        "Stealing sticker pack with name {title} for you... \
+        It may take a few minutes if this sticker pack contains more than {one_go_limit} stickers.",
+        title = html_code(html_quote(title)),
+        one_go_limit = html_code(one_go_limit.to_string()),
+    )
+}
+
 pub fn do_you_want_to_steal(set_name: &str) -> String {
     format!(
         "Do you want to steal this {set}?",
@@ -49,13 +77,13 @@ pub fn user_doesnt_has_stickers_yet() -> &'static str {
 
 pub fn ask_for_sticker_from_pack() -> &'static str {
     "Send me a sticker from the sticker pack you want to add stickers to. \
-     You can list your stolen packs with /mystickers."
+    You can list your stolen packs with /mystickers."
 }
 
 pub fn pack_not_stolen_by_bot() -> &'static str {
     "This sticker pack wasn't stolen by this bot, so I can't add stickers to it — \
-     Telegram only allows modifying packs the bot created. \
-     Use /mystickers to list your stolen packs, or /stealpack to steal this one."
+    Telegram only allows modifying packs the bot created. \
+    Use /mystickers to list your stolen packs, or /stealpack to steal this one."
 }
 
 pub fn pack_deleted() -> &'static str {
@@ -64,7 +92,7 @@ pub fn pack_deleted() -> &'static str {
 
 pub fn not_pack_owner() -> &'static str {
     "You're not the owner of this sticker pack. \
-     Send me a pack that this bot stole for you, or use /stealpack to steal this one."
+    Send me a pack that this bot stole for you, or use /stealpack to steal this one."
 }
 
 pub fn pack_current_length(current: usize, remaining: usize) -> String {
@@ -77,7 +105,7 @@ pub fn pack_current_length(current: usize, remaining: usize) -> String {
 
 pub fn pack_full() -> &'static str {
     "This sticker pack is full. \
-     Remove a few stickers and then try /addstickers again."
+    Remove a few stickers and then try /addstickers again."
 }
 
 pub fn ask_for_stickers_to_add() -> &'static str {
@@ -113,7 +141,7 @@ pub fn sticker_removed_from_list() -> &'static str {
 
 pub fn all_stickers_removed_undo() -> &'static str {
     "You've removed all stickers from the list. \
-     Send at least one sticker before using /done or /undo."
+    Send at least one sticker before using /done or /undo."
 }
 
 pub fn all_stickers_removed_done() -> &'static str {
