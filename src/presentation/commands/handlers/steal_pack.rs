@@ -376,6 +376,10 @@ pub async fn process_sticker_set_link<S: Storage>(
     )
     .await?;
 
+    fsm.set_state(StealStickerSetState::DoYouWantToSteal)
+        .await
+        .map_err(Into::into)?;
+
     Ok(EventReturn::Finish)
 }
 
@@ -441,13 +445,14 @@ pub async fn process_user_agreement<S: Storage>(
             .map_err(Into::into)?;
 
         return Ok(EventReturn::Finish);
-    } else {
-        bot.send(SendMessage::new(
-            message.chat.id(),
-            you_can_steal_at_any_time(),
-        ))
-        .await?;
     }
+    bot.send(SendMessage::new(
+        message.chat.id(),
+        you_can_steal_at_any_time(),
+    ))
+    .await?;
+
+    fsm.finish().await.map_err(Into::into)?;
 
     return Ok(EventReturn::Finish);
 }
