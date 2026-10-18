@@ -6,13 +6,17 @@ use telers::{
     fsm::{Context, Storage},
     methods::SendMessage,
     types::{MessageSticker, MessageText, ReplyParameters},
-    utils::text::html_code,
 };
 use tracing::error;
 
-use crate::presentation::{
-    commands::{common::send_default_error_msg, states::get_owner::GetOwnerState},
-    telegram_application::get_sticker_set_user_id,
+use crate::{
+    core::helpers::texts::{
+        ask_for_sticker_for_owner, pack_owner_id, sticker_without_pack_for_owner,
+    },
+    presentation::{
+        commands::{common::send_default_error_msg, states::get_owner::GetOwnerState},
+        telegram_application::get_sticker_set_user_id,
+    },
 };
 
 pub async fn get_owner_handler<S: Storage>(
@@ -24,7 +28,7 @@ pub async fn get_owner_handler<S: Storage>(
 
     bot.send(SendMessage::new(
         message.chat.id(),
-        "Send me any sticker and i'll show you the owner ID of this sticker pack:",
+        ask_for_sticker_for_owner(),
     ))
     .await?;
 
@@ -44,12 +48,13 @@ pub async fn get_owner_id(
         Some(set_name) => set_name,
         None => {
             bot.send(
-        SendMessage::new(
-            message.chat.id(),
-                "Unable to retrieve the owner's ID because this sticker is not in any sticker pack. Try to send another sticker or use /cancel instead."
+                SendMessage::new(message.chat.id(), sticker_without_pack_for_owner())
+                    .reply_parameters(
+                        ReplyParameters::new()
+                            .chat_id(message.chat.id())
+                            .message_id(message.message_id),
+                    ),
             )
-            .parse_mode(ParseMode::HTML)
-            .reply_parameters(ReplyParameters::new().chat_id(message.chat.id()).message_id(message.message_id)))
             .await?;
 
             return Ok(EventReturn::Finish);
@@ -72,15 +77,13 @@ pub async fn get_owner_id(
     };
 
     bot.send(
-        SendMessage::new(
-            message.chat.id(),
-            format!(
-                "The ID of the owner of this sticker pack — {}. Send the next one or use /cancel instead.",
-                html_code(owner_id.to_string())
+        SendMessage::new(message.chat.id(), pack_owner_id(owner_id))
+            .parse_mode(ParseMode::HTML)
+            .reply_parameters(
+                ReplyParameters::new()
+                    .chat_id(message.chat.id())
+                    .message_id(message.message_id),
             ),
-        )
-        .parse_mode(ParseMode::HTML)
-        .reply_parameters(ReplyParameters::new().chat_id(message.chat.id()).message_id(message.message_id)),
     )
     .await?;
 

@@ -8,6 +8,22 @@ use crate::{
     domain::entities::set::Set,
 };
 
+pub fn ask_for_sticker_for_owner() -> &'static str {
+    "Send me any sticker and I'll show you the owner ID of its sticker pack:"
+}
+
+pub fn sticker_without_pack_for_owner() -> &'static str {
+    "Unable to retrieve the owner's ID because this sticker isn't in any sticker pack. \
+     Try sending another sticker or use /cancel instead."
+}
+
+pub fn pack_owner_id(owner_id: i64) -> String {
+    format!(
+        "The owner ID of this sticker pack is {id}. Send another sticker or use /cancel instead.",
+        id = html_code(owner_id.to_string()),
+    )
+}
+
 pub fn default_error_message() -> &'static str {
     "Sorry, an unexpected error has occurred."
 }
