@@ -2,6 +2,7 @@
 pub enum StealStickerSetState {
     StealStickerSetName,
     CreateNewStickerSet,
+    DoYouWantToSteal,
 }
 
 impl StealStickerSetState {
@@ -9,6 +10,7 @@ impl StealStickerSetState {
         match self {
             StealStickerSetState::StealStickerSetName => "steal_sticker_set_name",
             StealStickerSetState::CreateNewStickerSet => "create_new_sticker_set",
+            StealStickerSetState::DoYouWantToSteal => "do_you_want_to_steal",
         }
     }
 }

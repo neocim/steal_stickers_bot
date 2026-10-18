@@ -1,17 +1,13 @@
 use telers::{
     Bot, Extension,
-    callback_data::CallbackData as _,
     enums::ParseMode,
     errors::{HandlerError, TelegramErrorKind, session::ErrorKind},
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
-    methods::{
-        AnswerCallbackQuery, CreateNewStickerSet, DeleteMessage, EditMessageText, GetMe,
-        GetStickerSet, SendMessage,
-    },
+    methods::{CreateNewStickerSet, DeleteMessage, GetMe, GetStickerSet, SendMessage},
     types::{
-        CallbackQuery, FileId, InlineKeyboardButton, InlineKeyboardMarkup, InputFile, InputSticker,
-        Message, MessageSticker, MessageText, ReplyParameters, Sticker,
+        FileId, InputFile, InputSticker, KeyboardButton, Message, MessageSticker, MessageText,
+        ReplyKeyboardMarkup, ReplyParameters, Sticker,
     },
     utils::text::{html_code, html_quote},
 };
@@ -37,7 +33,7 @@ use crate::{
             AddStickersError, InvalidSetLinkError, add_stickers, check_set_name,
             parse_sticker_set_link, send_detailed_error_msg, send_invalid_set_msg,
         },
-        states::{callback_data::StealSetAction, steal_sticker_set::StealStickerSetState},
+        states::steal_sticker_set::StealStickerSetState,
     },
 };
 use crate::{
@@ -358,16 +354,20 @@ pub async fn process_sticker_set_link<S: Storage>(
     )
     .await?;
 
-    let set_name: String = fsm
+    let set_name: String = if let Some(set_name) = fsm
         .get_value("steal_sticker_set_name")
         .await
         .map_err(Into::into)?
-        .expect("Sticker set name for sticker set user want steal should be set");
+    {
+        set_name
+    } else {
+        return Ok(EventReturn::Finish);
+    };
 
     bot.send(
         SendMessage::new(message.chat.id(), do_you_want_to_steal(&set_name))
             .parse_mode(ParseMode::HTML)
-            .reply_markup(inline_keyboard_markup())
+            .reply_markup(reply_keyboard_markup())
             .reply_parameters(
                 ReplyParameters::new()
                     .chat_id(message.chat.id())
@@ -404,7 +404,7 @@ pub async fn process_set_sticker<S: Storage>(
     bot.send(
         SendMessage::new(message.chat.id(), do_you_want_to_steal(&set_name))
             .parse_mode(ParseMode::HTML)
-            .reply_markup(inline_keyboard_markup())
+            .reply_markup(reply_keyboard_markup())
             .reply_parameters(
                 ReplyParameters::new()
                     .chat_id(message.chat.id())
@@ -413,49 +413,28 @@ pub async fn process_set_sticker<S: Storage>(
     )
     .await?;
 
+    fsm.set_state(StealStickerSetState::DoYouWantToSteal)
+        .await
+        .map_err(Into::into)?;
+
     Ok(EventReturn::Finish)
 }
 
-fn inline_keyboard_markup() -> InlineKeyboardMarkup {
-    let yes_data = StealSetAction {
-        action: "Yes".into(),
-    }
-    .pack()
-    .expect("Failed to pack StealSetAction::Yes");
-    let no_data = StealSetAction {
-        action: "No".into(),
-    }
-    .pack()
-    .expect("Failed to pack StealSetAction::No");
-
-    let buttons = [[
-        InlineKeyboardButton::new("Yes").callback_data(yes_data),
-        InlineKeyboardButton::new("No").callback_data(no_data),
-    ]];
-
-    InlineKeyboardMarkup::new(buttons)
+fn reply_keyboard_markup() -> ReplyKeyboardMarkup {
+    let buttons = [[KeyboardButton::new("Yes"), KeyboardButton::new("No")]];
+    ReplyKeyboardMarkup::new(buttons).one_time_keyboard(true)
 }
 
-pub async fn process_user_agreement_buttons<S: Storage>(
+pub async fn process_user_agreement<S: Storage>(
     bot: Bot,
-    callback_query: CallbackQuery,
-    StealSetAction { action }: StealSetAction,
+    message: MessageText,
     fsm: Context<S>,
 ) -> HandlerResult {
-    let (chat_id, message_id) = if let Some(message) = callback_query.message {
-        (message.chat().id(), message.message_id())
-    } else {
-        return Ok(EventReturn::Finish);
-    };
+    let text = &*message.text;
 
-    if action == "Yes" {
-        bot.send(
-            EditMessageText::new()
-                .text(now_enter_set_name())
-                .chat_id(chat_id)
-                .message_id(message_id),
-        )
-        .await?;
+    if text == "Yes" {
+        bot.send(SendMessage::new(message.chat.id(), now_enter_set_name()))
+            .await?;
 
         fsm.set_state(StealStickerSetState::CreateNewStickerSet)
             .await
@@ -463,17 +442,12 @@ pub async fn process_user_agreement_buttons<S: Storage>(
 
         return Ok(EventReturn::Finish);
     } else {
-        bot.send(
-            EditMessageText::new()
-                .text(you_can_steal_at_any_time())
-                .chat_id(chat_id)
-                .message_id(message_id),
-        )
+        bot.send(SendMessage::new(
+            message.chat.id(),
+            you_can_steal_at_any_time(),
+        ))
         .await?;
     }
-
-    bot.send(AnswerCallbackQuery::new(callback_query.id))
-        .await?;
 
     return Ok(EventReturn::Finish);
 }

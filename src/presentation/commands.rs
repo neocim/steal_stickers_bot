@@ -33,11 +33,11 @@ use crate::{
                 non_commands::process_non_commands_handler,
                 process_non::process_non_text_or_stickers_handler,
                 steal_pack::{
-                    process_set_sticker, process_sticker_set_link, process_user_agreement_buttons,
+                    process_set_sticker, process_sticker_set_link, process_user_agreement,
                 },
             },
             states::{
-                callback_data::{MyStickersPage, StatsState, StealSetAction},
+                callback_data::{MyStickersPage, StatsState},
                 get_owner::GetOwnerState,
             },
         },
@@ -133,38 +133,36 @@ impl PrivateRouterBuilder {
         for<'a> UserRepoImpl<&'a mut DB::Connection>: UserRepo,
         for<'a> SetRepoImpl<&'a mut DB::Connection>: SetRepo,
     {
-        self.router = self
-            .router
-            .on_message(|observer| {
-                observer.registers([
-                    Handler::new(process_sticker_set_link::<MemoryStorage>)
-                        .filter(MessageType::one(MessageTypeEnum::Text))
-                        .filter(Text::contains([TELEGRAM_STICKER_SET_URL]))
-                        .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
-                    Handler::new(process_set_sticker::<MemoryStorage>)
-                        .filter(MessageType::one(MessageTypeEnum::Sticker))
-                        .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
-                    Handler::new(steal_sticker_set_handler::<MemoryStorage>)
-                        .filter(Command::one(command))
-                        .filter(MessageType::one(MessageTypeEnum::Text)),
-                    Handler::new(get_sticker_set_name::<MemoryStorage>)
-                        .filter(MessageType::many([
-                            MessageTypeEnum::Sticker,
-                            MessageTypeEnum::Text,
-                        ]))
-                        .filter(StateFilter::one(StealStickerSetState::StealStickerSetName)),
-                    Handler::new(create_new_sticker_set::<MemoryStorage, UoWFactory<DB>>)
-                        .filter(MessageType::one(MessageTypeEnum::Text))
-                        .filter(StateFilter::one(StealStickerSetState::CreateNewStickerSet))
-                        .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
-                ])
-            })
-            .on_callback_query(|observer| {
-                observer.register(
-                    Handler::new(process_user_agreement_buttons::<MemoryStorage>)
-                        .filter(CallbackDataFilter::<StealSetAction>::new()),
-                )
-            });
+        self.router = self.router.on_message(|observer| {
+            observer.registers([
+                Handler::new(process_sticker_set_link::<MemoryStorage>)
+                    .filter(StateFilter::none())
+                    .filter(MessageType::one(MessageTypeEnum::Text))
+                    .filter(Text::contains([TELEGRAM_STICKER_SET_URL]))
+                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
+                Handler::new(process_set_sticker::<MemoryStorage>)
+                    .filter(StateFilter::none())
+                    .filter(MessageType::one(MessageTypeEnum::Sticker))
+                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
+                Handler::new(process_user_agreement::<MemoryStorage>)
+                    .filter(StateFilter::one(StealStickerSetState::DoYouWantToSteal))
+                    .filter(MessageType::one(MessageTypeEnum::Text)),
+                Handler::new(steal_sticker_set_handler::<MemoryStorage>)
+                    .filter(Command::one(command))
+                    .filter(MessageType::one(MessageTypeEnum::Text)),
+                Handler::new(get_sticker_set_name::<MemoryStorage>)
+                    .filter(MessageType::many([
+                        MessageTypeEnum::Sticker,
+                        MessageTypeEnum::Text,
+                    ]))
+                    .filter(StateFilter::one(StealStickerSetState::StealStickerSetName)),
+                Handler::new(create_new_sticker_set::<MemoryStorage, UoWFactory<DB>>)
+                    .filter(ChatType::one(Private))
+                    .filter(StateFilter::one(StealStickerSetState::CreateNewStickerSet))
+                    .filter(MessageType::one(MessageTypeEnum::Text))
+                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
+            ])
+        });
         self
     }
 

@@ -5,8 +5,6 @@ use telers::{
     enums::ParseMode,
     errors::{HandlerError, TelegramErrorKind, session::ErrorKind},
     event::{EventReturn, telegram::HandlerResult},
-    fsm::Context,
-    fsm::Storage,
     methods::{AddStickerToSet, GetStickerSet, SendMessage},
     types::{InputFile, InputSticker, ReplyParameters, Sticker},
 };
@@ -14,7 +12,7 @@ use telers::{
 use crate::core::helpers::{
     common::sticker_format,
     constants::{TELEGRAM_SET_SHORT_NAME_MAX_LENGTH, TELEGRAM_STICKER_SET_URL},
-    texts::{default_error_message, detailed_error_message, invalid_set, sticker_without_pack},
+    texts::{default_error_message, detailed_error_message, invalid_set},
 };
 
 const SLEEP_TIME: u64 = 1500;
