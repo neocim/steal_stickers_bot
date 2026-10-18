@@ -8,7 +8,6 @@ use telers::{
     methods::{AnswerCallbackQuery, EditMessageText, SendMessage},
     types::{CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message},
 };
-use tracing::debug;
 
 use crate::{
     application::{

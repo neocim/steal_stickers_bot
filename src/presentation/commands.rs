@@ -6,6 +6,7 @@ use telers::{
     event::telegram::Handler,
     filters::{
         CallbackData as CallbackDataFilter, ChatType, Command, MessageType, State as StateFilter,
+        Text,
     },
     fsm::{MemoryStorage, Strategy},
     methods::SetMyCommands,
@@ -19,6 +20,7 @@ mod states;
 
 use crate::{
     application::{set::repository::SetRepo, user::repository::UserRepo},
+    core::helpers::constants::TELEGRAM_STICKER_SET_URL,
     infrastructure::database::{
         repositories::{set::SetRepoImpl, user::UserRepoImpl},
         uow::UoWFactory,
@@ -30,7 +32,9 @@ use crate::{
                 get_owner::{get_owner_handler, get_owner_id},
                 non_commands::process_non_commands_handler,
                 process_non::process_non_text_or_stickers_handler,
-                steal_pack::process_user_agreement_buttons,
+                steal_pack::{
+                    process_set_sticker, process_sticker_set_link, process_user_agreement_buttons,
+                },
             },
             states::{
                 callback_data::{MyStickersPage, StatsState, StealSetAction},
@@ -133,6 +137,13 @@ impl PrivateRouterBuilder {
             .router
             .on_message(|observer| {
                 observer.registers([
+                    Handler::new(process_sticker_set_link::<MemoryStorage>)
+                        .filter(MessageType::one(MessageTypeEnum::Text))
+                        .filter(Text::contains([TELEGRAM_STICKER_SET_URL]))
+                        .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
+                    Handler::new(process_set_sticker::<MemoryStorage>)
+                        .filter(MessageType::one(MessageTypeEnum::Sticker))
+                        .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
                     Handler::new(steal_sticker_set_handler::<MemoryStorage>)
                         .filter(Command::one(command))
                         .filter(MessageType::one(MessageTypeEnum::Text)),
@@ -143,7 +154,6 @@ impl PrivateRouterBuilder {
                         ]))
                         .filter(StateFilter::one(StealStickerSetState::StealStickerSetName)),
                     Handler::new(create_new_sticker_set::<MemoryStorage, UoWFactory<DB>>)
-                        .filter(ChatType::one(Private))
                         .filter(MessageType::one(MessageTypeEnum::Text))
                         .filter(StateFilter::one(StealStickerSetState::CreateNewStickerSet))
                         .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
