@@ -32,6 +32,7 @@ use crate::{
                 get_owner::{get_owner_handler, get_owner_id},
                 non_commands::process_non_commands_handler,
                 process_non::process_non_text_or_stickers_handler,
+                start::help_handler,
                 steal_pack::{
                     process_set_sticker, process_sticker_set_link, process_user_agreement,
                 },
@@ -89,7 +90,7 @@ impl PrivateRouterBuilder {
         CreateUserMiddleware<UoWFactory<DB>>: OuterMiddleware,
     {
         let router = PrivateRouterBuilder { router }
-            .start_command(&["start", "help"])
+            .start_command("start", "help")
             .add_stickers_command::<DB>("addstickers", "done", "undo")
             .my_stickers_command::<DB>("mystickers")
             .stats_command::<DB>("stats")
@@ -115,13 +116,16 @@ impl PrivateRouterBuilder {
     }
 
     /// Executes Telegram commands `/start` and `/help`
-    fn start_command(mut self, start_comands: &'static [&str]) -> Self {
+    fn start_command(mut self, start: &'static str, help: &'static str) -> Self {
         self.router = self.router.on_message(|observer| {
-            observer.register(
+            observer.registers([
                 Handler::new(start_handler::<MemoryStorage>)
                     .filter(ChatType::one(Private))
-                    .filter(Command::many(start_comands.iter().map(ToOwned::to_owned))),
-            )
+                    .filter(Command::one(start)),
+                Handler::new(help_handler::<MemoryStorage>)
+                    .filter(ChatType::one(Private))
+                    .filter(Command::one(help)),
+            ])
         });
         self
     }

@@ -83,9 +83,16 @@ pub fn stolen_set_message(
 
 pub fn start_message(username: &str) -> String {
     format!(
-        "
-    Hello, {username}! This is bot to steal stickers!\n\
-    List of commands you can use:\n\n\
+        "Hi, {username}! I can steal any set of stickers for you! \
+        To do it, just send me a sticker OR a link to a set of stickers and I'll make it yours! \
+        You can see all your stolen stickers using /mystickers. \
+        Also, after you have stolen a set of stickers, you may need to add new stickers to it, and to do this, use /addstickers. \
+        Use /help to see the full list of commands.",
+    )
+}
+
+pub fn help_message() -> &'static str {
+    "List of commands:\n\n\
     /stealpack - Steal sticker pack\n\
     /addstickers - Add stickers to a sticker pack stolen by me\n\
     /mystickers - List of your stolen stickers\n\
@@ -93,10 +100,8 @@ pub fn start_message(username: &str) -> String {
     /help - Show this message\n\
     /getowner - Get the owner ID of the sticker pack\n\
     /cancel - Cancel last command\n\
-    /source or /src - Show source code of the bot",
-    )
+    /source or /src - Show source code of the bot"
 }
-
 pub fn current_page_message(
     current_page: usize,
     pages_number: u32,
