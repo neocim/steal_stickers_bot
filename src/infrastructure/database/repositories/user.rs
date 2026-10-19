@@ -34,7 +34,7 @@ impl UserRepo for UserRepoImpl<&mut PgConnection> {
             .values_panic([user.tg_id().into()])
             .build_sqlx(PostgresQueryBuilder);
 
-        debug!("Postgres query: {sql_query};\nValues for query: {values:?}");
+        debug!("User created");
 
         sqlx::query_with(&sql_query, values)
             .execute(&mut *self.conn)

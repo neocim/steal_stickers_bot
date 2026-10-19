@@ -69,10 +69,6 @@ where
                     if matches!(err,  SessionErrorKind::Telegram(TelegramErrorKind::BadRequest { ref message })
                         if message.as_ref() == "Bad Request: STICKERSET_INVALID")
                     {
-                        debug!(
-                            "Trying to set `deleted` column to `true` for sticker set `{}`..",
-                            set.short_name.as_str()
-                        );
                         set_deleted_col(
                             &mut uow,
                             SetDeletedColByShortName::new(set.short_name.as_str(), true),

@@ -1,8 +1,8 @@
 services:
   bot:
     container_name: steal_stickers.bot
-    image: nnenty/steal_stickers_bot
-    restart: "unless-stopped"
+    image: nnenty/steal_stickers_bot:latest
+    restart: on-failure:3
     build:
       context: .
     networks:
@@ -11,7 +11,7 @@ services:
       options:
         max-size: "100m"
     volumes:
-      - "./configs:/app/configs:rw"
+      - "./configs:/app/configs:rw,z"
     command: start
     depends_on:
       - postgres

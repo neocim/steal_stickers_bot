@@ -47,7 +47,7 @@ async fn main() {
     .await;
     info!("Successfully logged in!");
 
-    info!("Connecting to the database with url..");
+    info!("Connecting to the database..");
     let pool = match sqlx::PgPool::connect(&pg_url).await {
         Ok(pool) => pool,
         Err(err) => {

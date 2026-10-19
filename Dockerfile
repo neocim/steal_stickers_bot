@@ -4,22 +4,27 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
 
-FROM rust:1.98.1-slim AS build
+FROM rust:1.98.1-slim-bookworm AS build
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libssl-dev \
     && apt-get install -y --no-install-recommends pkg-config \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
+
 WORKDIR /usr/src/app
-RUN USER=root cargo init
-COPY ./Cargo.toml .
-RUN cargo build --release
+COPY ./Cargo.toml ./
+RUN mkdir src && echo "fn main() {}" > src/main.rs \
+    && cargo build --release \
+    && rm -rf src target/release/deps/steal_stickers_bot*
 COPY ./src ./src
-RUN touch src/main.rs && cargo build --release
+RUN cargo build --release
 
 FROM base AS final
 WORKDIR /app
+
+RUN useradd -m -u 1000 appuser
 COPY --from=build /usr/src/app/target/release/steal_stickers_bot .
-VOLUME /configs
+
+USER appuser
 ENV RUST_BACKTRACE=full
 ENTRYPOINT ["/app/steal_stickers_bot"]
