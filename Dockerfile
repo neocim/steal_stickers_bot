@@ -1,10 +1,10 @@
-FROM debian:bullseye-slim AS base
+FROM debian:bookworm-slim AS base
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
 
-FROM rust:1.88.0-slim-bullseye AS build
+FROM rust:1.98.1-slim AS build
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libssl-dev \
     && apt-get install -y --no-install-recommends pkg-config \
