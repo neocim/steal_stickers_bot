@@ -35,6 +35,6 @@ log_level = "debug"
 username = "admin"
 password = "admin"
 # dont change if you're use docker compose
-host = "steal_stickers.postgres"
+host = "postgres"
 port = "5432"
 db = "db"
