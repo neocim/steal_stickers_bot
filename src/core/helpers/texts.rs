@@ -4,7 +4,10 @@ use telers::utils::text::{html_blockquote, html_bold, html_code, html_quote, htm
 
 use super::{common::get_page_begin_and_end, constants::TELEGRAM_STICKER_SET_URL};
 use crate::{
-    core::helpers::stats::{GlobalStats, GreaterThan, PersonalStats},
+    core::helpers::{
+        constants::MAX_STICKER_SET_LENGTH,
+        stats::{GlobalStats, GreaterThan, PersonalStats},
+    },
     domain::entities::set::Set,
 };
 
@@ -134,12 +137,12 @@ pub fn sticker_without_emoji() -> &'static str {
     "This sticker has no emoji, so it can't be added. Try sending another one."
 }
 
-pub fn sticker_limit_reached(max_len: usize) -> String {
+pub fn sticker_limit_reached() -> String {
     format!(
         "You've reached the limit of {max_len} stickers. \
         Use /done to add the selected ones, or /undo to remove the latest. \
         Any further stickers will be ignored.",
-        max_len = html_code(max_len.to_string()),
+        max_len = html_code(MAX_STICKER_SET_LENGTH.to_string()),
     )
 }
 

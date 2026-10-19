@@ -330,11 +330,8 @@ where
 
             if sticker_set_length + stickers_vec_len >= MAX_STICKER_SET_LENGTH {
                 bot.send(
-                    SendMessage::new(
-                        message.chat.id(),
-                        sticker_limit_reached(MAX_STICKER_SET_LENGTH),
-                    )
-                    .parse_mode(ParseMode::HTML),
+                    SendMessage::new(message.chat.id(), sticker_limit_reached())
+                        .parse_mode(ParseMode::HTML),
                 )
                 .await?;
 
