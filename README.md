@@ -41,11 +41,6 @@ just auth
 just compose-run
 ```
 
-4. After the previous step, bot will start working, but database will be without migrations. To solve it, run the command below (it uses information from [.env](./.env.example) file):
-```
-just migrate
-```
-
 <strong>If you encounter errors that are directly related to my code (docker errors, bot bugs, etc.), please [open an Issue](https://github.com/neocim/steal_stickers_bot/issues/new). Thanks :)</strong>
 
 <h2>License</h2>
