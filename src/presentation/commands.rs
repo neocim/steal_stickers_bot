@@ -349,17 +349,14 @@ impl PrivateRouterBuilder {
 }
 
 pub async fn set_commands(bot: Bot) -> Result<(), HandlerError> {
-    let help_cmd = BotCommand::new("help", "Show help message");
-    let src_cmd = BotCommand::new("src", "Show the source code of the bot");
-    let steal_pack_cmd = BotCommand::new("stealpack", "Steal sticker pack");
-    let add_stickers_cmd = BotCommand::new(
-        "addstickers",
-        "Add stickers to a sticker pack stolen by this bot",
-    );
-    let my_stickers_cmd = BotCommand::new("mystickers", "List of your stolen stickers");
-    let stats_cmd = BotCommand::new("stats", "See the bot statistics");
-    let cancel_cmd = BotCommand::new("cancel", "Cancel last command");
-    let get_owner_cmd = BotCommand::new("getowner", "Get the ID of the owner of stickers");
+    let help_cmd = BotCommand::new("help", "Show the list of commands");
+    let src_cmd = BotCommand::new("src", "Show the bot's source code");
+    let steal_pack_cmd = BotCommand::new("stealpack", "Steal a sticker pack");
+    let add_stickers_cmd = BotCommand::new("addstickers", "Add stickers to a pack you've stolen");
+    let my_stickers_cmd = BotCommand::new("mystickers", "List your stolen sticker packs");
+    let stats_cmd = BotCommand::new("stats", "Show bot statistics");
+    let cancel_cmd = BotCommand::new("cancel", "Cancel the current command");
+    let get_owner_cmd = BotCommand::new("getowner", "Get the owner ID of a sticker pack");
 
     let private_chats = [
         steal_pack_cmd,
