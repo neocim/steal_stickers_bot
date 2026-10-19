@@ -6,8 +6,6 @@ LICENSE
 .gitignore
 
 /target
-Cargo.lock
-
 Dockerfile
 
 config.toml.example

@@ -2,9 +2,9 @@ services:
   bot:
     container_name: steal_stickers.bot
     image: nnenty/steal_stickers_bot:latest
-    restart: on-failure:3
     build:
       context: .
+    restart: on-failure:3
     networks:
       - steal_stickers.postgres.network
     logging:
@@ -14,7 +14,28 @@ services:
       - "./configs:/app/configs:rw,z"
     command: start
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  migrate:
+    container_name: steal_stickers.migrate
+    image: nnenty/steal_stickers_bot:latest
+    build:
+      context: .
+    command: migrate
+    networks:
+      - steal_stickers.postgres.network
+    volumes:
+      - "./configs:/app/configs:rw,z"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    logging:
+      options:
+        max-size: "50m"
 
   postgres:
     container_name: steal_stickers.postgres
