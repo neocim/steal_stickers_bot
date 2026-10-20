@@ -1,4 +1,7 @@
-use std::{io, sync::Arc};
+use std::{
+    io::{self, Write as _},
+    sync::Arc,
+};
 
 use grammers_client::tl::{
     enums::{self, InputStickerSet},
@@ -38,6 +41,7 @@ pub async fn client_authorize(
         let token = client.request_login_code(phone, api_hash).await?;
 
         print!("Enter the code you received on your Telegram account: ");
+        io::stdout().flush()?;
         let mut code = String::new();
         io::stdin().read_line(&mut code)?;
         let code = code.trim();
