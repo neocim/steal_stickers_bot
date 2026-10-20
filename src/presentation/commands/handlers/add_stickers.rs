@@ -102,7 +102,6 @@ where
     UoWFactory: UoWFactoryTrait,
     S: Storage,
 {
-    // Извлекаем shortname пака либо из стикера, либо из ссылки в тексте
     let sticker_set_name: String = if let Some(sticker) = message.sticker() {
         match sticker.set_name() {
             Some(name) => name.to_string(),
@@ -148,7 +147,6 @@ where
         }
     };
 
-    // Проверяем, что пак существует и доступен
     let result = bot
         .send(GetStickerSet::new(sticker_set_name.as_str()))
         .await;
