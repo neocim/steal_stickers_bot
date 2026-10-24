@@ -1,6 +1,7 @@
 #[derive(Clone)]
 pub enum AddStickerState {
     GetStolenStickerSet,
+    ConfirmAddStickers,
     GetStickersToAdd,
 }
 
@@ -8,6 +9,7 @@ impl AddStickerState {
     const fn as_str(&self) -> &'static str {
         match self {
             AddStickerState::GetStolenStickerSet => "get_stolen_sticker_set",
+            AddStickerState::ConfirmAddStickers => "confirm_add_stickers",
             AddStickerState::GetStickersToAdd => "get_stickers_to_add",
         }
     }

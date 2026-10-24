@@ -493,22 +493,26 @@ pub async fn process_sticker_to_steal<S: Storage>(
         }
     };
 
-    match check_set_name(&bot, set_name).await {
-        Ok(set_name) => set_name,
-        Err(err) => match err.downcast_ref() {
-            Some(InvalidSetLinkError) => {
-                return send_invalid_set_msg(&bot, chat_id, message_id).await;
-            }
-            None => {
-                send_detailed_error_msg(&bot, &err.to_string(), chat_id, message_id).await?;
-                return Ok(EventReturn::Finish);
-            }
-        },
-    };
+    if let Err(error) = check_set_name(&bot, set_name).await {
+        handle_error(error, bot, chat_id, message_id).await?;
+        return Ok(EventReturn::Finish);
+    }
 
     fsm.set_value("steal_sticker_set_name", set_name.to_string())
         .await
         .map_err(Into::into)?;
 
     Ok(EventReturn::Finish)
+}
+
+async fn handle_error(
+    error: telers::errors::handler::Error,
+    bot: &Bot,
+    chat_id: i64,
+    message_id: i64,
+) -> HandlerResult {
+    match error.downcast_ref() {
+        Some(InvalidSetLinkError) => send_invalid_set_msg(&bot, chat_id, message_id).await,
+        None => send_detailed_error_msg(&bot, &error.to_string(), chat_id, message_id).await,
+    }
 }
