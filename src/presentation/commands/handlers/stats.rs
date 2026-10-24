@@ -128,6 +128,21 @@ where
         .await
         .map_err(HandlerError::new)?;
 
+    let all_counts: Vec<i64> = uow
+        .set_repo()
+        .await
+        .map_err(HandlerError::new)?
+        .get_set_counts_for_all_users(GetAll::new(None))
+        .await
+        .map_err(HandlerError::new)?;
+
+    let less = &all_counts
+        .iter()
+        .filter(|c| **c < total_user_sets_count)
+        .count();
+
+    let better_than = less / all_counts.iter().count() * 100;
+
     let buttons = [[
         InlineKeyboardButton::new("Global Statistics »").callback_data(
             StatsState {
@@ -142,7 +157,11 @@ where
 
     Ok((
         inline_keyboard_markup,
-        PersonalStats::new(total_user_sets_count, not_deleted_user_sets_count),
+        PersonalStats::new(
+            total_user_sets_count,
+            not_deleted_user_sets_count,
+            better_than,
+        ),
     ))
 }
 

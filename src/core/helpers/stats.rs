@@ -15,13 +15,19 @@ impl GlobalStats {
 pub struct PersonalStats {
     pub total_user_sets_count: i64,
     pub not_deleted_user_sets_count: i64,
+    pub better_than: usize,
 }
 
 impl PersonalStats {
-    pub const fn new(total_user_sets_count: i64, not_deleted_user_sets_count: i64) -> Self {
+    pub const fn new(
+        total_user_sets_count: i64,
+        not_deleted_user_sets_count: i64,
+        better_than: usize,
+    ) -> Self {
         Self {
             total_user_sets_count,
             not_deleted_user_sets_count,
+            better_than,
         }
     }
 }

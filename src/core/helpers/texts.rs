@@ -272,34 +272,34 @@ pub fn current_page_message(
 }
 
 pub fn personal_stats_message(personal_stats: PersonalStats) -> String {
-    let deleted_count =
-        personal_stats.total_user_sets_count - personal_stats.not_deleted_user_sets_count;
-    let total_count_text = if deleted_count == 0 {
-        ""
-    } else {
-        &format!(
-            "Total number of stolen sticker packs (including {deleted_count} deleted ones): {total_count}",
-            total_count = html_code(personal_stats.total_user_sets_count)
+    if personal_stats.total_user_sets_count == personal_stats.not_deleted_user_sets_count {
+        format!(
+            "{personal_statistics_text}\n\n\
+            Stolen packs: {total_count}\n\
+            You're ahead of {percent}% of users.",
+            personal_statistics_text = html_bold("Personal statistics"),
+            total_count = html_code(personal_stats.total_user_sets_count),
+            percent = personal_stats.better_than
         )
-    };
-
-    format!(
-        "
-    {personal_statistics_text}\n\n\
-    The current number of stolen stickers: {not_deleted_count}\n\
-    {total_count_text}
-        ",
-        personal_statistics_text = html_bold("Personal statistics"),
-        not_deleted_count = html_code(personal_stats.not_deleted_user_sets_count),
-    )
+    } else {
+        format!(
+            "{personal_statistics_text}\n\n\
+            Stolen packs: {total_count}\n\
+            Active: {active_count}\n\n\
+            You're ahead of {percent}% of users.",
+            personal_statistics_text = html_bold("Personal statistics"),
+            total_count = html_code(personal_stats.total_user_sets_count),
+            active_count = html_code(personal_stats.not_deleted_user_sets_count),
+            percent = personal_stats.better_than
+        )
+    }
 }
 
 pub fn global_stats_message(global_stats: GlobalStats) -> String {
     format!(
-        "
-    {global_statistics_text}\n\n\
-    Total sticker packs stolen: {total_stolen}\n\
-    Total users: {total_users}\n
+        "{global_statistics_text}\n\n\
+        Total sticker packs stolen: {total_stolen}\n\
+        Total users: {total_users}\n
         ",
         global_statistics_text = html_bold("Global statistics"),
         total_stolen = html_code(global_stats.total_stolen),
