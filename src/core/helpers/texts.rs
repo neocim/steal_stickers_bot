@@ -214,6 +214,7 @@ pub fn stolen_set_message(
         sticker_set_name = html_code(sticker_set_name)
     )
 }
+
 pub fn start_message(username: &str) -> String {
     format!(
         "Hi, {username}! I can steal any sticker pack for you. \
@@ -315,6 +316,18 @@ pub fn global_stats_message(global_stats: GlobalStats) -> String {
         fourth = GreaterThan::FourthLevel.to_string(),
         fourth_count = html_code(global_stats.fourth_count.to_string())
     )
+}
+
+pub fn pack_owned_by_user_and_bot() -> &'static str {
+    "This sticker pack belongs to you and was created by this bot. Do you want to add stickers to it?"
+}
+
+pub fn pack_owned_by_user_not_bot() -> &'static str {
+    "It seems this is your pack, but it wasn't stolen by this bot. Do you want to steal it?"
+}
+
+pub fn add_stickers_cancelled() -> &'static str {
+    "Okay, do whatever you want with it."
 }
 
 #[test]
