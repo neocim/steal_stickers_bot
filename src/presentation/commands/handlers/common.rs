@@ -1,6 +1,7 @@
 use grammers_client::{Client, InvocationError};
 use telers::{
     Bot, Extension,
+    enums::ParseMode,
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
     methods::{GetMe, SendMessage},
@@ -12,7 +13,7 @@ use crate::{
     core::helpers::{
         common::set_created_by,
         constants::TELEGRAM_STICKER_SET_URL,
-        texts::{pack_owned_by_user_and_bot, pack_owned_by_user_not_bot},
+        texts::{do_you_want_to_steal, pack_owned_by_user_and_bot, pack_owned_by_user_not_bot},
     },
     presentation::{
         commands::{
@@ -35,9 +36,10 @@ pub async fn process_sticker_or_link<S: Storage>(
             None => return Ok(EventReturn::Skip),
         }
     } else {
-        let Some(text) = message.text() else {
-            return Ok(EventReturn::Skip);
-        };
+        let text = message
+            .text()
+            .expect("Message is not text. Check the filters");
+
         if !text.contains(TELEGRAM_STICKER_SET_URL) {
             return Ok(EventReturn::Skip);
         }
@@ -76,8 +78,10 @@ pub async fn process_sticker_or_link<S: Storage>(
             return Ok(EventReturn::Skip);
         }
     };
-
     let owned_by_user = pack_user_id == Some(user_id);
+
+    let chat_id = message.chat().id();
+    let message_id = message.message_id();
 
     if created_by_bot && owned_by_user {
         fsm.set_value("pending_pack_name", &set_name)
@@ -85,12 +89,12 @@ pub async fn process_sticker_or_link<S: Storage>(
             .map_err(Into::into)?;
 
         bot.send(
-            SendMessage::new(message.chat().id(), pack_owned_by_user_and_bot())
+            SendMessage::new(chat_id, pack_owned_by_user_and_bot())
                 .reply_markup(yes_no_keyboard_markup())
                 .reply_parameters(
                     ReplyParameters::new()
-                        .chat_id(message.chat().id())
-                        .message_id(message.message_id()),
+                        .chat_id(chat_id)
+                        .message_id(message_id),
                 ),
         )
         .await?;
@@ -98,18 +102,25 @@ pub async fn process_sticker_or_link<S: Storage>(
         fsm.set_state(AddStickerState::ConfirmAddStickers)
             .await
             .map_err(Into::into)?;
-    } else if owned_by_user && !created_by_bot {
+    } else {
         fsm.set_value("steal_sticker_set_name", &set_name)
             .await
             .map_err(Into::into)?;
 
+        let message = if !created_by_bot && owned_by_user {
+            pack_owned_by_user_not_bot()
+        } else {
+            &do_you_want_to_steal(&set_name)
+        };
+
         bot.send(
-            SendMessage::new(message.chat().id(), pack_owned_by_user_not_bot())
+            SendMessage::new(chat_id, message)
+                .parse_mode(ParseMode::HTML)
                 .reply_markup(yes_no_keyboard_markup())
                 .reply_parameters(
                     ReplyParameters::new()
-                        .chat_id(message.chat().id())
-                        .message_id(message.message_id()),
+                        .chat_id(chat_id)
+                        .message_id(message_id),
                 ),
         )
         .await?;
@@ -117,8 +128,6 @@ pub async fn process_sticker_or_link<S: Storage>(
         fsm.set_state(StealStickerSetState::DoYouWantToSteal)
             .await
             .map_err(Into::into)?;
-    } else {
-        return Ok(EventReturn::Skip);
     }
 
     Ok(EventReturn::Finish)
