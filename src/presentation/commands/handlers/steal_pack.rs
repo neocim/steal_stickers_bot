@@ -5,7 +5,7 @@ use telers::{
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
     methods::{CreateNewStickerSet, DeleteMessage, GetMe, GetStickerSet, SendMessage},
-    types::{FileId, InputFile, InputSticker, Message, MessageText, ReplyParameters, Sticker},
+    types::{FileId, InputFile, InputSticker, Message, MessageText, ReplyParameters},
 };
 use tracing::error;
 
@@ -18,10 +18,11 @@ use crate::{
         common::{generate_sticker_set_name_and_link, sticker_format},
         constants::{
             CREATE_SET_IN_ONE_GO_LENGTH_LIMIT, MAX_SET_TITLE_LENGTH, MIN_SET_TITLE_LENGTH,
+            TELEGRAM_STICKER_SET_URL,
         },
         texts::{
-            ask_for_sticker_or_link, now_enter_set_name, set_title_too_long, set_title_too_short,
-            stealing_pack_started, sticker_without_pack, stolen_set_message,
+            ask_for_sticker_or_link, link_or_sticker, now_enter_set_name, set_title_too_long,
+            set_title_too_short, stealing_pack_started, sticker_without_pack, stolen_set_message,
             you_can_steal_at_any_time,
         },
     },
@@ -59,28 +60,55 @@ pub async fn get_sticker_set_name<S: Storage>(
     message: Message,
     fsm: Context<S>,
 ) -> HandlerResult {
-    if let Some(sticker) = message.sticker() {
-        process_sticker_to_steal(
-            &bot,
-            message.chat().id(),
-            message.message_id(),
-            &fsm,
-            sticker,
-        )
-        .await?;
+    let chat_id = message.chat().id();
+    let message_id = message.message_id();
+
+    let set_name = if let Some(sticker) = message.sticker() {
+        let set_name = match sticker.set_name() {
+            Some(set_name) => set_name,
+            None => {
+                bot.send(SendMessage::new(chat_id, sticker_without_pack()))
+                    .await?;
+
+                return Ok(EventReturn::Finish);
+            }
+        };
+
+        if let Err(error) = check_set_name(&bot, set_name).await {
+            handle_error(error, &bot, chat_id, message_id).await?;
+            return Ok(EventReturn::Finish);
+        }
+        set_name.to_owned()
     } else {
-        process_link_to_steal(
-            &bot,
-            message.chat().id(),
-            message.message_id(),
-            &fsm,
-            // filter for texts and stickers during registrations
-            message
-                .text()
-                .expect("Message is not text. Check the filters"),
-        )
-        .await?;
-    }
+        let text = message
+            .text()
+            .expect("Message is not text. Check the filters");
+
+        if !text.contains(TELEGRAM_STICKER_SET_URL) {
+            bot.send(
+                SendMessage::new(chat_id, link_or_sticker()).reply_parameters(
+                    ReplyParameters::new()
+                        .chat_id(chat_id)
+                        .message_id(message_id),
+                ),
+            )
+            .await?;
+
+            return Ok(EventReturn::Finish);
+        }
+
+        match parse_sticker_set_link(&bot, text).await {
+            Ok(set_name) => set_name,
+            Err(error) => {
+                handle_error(error, &bot, chat_id, message_id).await?;
+                return Ok(EventReturn::Finish);
+            }
+        }
+    };
+
+    fsm.set_value("steal_sticker_set_name", set_name.to_string())
+        .await
+        .map_err(Into::into)?;
 
     fsm.set_state(StealStickerSetState::CreateNewStickerSet)
         .await
@@ -305,61 +333,6 @@ pub async fn process_steal_pack_confirmation<S: Storage>(
     fsm.finish().await.map_err(Into::into)?;
 
     return Ok(EventReturn::Finish);
-}
-
-pub async fn process_link_to_steal<S: Storage>(
-    bot: &Bot,
-    chat_id: i64,
-    message_id: i64,
-    fsm: &Context<S>,
-    text: &str,
-) -> HandlerResult {
-    if let Err(error) = parse_sticker_set_link(&bot, text).await {
-        handle_error(error, bot, chat_id, message_id).await?;
-        return Ok(EventReturn::Finish);
-    }
-
-    let set_name = match parse_sticker_set_link(&bot, text).await {
-        Ok(set_name) => set_name,
-        Err(error) => {
-            return handle_error(error, bot, chat_id, message_id).await;
-        }
-    };
-
-    fsm.set_value("steal_sticker_set_name", set_name)
-        .await
-        .map_err(Into::into)?;
-
-    Ok(EventReturn::Finish)
-}
-
-pub async fn process_sticker_to_steal<S: Storage>(
-    bot: &Bot,
-    chat_id: i64,
-    message_id: i64,
-    fsm: &Context<S>,
-    sticker: &Sticker,
-) -> HandlerResult {
-    let set_name = match sticker.set_name() {
-        Some(set_name) => set_name,
-        None => {
-            bot.send(SendMessage::new(chat_id, sticker_without_pack()))
-                .await?;
-
-            return Ok(EventReturn::Finish);
-        }
-    };
-
-    if let Err(error) = check_set_name(&bot, set_name).await {
-        handle_error(error, bot, chat_id, message_id).await?;
-        return Ok(EventReturn::Finish);
-    }
-
-    fsm.set_value("steal_sticker_set_name", set_name.to_string())
-        .await
-        .map_err(Into::into)?;
-
-    Ok(EventReturn::Finish)
 }
 
 async fn handle_error(
