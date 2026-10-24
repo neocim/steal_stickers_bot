@@ -95,6 +95,7 @@ impl PrivateRouterBuilder {
             .source_command(&["src", "source"])
             .cancel_command("cancel")
             .steal_sticker_set_command::<DB>("stealpack")
+            .sticker_pack_entrypoint()
             .process_non_commands()
             .process_non_text_and_stickers()
             .process_non_text()
@@ -127,13 +128,8 @@ impl PrivateRouterBuilder {
         self
     }
 
-    /// Executes Telegram command `/stealpack`
-    fn steal_sticker_set_command<DB>(mut self, command: &'static str) -> Self
-    where
-        DB: Database,
-        for<'a> UserRepoImpl<&'a mut DB::Connection>: UserRepo,
-        for<'a> SetRepoImpl<&'a mut DB::Connection>: SetRepo,
-    {
+    ///
+    fn sticker_pack_entrypoint(mut self) -> Self {
         self.router = self.router.on_message(|observer| {
             observer.registers([
                 Handler::new(process_sticker_or_link::<MemoryStorage>)
@@ -146,6 +142,20 @@ impl PrivateRouterBuilder {
                 Handler::new(process_add_stickers_confirmation::<MemoryStorage>)
                     .filter(StateFilter::one(AddStickerState::ConfirmAddStickers))
                     .filter(MessageType::one(MessageTypeEnum::Text)),
+            ])
+        });
+        self
+    }
+
+    /// Executes Telegram command stealpack
+    fn steal_sticker_set_command<DB>(mut self, command: &'static str) -> Self
+    where
+        DB: Database,
+        for<'a> UserRepoImpl<&'a mut DB::Connection>: UserRepo,
+        for<'a> SetRepoImpl<&'a mut DB::Connection>: SetRepo,
+    {
+        self.router = self.router.on_message(|observer| {
+            observer.registers([
                 Handler::new(process_steal_pack_confirmation::<MemoryStorage>)
                     .filter(StateFilter::one(StealStickerSetState::DoYouWantToSteal))
                     .filter(MessageType::one(MessageTypeEnum::Text)),

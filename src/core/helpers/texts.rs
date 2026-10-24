@@ -318,12 +318,24 @@ pub fn global_stats_message(global_stats: GlobalStats) -> String {
     )
 }
 
-pub fn pack_owned_by_user_and_bot() -> &'static str {
-    "This sticker pack belongs to you and was created by this bot. Do you want to add stickers to it?"
+pub fn pack_owned_by_user_and_bot(set_name: &str) -> String {
+    format!(
+        "This {set} belongs to you and was created by this bot. Do you want to add stickers to it?",
+        set = html_text_link(
+            html_quote("sticker pack"),
+            format!("{TELEGRAM_STICKER_SET_URL}{set_name}")
+        )
+    )
 }
 
-pub fn pack_owned_by_user_not_bot() -> &'static str {
-    "It seems this is your pack, but it wasn't stolen by this bot. Do you want to steal it?"
+pub fn pack_owned_by_user_not_bot(set_name: &str) -> String {
+    format!(
+        "It seems this is your {set}, but it wasn't stolen by this bot. Do you want to steal it?",
+        set = html_text_link(
+            html_quote("sticker pack"),
+            format!("{TELEGRAM_STICKER_SET_URL}{set_name}")
+        )
+    )
 }
 
 pub fn add_stickers_cancelled() -> &'static str {

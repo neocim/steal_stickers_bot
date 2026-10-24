@@ -89,7 +89,7 @@ pub async fn process_sticker_or_link<S: Storage>(
             .map_err(Into::into)?;
 
         bot.send(
-            SendMessage::new(chat_id, pack_owned_by_user_and_bot())
+            SendMessage::new(chat_id, pack_owned_by_user_and_bot(&set_name))
                 .reply_markup(yes_no_keyboard_markup())
                 .reply_parameters(
                     ReplyParameters::new()
@@ -108,9 +108,9 @@ pub async fn process_sticker_or_link<S: Storage>(
             .map_err(Into::into)?;
 
         let message = if !created_by_bot && owned_by_user {
-            pack_owned_by_user_not_bot()
+            pack_owned_by_user_not_bot(&set_name)
         } else {
-            &do_you_want_to_steal(&set_name)
+            do_you_want_to_steal(&set_name)
         };
 
         bot.send(
