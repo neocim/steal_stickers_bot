@@ -20,7 +20,7 @@ use crate::infrastructure::database::{
     uow::UoWFactory,
 };
 
-pub async fn deleted_sets_upd<DB>(pool: Pool<DB>, bot: Bot) -> HandlerResult
+pub async fn update_sets<DB>(pool: Pool<DB>, bot: Bot) -> HandlerResult
 where
     DB: Database,
     for<'a> UserRepoImpl<&'a mut DB::Connection>: UserRepo,

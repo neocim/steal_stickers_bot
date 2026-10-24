@@ -5,7 +5,7 @@ use tracing::debug;
 
 use crate::{
     infrastructure::database::uow::UoWFactory,
-    presentation::commands::{PrivateRouterBuilder, deleted_sets_upd, set_commands},
+    presentation::commands::{PrivateRouterBuilder, set_commands, update_sets},
 };
 
 pub async fn start_bot(bot: Bot, pool: Pool<Postgres>, client: Client) {
@@ -32,7 +32,7 @@ fn init_router(bot: Bot, pool: Pool<Postgres>) -> Router {
         .on_startup(|observer| {
             observer
                 .register(simple::Handler::new(set_commands, (bot.clone(),)))
-                .register(simple::Handler::new(deleted_sets_upd, (pool, bot.clone())))
+                .register(simple::Handler::new(update_sets, (pool, bot.clone())))
         });
 
     main_router
