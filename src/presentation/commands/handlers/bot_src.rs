@@ -19,7 +19,7 @@ pub async fn source_handler<S: Storage>(
         SendMessage::new(
             message.chat.id(),
             format!(
-                "Source code of the bot {here}! You can also star it :)",
+                "Source code of the bot {here}.",
                 here = html_text_link("here", "github.com/neocim/steal_stickers_bot")
             ),
         )
