@@ -6,7 +6,6 @@ use telers::{
     event::telegram::Handler,
     filters::{
         CallbackData as CallbackDataFilter, ChatType, Command, MessageType, State as StateFilter,
-        Text,
     },
     fsm::{MemoryStorage, Strategy},
     methods::SetMyCommands,
@@ -20,7 +19,6 @@ mod states;
 
 use crate::{
     application::{set::repository::SetRepo, user::repository::UserRepo},
-    core::helpers::constants::TELEGRAM_STICKER_SET_URL,
     infrastructure::database::{
         repositories::{set::SetRepoImpl, user::UserRepoImpl},
         uow::UoWFactory,
@@ -28,15 +26,15 @@ use crate::{
     presentation::{
         commands::{
             handlers::{
-                add_stickers::undo_last_sticker,
+                add_stickers::{process_add_stickers_confirmation, undo_last_sticker},
+                common::process_sticker_or_link,
                 get_owner::{get_owner_handler, get_owner_id},
                 process_non::process_non_text_or_stickers_handler,
                 start::help_handler,
-                steal_pack::{
-                    process_set_sticker, process_sticker_set_link, process_user_agreement,
-                },
+                steal_pack::process_steal_pack_confirmation,
             },
             states::{
+                add_stickers::AddStickerState,
                 callback_data::{MyStickersPage, StatsState},
                 get_owner::GetOwnerState,
             },
@@ -59,7 +57,7 @@ use handlers::{
     stats::{process_buttons as process_stats_buttons, stats_handler},
     steal_pack::{create_new_sticker_set, get_sticker_set_name, steal_sticker_set_handler},
 };
-use states::{add_stickers::AddStickerState, steal_sticker_set::StealStickerSetState};
+use states::steal_sticker_set::StealStickerSetState;
 
 pub struct PrivateRouterBuilder {
     router: Router,
@@ -138,16 +136,17 @@ impl PrivateRouterBuilder {
     {
         self.router = self.router.on_message(|observer| {
             observer.registers([
-                Handler::new(process_sticker_set_link::<MemoryStorage>)
+                Handler::new(process_sticker_or_link::<MemoryStorage>)
                     .filter(StateFilter::none())
-                    .filter(MessageType::one(MessageTypeEnum::Text))
-                    .filter(Text::contains([TELEGRAM_STICKER_SET_URL]))
+                    .filter(MessageType::many([
+                        MessageTypeEnum::Text,
+                        MessageTypeEnum::Sticker,
+                    ]))
                     .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
-                Handler::new(process_set_sticker::<MemoryStorage>)
-                    .filter(StateFilter::none())
-                    .filter(MessageType::one(MessageTypeEnum::Sticker))
-                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
-                Handler::new(process_user_agreement::<MemoryStorage>)
+                Handler::new(process_add_stickers_confirmation::<MemoryStorage>)
+                    .filter(StateFilter::one(AddStickerState::ConfirmAddStickers))
+                    .filter(MessageType::one(MessageTypeEnum::Text)),
+                Handler::new(process_steal_pack_confirmation::<MemoryStorage>)
                     .filter(StateFilter::one(StealStickerSetState::DoYouWantToSteal))
                     .filter(MessageType::one(MessageTypeEnum::Text)),
                 Handler::new(steal_sticker_set_handler::<MemoryStorage>)

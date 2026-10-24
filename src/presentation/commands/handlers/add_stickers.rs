@@ -24,12 +24,13 @@ use crate::{
         common::set_created_by,
         constants::{MAX_STICKER_SET_LENGTH, TELEGRAM_STICKER_SET_URL},
         texts::{
-            added_stickers_message, adding_stickers, all_stickers_removed_done,
-            all_stickers_removed_undo, ask_for_stickers_to_add, ask_stolen_sticker_or_link,
-            link_or_sticker, no_stickers_sent_done, not_pack_owner, nothing_to_remove,
-            pack_current_length, pack_deleted, pack_full, pack_not_stolen_by_bot,
-            sticker_limit_reached, sticker_processed, sticker_removed_from_list,
-            sticker_without_emoji, sticker_without_pack, user_doesnt_has_stickers_yet,
+            add_stickers_cancelled, added_stickers_message, adding_stickers,
+            all_stickers_removed_done, all_stickers_removed_undo, ask_for_stickers_to_add,
+            ask_stolen_sticker_or_link, link_or_sticker, no_stickers_sent_done, not_pack_owner,
+            nothing_to_remove, pack_current_length, pack_deleted, pack_full,
+            pack_not_stolen_by_bot, sticker_limit_reached, sticker_processed,
+            sticker_removed_from_list, sticker_without_emoji, sticker_without_pack,
+            user_doesnt_has_stickers_yet,
         },
     },
     presentation::{
@@ -92,6 +93,7 @@ where
 
     Ok(EventReturn::Finish)
 }
+
 pub async fn get_stolen_sticker_set<S, UoWFactory>(
     bot: Bot,
     message: Message,
@@ -491,6 +493,60 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
         .parse_mode(ParseMode::HTML),
     )
     .await?;
+
+    Ok(EventReturn::Finish)
+}
+
+pub async fn process_add_stickers_confirmation<S: Storage>(
+    bot: Bot,
+    message: MessageText,
+    fsm: Context<S>,
+) -> HandlerResult {
+    let text = &*message.text;
+
+    if text == "Yes" {
+        let pack_name: String = fsm
+            .get_value("pending_pack_name")
+            .await
+            .map_err(Into::into)?
+            .expect("pending_pack_name should be set before confirmation");
+
+        let set = bot.send(GetStickerSet::new(pack_name.as_str())).await?;
+        let set_length = set.stickers.len();
+
+        if set_length >= MAX_STICKER_SET_LENGTH {
+            bot.send(SendMessage::new(message.chat.id(), pack_full()))
+                .await?;
+
+            fsm.finish().await.map_err(Into::into)?;
+            return Ok(EventReturn::Finish);
+        }
+
+        fsm.set_value(
+            "get_stolen_sticker_set",
+            (pack_name.into_boxed_str(), set.title, set_length),
+        )
+        .await
+        .map_err(Into::into)?;
+
+        fsm.set_state(AddStickerState::GetStickersToAdd)
+            .await
+            .map_err(Into::into)?;
+
+        bot.send(SendMessage::new(
+            message.chat.id(),
+            ask_for_stickers_to_add(),
+        ))
+        .await?;
+    } else {
+        bot.send(SendMessage::new(
+            message.chat.id(),
+            add_stickers_cancelled(),
+        ))
+        .await?;
+
+        fsm.finish().await.map_err(Into::into)?;
+    }
 
     Ok(EventReturn::Finish)
 }

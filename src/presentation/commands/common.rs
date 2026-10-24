@@ -6,7 +6,9 @@ use telers::{
     errors::{HandlerError, TelegramErrorKind, session::ErrorKind},
     event::{EventReturn, telegram::HandlerResult},
     methods::{AddStickerToSet, GetStickerSet, SendMessage},
-    types::{InputFile, InputSticker, ReplyParameters, Sticker},
+    types::{
+        InputFile, InputSticker, KeyboardButton, ReplyKeyboardMarkup, ReplyParameters, Sticker,
+    },
 };
 
 use crate::core::helpers::{
@@ -183,4 +185,9 @@ async fn add_sticker<'a>(
         }
         Err(err) => Err(AddStickersError::Other(err.to_string().into())),
     }
+}
+
+pub fn yes_no_keyboard_markup() -> ReplyKeyboardMarkup {
+    let buttons = [[KeyboardButton::new("Yes"), KeyboardButton::new("No")]];
+    ReplyKeyboardMarkup::new(buttons).one_time_keyboard(true)
 }

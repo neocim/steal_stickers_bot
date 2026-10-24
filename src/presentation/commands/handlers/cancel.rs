@@ -15,7 +15,7 @@ pub async fn cancel_handler<S: Storage>(
 
     bot.send(SendMessage::new(
         message.chat.id(),
-        "Last command was canceled.",
+        "Last command was cancelled.",
     ))
     .await?;
 
