@@ -241,8 +241,7 @@ where
                 } else {
                     error!(
                         ?err,
-                        ?new_set_name,
-                        "Bad request error occurred while creating new sticker set: "
+                        "Bad request error occurred while creating new sticker set"
                     );
 
                     return send_detailed_error_msg(
@@ -257,8 +256,7 @@ where
             err => {
                 error!(
                     ?err,
-                    ?new_set_name,
-                    "Unexpected error occurred while creating new sticker set:"
+                    "Unexpected error occurred while creating new sticker set"
                 );
 
                 return send_detailed_error_msg(

@@ -168,7 +168,7 @@ where
 
         error!(
             ?error,
-            "Error occurred while getting sticker set name to steal: "
+            "Error occurred while getting sticker set name to steal"
         );
 
         send_default_error_msg(&bot, message.chat().id(), message.message_id()).await?;
@@ -205,11 +205,7 @@ where
             return Ok(EventReturn::Finish);
         }
         Err(err) => {
-            error!(
-                ?err,
-                ?sticker_set_name,
-                "Error occurred while getting sticker set user id: "
-            );
+            error!(?err, "Error occurred while getting sticker set user id");
 
             send_detailed_error_msg(
                 &bot,

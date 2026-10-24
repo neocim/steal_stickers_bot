@@ -78,11 +78,7 @@ where
                             )
                             .await
                             .map_err(|err| {
-                                error!(
-                                    ?err,
-                                    ?set.short_name,
-                                    "Failed to update `title` column for sticker set: ",
-                                );
+                                error!(?err, "Failed to update `title` column for sticker set",);
                             });
                         }
                     }
@@ -100,14 +96,10 @@ where
                             )
                             .await
                             .map_err(|err| {
-                                error!(
-                                    ?err,
-                                    ?set.short_name,
-                                    "Failed to update `deleted` column for sticker set: ",
-                                );
+                                error!(?err, "Failed to update `deleted` column for sticker set",);
                             });
                         } else {
-                            error!(?err, ?set.short_name, "Failed to get sticker set :",);
+                            error!(?err, "Failed to get sticker set");
                         }
                     }
                 }
@@ -116,10 +108,7 @@ where
                 }
             }
             last_upd_time = Utc::now();
-            debug!(
-                "Finish changing the `deleted` columns. Current time: `{:?}`",
-                last_upd_time
-            );
+            debug!("Finish changing the `deleted` columns",);
         }
     });
 

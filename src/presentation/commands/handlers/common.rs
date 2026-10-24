@@ -72,8 +72,7 @@ pub async fn process_sticker_or_link<S: Storage>(
         Err(err) => {
             error!(
                 ?err,
-                ?set_name,
-                "Error occurred while getting sticker set user id in process_sticker_or_link: "
+                "Error occurred while getting sticker set user id in `process_sticker_or_link`"
             );
             return Ok(EventReturn::Skip);
         }

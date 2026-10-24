@@ -64,11 +64,7 @@ pub async fn get_owner_id(
     let owner_id = match get_sticker_set_user_id(&set_name, &client).await {
         Ok(id) => id,
         Err(error) => {
-            error!(
-                ?error,
-                ?set_name,
-                "Error occurred while getting sticker set user id: "
-            );
+            error!(?error, "Error occurred while getting sticker set user id");
 
             send_default_error_msg(&bot, message.chat.id(), message.message_id).await?;
 

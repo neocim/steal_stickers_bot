@@ -50,11 +50,7 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
             ])
             .build_sqlx(PostgresQueryBuilder);
 
-        debug!(
-            tg_id = set.tg_id(),
-            short_name_len = set.short_name().len(),
-            "Postgres `create` query"
-        );
+        debug!(tg_id = set.tg_id(), "Postgres `create` query");
 
         sqlx::query_with(&sql_query, values)
             .execute(&mut *self.conn)
@@ -85,10 +81,7 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
             .and_where(Expr::col(Alias::new("short_name")).eq(set.short_name()))
             .build_sqlx(PostgresQueryBuilder);
 
-        debug!(
-            short_name_len = set.short_name().len(),
-            "Postgres `delete_by_short_name` query"
-        );
+        debug!("Postgres `delete_by_short_name` query");
 
         let result = sqlx::query_with(&sql_query, values)
             .execute(&mut *self.conn)
@@ -170,10 +163,7 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
             .and_where(Expr::col(Alias::new("short_name")).eq(set.short_name()))
             .build_sqlx(PostgresQueryBuilder);
 
-        debug!(
-            short_name_len = set.short_name().len(),
-            "Postgres `get_one_by_short_name` query"
-        );
+        debug!("Postgres `get_one_by_short_name` query");
 
         sqlx::query_as_with(&sql_query, values)
             .fetch_one(&mut *self.conn)
