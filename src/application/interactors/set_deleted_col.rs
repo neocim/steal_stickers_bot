@@ -17,7 +17,7 @@ where
         .set_repo()
         .await
         .map_err(TransactionKind::begin_err)?
-        .set_deleted_col_by_short_name(set)
+        .update_by_short_name(set)
         .await;
 
     match result {

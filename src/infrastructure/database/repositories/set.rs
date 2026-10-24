@@ -8,10 +8,13 @@ use crate::{
         common::exceptions::{RepoError, RepoKind},
         set::{
             dto::{
-                count_by_tg_id::CountByTgID, create::Create,
-                delete_by_short_name::DeleteByShortName, get_all::GetAll,
-                get_by_short_name::GetByShortName, get_by_tg_id::GetByTgID,
-                update_by_short_name::SetDeletedColByShortName,
+                count_by_tg_id::CountByTgID,
+                create::Create,
+                delete_by_short_name::DeleteByShortName,
+                get_all::GetAll,
+                get_by_short_name::GetByShortName,
+                get_by_tg_id::GetByTgID,
+                update_by_short_name::{SetDeletedColByShortName, UpdateSetByShortName},
             },
             exceptions::{SetShortNameAlreadyExist, SetShortNameNotExist, SetTgIdNotExist},
             repository::SetRepo,
@@ -182,18 +185,30 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
             })
     }
 
-    async fn set_deleted_col_by_short_name<'a>(
+    async fn update_by_short_name<'a>(
         &'a mut self,
-        set: SetDeletedColByShortName<'a>,
+        set: UpdateSetByShortName<'a>,
     ) -> Result<(), RepoKind<SetShortNameNotExist>> {
-        let (sql_query, values) = Query::update()
-            .table(Alias::new("sets"))
-            .value(Alias::new("deleted"), set.deleted())
+        if set.title().is_none() && set.deleted().is_none() {
+            return Ok(());
+        }
+
+        let mut query = Query::update();
+        query.table(Alias::new("sets"));
+
+        if let Some(title) = set.title() {
+            query.value(Alias::new("title"), title);
+        }
+        if let Some(deleted) = set.deleted() {
+            query.value(Alias::new("deleted"), deleted);
+        }
+
+        let (sql_query, values) = query
             .and_where(Expr::col(Alias::new("short_name")).eq(set.short_name()))
             .build_sqlx(PostgresQueryBuilder);
 
         debug!(
-            "Postgres `set_deleted_col_by_short_name` query: `{sql_query}`;\nValues for query: `{values:?}`"
+            "Postgres `update_by_short_name` query: `{sql_query}`;\nValues for query: `{values:?}`"
         );
 
         sqlx::query_with(&sql_query, values)

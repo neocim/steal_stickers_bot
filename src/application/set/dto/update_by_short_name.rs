@@ -8,7 +8,7 @@ pub struct UpdateSetByShortName<'a> {
 }
 
 impl<'a> UpdateSetByShortName<'a> {
-    pub const fn new(short_name: &'a str, title: Option<&'a str>, deleted: Option<bool>bool) -> Self {
+    pub const fn new(short_name: &'a str, title: Option<&'a str>, deleted: Option<bool>) -> Self {
         Self {
             short_name,
             title,
