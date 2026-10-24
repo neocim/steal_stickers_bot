@@ -6,7 +6,7 @@ use super::{common::get_page_begin_and_end, constants::TELEGRAM_STICKER_SET_URL}
 use crate::{
     core::helpers::{
         constants::MAX_STICKER_SET_LENGTH,
-        stats::{GlobalStats, GreaterThan, PersonalStats},
+        stats::{GlobalStats, PersonalStats},
     },
     domain::entities::set::Set,
 };
@@ -23,7 +23,7 @@ pub fn sticker_without_pack_for_owner() -> &'static str {
 pub fn pack_owner_id(owner_id: i64) -> String {
     format!(
         "The owner ID of this sticker pack is {id}. Send another sticker or use /cancel instead.",
-        id = html_code(owner_id.to_string()),
+        id = html_code(owner_id),
     )
 }
 
@@ -42,15 +42,15 @@ pub fn ask_for_sticker_or_link() -> &'static str {
 pub fn set_title_too_long(max_len: usize) -> String {
     format!(
         "Too long name! Please enter a name up to {max_len} characters long:",
-        max_len = html_code(max_len.to_string()),
+        max_len = html_code(max_len),
     )
 }
 
 pub fn set_title_too_short(min_len: usize, max_len: usize) -> String {
     format!(
         "Too short name! Please enter a name between {min_len} and {max_len} characters long:",
-        min_len = html_code(min_len.to_string()),
-        max_len = html_code(max_len.to_string()),
+        min_len = html_code(min_len),
+        max_len = html_code(max_len),
     )
 }
 
@@ -59,7 +59,7 @@ pub fn stealing_pack_started(title: &str, one_go_limit: usize) -> String {
         "Stealing sticker pack with name {title} for you... \
         It may take a few minutes if this sticker pack contains more than {one_go_limit} stickers.",
         title = html_code(html_quote(title)),
-        one_go_limit = html_code(one_go_limit.to_string()),
+        one_go_limit = html_code(one_go_limit),
     )
 }
 
@@ -117,8 +117,8 @@ pub fn not_pack_owner() -> &'static str {
 pub fn pack_current_length(current: usize, remaining: usize) -> String {
     format!(
         "This sticker pack currently has {current} stickers. You can add {remaining} more.",
-        current = html_code(current.to_string()),
-        remaining = html_code(remaining.to_string()),
+        current = html_code(current),
+        remaining = html_code(remaining),
     )
 }
 
@@ -142,7 +142,7 @@ pub fn sticker_limit_reached() -> String {
         "You've reached the limit of {max_len} stickers. \
         Use /done to add the selected ones, or /undo to remove the latest. \
         Any further stickers will be ignored.",
-        max_len = html_code(MAX_STICKER_SET_LENGTH.to_string()),
+        max_len = html_code(MAX_STICKER_SET_LENGTH),
     )
 }
 
@@ -279,8 +279,7 @@ pub fn personal_stats_message(personal_stats: PersonalStats) -> String {
     } else {
         &format!(
             "Total number of stolen sticker packs (including {deleted_count} deleted ones): {total_count}",
-            deleted_count = html_code((deleted_count).to_string()),
-            total_count = html_code(personal_stats.total_user_sets_count.to_string())
+            total_count = html_code(personal_stats.total_user_sets_count)
         )
     };
 
@@ -291,7 +290,7 @@ pub fn personal_stats_message(personal_stats: PersonalStats) -> String {
     {total_count_text}
         ",
         personal_statistics_text = html_bold("Personal statistics"),
-        not_deleted_count = html_code(personal_stats.not_deleted_user_sets_count.to_string()),
+        not_deleted_count = html_code(personal_stats.not_deleted_user_sets_count),
     )
 }
 
@@ -300,21 +299,11 @@ pub fn global_stats_message(global_stats: GlobalStats) -> String {
         "
     {global_statistics_text}\n\n\
     Total sticker packs stolen: {total_stolen}\n\
-    Users, who have stolen more than {first}: {first_count}\n\
-    More than {second}: {second_count}\n\
-    More than {third}: {third_count}\n\
-    More than {fourth}: {fourth_count}\n
+    Total users: {total_users}\n
         ",
         global_statistics_text = html_bold("Global statistics"),
-        total_stolen = html_code(global_stats.total_stolen.to_string()),
-        first = GreaterThan::FirstLevel.to_string(),
-        first_count = html_code(global_stats.first_count.to_string()),
-        second = GreaterThan::SecondLevel.to_string(),
-        second_count = html_code(global_stats.second_count.to_string()),
-        third = GreaterThan::ThirdLevel.to_string(),
-        third_count = html_code(global_stats.third_count.to_string()),
-        fourth = GreaterThan::FourthLevel.to_string(),
-        fourth_count = html_code(global_stats.fourth_count.to_string())
+        total_stolen = html_code(global_stats.total_stolen),
+        total_users = html_code(global_stats.total_users)
     )
 }
 

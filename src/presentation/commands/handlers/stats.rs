@@ -18,7 +18,7 @@ use crate::{
         },
     },
     core::helpers::{
-        stats::{GlobalStats, GreaterThan, PersonalStats},
+        stats::{GlobalStats, PersonalStats},
         texts::{global_stats_message, personal_stats_message},
     },
     presentation::commands::states::callback_data::StatsState,
@@ -160,34 +160,7 @@ where
         .await
         .map_err(HandlerError::new)?;
 
-    let mut gt_fourth = 0u32;
-    let mut gt_third = 0u32;
-    let mut gt_second = 0u32;
-    let mut gt_first = 0u32;
-
-    for user_sets_count in all_set_counts.iter() {
-        match *user_sets_count {
-            count if count > Into::<i64>::into(GreaterThan::FourthLevel) => {
-                gt_fourth += 1;
-                gt_third += 1;
-                gt_second += 1;
-                gt_first += 1;
-            }
-            count if count > Into::<i64>::into(GreaterThan::ThirdLevel) => {
-                gt_third += 1;
-                gt_second += 1;
-                gt_first += 1;
-            }
-            count if count > Into::<i64>::into(GreaterThan::SecondLevel) => {
-                gt_second += 1;
-                gt_first += 1;
-            }
-            count if count > Into::<i64>::into(GreaterThan::FirstLevel) => gt_first += 1,
-            // if we see a count that is less than `FistLevel`, then we skip all the
-            // following counts, because we don't need to spend time for them.
-            _ => break,
-        }
-    }
+    let total_users = all_set_counts.len();
 
     let buttons = [[
         InlineKeyboardButton::new("« Personal Statistics").callback_data(
@@ -203,13 +176,7 @@ where
 
     Ok((
         inline_keyboard_markup,
-        GlobalStats::new(
-            all_set_counts.into_iter().sum(),
-            gt_first,
-            gt_second,
-            gt_third,
-            gt_fourth,
-        ),
+        GlobalStats::new(all_set_counts.into_iter().sum(), total_users),
     ))
 }
 

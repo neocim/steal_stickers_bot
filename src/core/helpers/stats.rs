@@ -1,50 +1,13 @@
-#[derive(PartialEq, Copy, Clone)]
-pub enum GreaterThan {
-    FirstLevel,
-    SecondLevel,
-    ThirdLevel,
-    FourthLevel,
-}
-
-impl Into<i64> for GreaterThan {
-    fn into(self) -> i64 {
-        match self {
-            GreaterThan::FirstLevel => 25,
-            GreaterThan::SecondLevel => 50,
-            GreaterThan::ThirdLevel => 75,
-            GreaterThan::FourthLevel => 100,
-        }
-    }
-}
-
-impl ToString for GreaterThan {
-    fn to_string(&self) -> String {
-        Into::<i64>::into(*self).to_string()
-    }
-}
-
 pub struct GlobalStats {
     pub total_stolen: i64,
-    pub first_count: u32,
-    pub second_count: u32,
-    pub third_count: u32,
-    pub fourth_count: u32,
+    pub total_users: usize,
 }
 
 impl GlobalStats {
-    pub const fn new(
-        total_stolen: i64,
-        first_count: u32,
-        second_count: u32,
-        third_count: u32,
-        fourth_count: u32,
-    ) -> Self {
+    pub const fn new(total_stolen: i64, total_users: usize) -> Self {
         Self {
             total_stolen,
-            first_count,
-            second_count,
-            third_count,
-            fourth_count,
+            total_users,
         }
     }
 }
