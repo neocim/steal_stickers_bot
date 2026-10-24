@@ -50,7 +50,11 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
             ])
             .build_sqlx(PostgresQueryBuilder);
 
-        debug!("Postgres `create` query: `{sql_query}`;\nValues for query: `{values:?}`");
+        debug!(
+            tg_id = set.tg_id(),
+            short_name_len = set.short_name().len(),
+            "Postgres `create` query"
+        );
 
         sqlx::query_with(&sql_query, values)
             .execute(&mut *self.conn)
@@ -82,23 +86,23 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
             .build_sqlx(PostgresQueryBuilder);
 
         debug!(
-            "Postgres `delete_by_short_name` query: `{sql_query}`;\nValues for query: `{values:?}`"
+            short_name_len = set.short_name().len(),
+            "Postgres `delete_by_short_name` query"
         );
 
-        sqlx::query_with(&sql_query, values)
+        let result = sqlx::query_with(&sql_query, values)
             .execute(&mut *self.conn)
             .await
-            .map(|_| ())
-            .map_err(|err| {
-                if let sqlx::Error::RowNotFound = err {
-                    return RepoKind::exception(SetShortNameNotExist::new(
-                        set.short_name().to_string(),
-                        err.to_string(),
-                    ));
-                }
+            .map_err(RepoKind::unexpected)?;
 
-                RepoKind::unexpected(err)
-            })
+        if result.rows_affected() == 0 {
+            return Err(RepoKind::exception(SetShortNameNotExist::new(
+                set.short_name().to_owned(),
+                "no rows affected",
+            )));
+        }
+
+        Ok(())
     }
 
     async fn get_by_tg_id(
@@ -133,7 +137,11 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
                 .build_sqlx(PostgresQueryBuilder)
         };
 
-        debug!("Postgres `get_by_tg_id` query: `{sql_query}`;\nValues for query: `{values:?}`");
+        debug!(
+            tg_id = set.tg_id(),
+            get_deleted = set.get_deleted(),
+            "Postgres `get_by_tg_id` query"
+        );
 
         sqlx::query_as_with(&sql_query, values)
             .fetch_all(&mut *self.conn)
@@ -163,7 +171,8 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
             .build_sqlx(PostgresQueryBuilder);
 
         debug!(
-            "Postgres `get_one_by_short_name` query: `{sql_query}`;\nValues for query: `{values:?}`"
+            short_name_len = set.short_name().len(),
+            "Postgres `get_one_by_short_name` query"
         );
 
         sqlx::query_as_with(&sql_query, values)
@@ -205,7 +214,9 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
             .build_sqlx(PostgresQueryBuilder);
 
         debug!(
-            "Postgres `update_by_short_name` query: `{sql_query}`;\nValues for query: `{values:?}`"
+            update_title = set.title().is_some(),
+            update_deleted = set.deleted().is_some(),
+            "Postgres `update_by_short_name` query"
         );
 
         sqlx::query_with(&sql_query, values)
@@ -251,7 +262,7 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
                 .build_sqlx(PostgresQueryBuilder)
         };
 
-        debug!("Postgres `get_all` query: `{sql_query}`;\nValues for query: `{values:?}`");
+        debug!(get_deleted = set.get_deleted(), "Postgres `get_all` query");
 
         sqlx::query_as_with(&sql_query, values)
             .fetch_all(&mut *self.conn)
@@ -279,7 +290,11 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
                 .build_sqlx(PostgresQueryBuilder)
         };
 
-        debug!("Postgres `count_by_tg_id` query: `{sql_query}`;\nValues for query: `{values:?}`");
+        debug!(
+            tg_id = set.tg_id(),
+            count_deleted = set.count_deleted(),
+            "Postgres `count_by_tg_id` query"
+        );
 
         sqlx::query_as_with(&sql_query, values)
             .fetch_one(&mut *self.conn)
@@ -320,7 +335,8 @@ impl SetRepo for SetRepoImpl<&mut PgConnection> {
         };
 
         debug!(
-            "Postgres `get_sets_count_for_all_users` query: `{sql_query}`;\nValues for query: `{values:?}`"
+            get_deleted = set.get_deleted(),
+            "Postgres `get_sets_count_for_all_users` query"
         );
 
         sqlx::query_as_with(&sql_query, values)

@@ -34,8 +34,6 @@ impl UserRepo for UserRepoImpl<&mut PgConnection> {
             .values_panic([user.tg_id().into()])
             .build_sqlx(PostgresQueryBuilder);
 
-        debug!("User created");
-
         sqlx::query_with(&sql_query, values)
             .execute(&mut *self.conn)
             .await
@@ -64,7 +62,10 @@ impl UserRepo for UserRepoImpl<&mut PgConnection> {
             .and_where(Expr::col(Alias::new("tg_id")).eq(user.tg_id()))
             .build_sqlx(PostgresQueryBuilder);
 
-        debug!("Postgres query: {sql_query};\nValues for query: {values:?}");
+        debug!(
+            user_id = user.tg_id(),
+            "Postgres query `get_by_tg_id` query"
+        );
 
         sqlx::query_as_with(&sql_query, values)
             .fetch_one(&mut *self.conn)
