@@ -8,9 +8,9 @@ use telers::{Bot, event::simple::HandlerResult};
 use tracing::{debug, error};
 
 use crate::application::common::traits::uow::UoW as _;
-use crate::application::interactors::set_deleted_col::set_deleted_col;
+use crate::application::interactors::update_by_short_name::update_by_short_name;
 use crate::application::set::dto::get_all::GetAll;
-use crate::application::set::dto::set_deleted_col_by_short_name::SetDeletedColByShortName;
+use crate::application::set::dto::update_by_short_name::UpdateSetByShortName;
 use crate::application::{
     common::traits::uow::UoWFactory as UoWFactoryTrait, set::repository::SetRepo,
     user::repository::UserRepo,
@@ -20,7 +20,7 @@ use crate::infrastructure::database::{
     uow::UoWFactory,
 };
 
-pub async fn deleted_sets_upd<DB>(pool: Pool<DB>, bot: Bot) -> HandlerResult
+pub async fn update_sets<DB>(pool: Pool<DB>, bot: Bot) -> HandlerResult
 where
     DB: Database,
     for<'a> UserRepoImpl<&'a mut DB::Connection>: UserRepo,
@@ -52,37 +52,63 @@ where
 
             if let Err(err) = result {
                 error!("Failed to start transaction: {:?}", err);
-                tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+                tokio::time::sleep(tokio::time::Duration::from_secs(600)).await;
                 continue;
             }
 
             let result = result.unwrap().get_all(GetAll::new(Some(false))).await;
             if let Err(err) = result {
                 error!(?err, "Error occurred while trying to get all sets: ");
-                tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+                tokio::time::sleep(tokio::time::Duration::from_secs(600)).await;
                 continue;
             }
 
             let sets = result.unwrap();
             for (i, set) in sets.into_iter().enumerate() {
-                if let Err(err) = bot.send(GetStickerSet::new(set.short_name.as_str())).await {
-                    if matches!(err,  SessionErrorKind::Telegram(TelegramErrorKind::BadRequest { ref message })
+                match bot.send(GetStickerSet::new(set.short_name.as_str())).await {
+                    Ok(tg_set) => {
+                        if set.title != *tg_set.title {
+                            update_by_short_name(
+                                &mut uow,
+                                UpdateSetByShortName::new(
+                                    set.short_name.as_str(),
+                                    Some(&tg_set.title),
+                                    None,
+                                ),
+                            )
+                            .await
+                            .map_err(|err| {
+                                error!(
+                                    ?err,
+                                    ?set.short_name,
+                                    "Failed to update `title` column for sticker set: ",
+                                );
+                            });
+                        }
+                    }
+                    Err(err) => {
+                        if matches!(err,  SessionErrorKind::Telegram(TelegramErrorKind::BadRequest { ref message })
                         if message.as_ref() == "Bad Request: STICKERSET_INVALID")
-                    {
-                        set_deleted_col(
-                            &mut uow,
-                            SetDeletedColByShortName::new(set.short_name.as_str(), true),
-                        )
-                        .await
-                        .map_err(|err| {
-                            error!(
-                                ?err,
-                                ?set.short_name,
-                                "Failed to update `deleted` column for sticker set: ",
-                            );
-                        });
-                    } else {
-                        error!(?err, ?set.short_name, "Failed to get sticker set :",);
+                        {
+                            update_by_short_name(
+                                &mut uow,
+                                UpdateSetByShortName::new(
+                                    set.short_name.as_str(),
+                                    None,
+                                    Some(true),
+                                ),
+                            )
+                            .await
+                            .map_err(|err| {
+                                error!(
+                                    ?err,
+                                    ?set.short_name,
+                                    "Failed to update `deleted` column for sticker set: ",
+                                );
+                            });
+                        } else {
+                            error!(?err, ?set.short_name, "Failed to get sticker set :",);
+                        }
                     }
                 }
                 if i % 5 == 0 {

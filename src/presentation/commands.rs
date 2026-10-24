@@ -43,7 +43,7 @@ use crate::{
     },
 };
 
-pub use handlers::deleted_sets_upd::deleted_sets_upd;
+pub use handlers::update_sets::update_sets;
 use handlers::{
     add_stickers::{
         add_stickers_handler, add_stickers_to_user_owned_sticker_set, get_stickers_to_add,
