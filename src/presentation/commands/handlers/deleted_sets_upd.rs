@@ -52,21 +52,40 @@ where
 
             if let Err(err) = result {
                 error!("Failed to start transaction: {:?}", err);
-                tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+                tokio::time::sleep(tokio::time::Duration::from_secs(600)).await;
                 continue;
             }
 
             let result = result.unwrap().get_all(GetAll::new(Some(false))).await;
             if let Err(err) = result {
                 error!(?err, "Error occurred while trying to get all sets: ");
-                tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+                tokio::time::sleep(tokio::time::Duration::from_secs(600)).await;
                 continue;
             }
 
             let sets = result.unwrap();
             for (i, set) in sets.into_iter().enumerate() {
                 match bot.send(GetStickerSet::new(set.short_name.as_str())).await {
-                    Ok(tg_set) => if set.title != *tg_set.title {},
+                    Ok(tg_set) => {
+                        if set.title != *tg_set.title {
+                            update_by_short_name(
+                                &mut uow,
+                                UpdateSetByShortName::new(
+                                    set.short_name.as_str(),
+                                    Some(&tg_set.title),
+                                    None,
+                                ),
+                            )
+                            .await
+                            .map_err(|err| {
+                                error!(
+                                    ?err,
+                                    ?set.short_name,
+                                    "Failed to update `title` column for sticker set: ",
+                                );
+                            });
+                        }
+                    }
                     Err(err) => {
                         if matches!(err,  SessionErrorKind::Telegram(TelegramErrorKind::BadRequest { ref message })
                         if message.as_ref() == "Bad Request: STICKERSET_INVALID")
