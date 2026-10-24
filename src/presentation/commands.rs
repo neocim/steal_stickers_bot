@@ -95,7 +95,7 @@ impl PrivateRouterBuilder {
             .source_command(&["src", "source"])
             .cancel_command("cancel")
             .steal_sticker_set_command::<DB>("stealpack")
-            .prcess_non_state_sticker_packs()
+            .process_non_state_sticker_packs()
             .process_non_commands()
             .process_non_text_and_stickers()
             .process_non_text()
@@ -128,22 +128,7 @@ impl PrivateRouterBuilder {
         self
     }
 
-    fn prcess_non_state_sticker_packs(mut self) -> Self {
-        self.router = self.router.on_message(|observer| {
-            observer.register(
-                Handler::new(process_sticker_or_link::<MemoryStorage>)
-                    .filter(StateFilter::none())
-                    .filter(MessageType::many([
-                        MessageTypeEnum::Text,
-                        MessageTypeEnum::Sticker,
-                    ]))
-                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
-            )
-        });
-        self
-    }
-
-    /// Executes Telegram command stealpack
+    /// Executes Telegram command `/stealpack`
     fn steal_sticker_set_command<DB>(mut self, command: &'static str) -> Self
     where
         DB: Database,
@@ -295,6 +280,21 @@ impl PrivateRouterBuilder {
         self.router = self.router.on_message(|observer| {
             observer.register(
                 Handler::new(cancel_handler::<MemoryStorage>).filter(Command::one(command)),
+            )
+        });
+        self
+    }
+
+    fn process_non_state_sticker_packs(mut self) -> Self {
+        self.router = self.router.on_message(|observer| {
+            observer.register(
+                Handler::new(process_sticker_or_link::<MemoryStorage>)
+                    .filter(StateFilter::none())
+                    .filter(MessageType::many([
+                        MessageTypeEnum::Text,
+                        MessageTypeEnum::Sticker,
+                    ]))
+                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
             )
         });
         self
