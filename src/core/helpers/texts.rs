@@ -276,21 +276,21 @@ pub fn personal_stats_message(personal_stats: PersonalStats) -> String {
         format!(
             "{personal_statistics_text}\n\n\
             Stolen packs: {total_count}\n\
-            You're ahead of {percent}% of users.",
+            You're ahead of {percent} of users.",
             personal_statistics_text = html_bold("Personal statistics"),
             total_count = html_code(personal_stats.total_user_sets_count),
-            percent = personal_stats.better_than
+            percent = html_code(personal_stats.better_than.to_string() + "%")
         )
     } else {
         format!(
             "{personal_statistics_text}\n\n\
             Stolen packs: {total_count}\n\
             Active: {active_count}\n\n\
-            You're ahead of {percent}% of users.",
+            You're ahead of {percent} of users.",
             personal_statistics_text = html_bold("Personal statistics"),
             total_count = html_code(personal_stats.total_user_sets_count),
             active_count = html_code(personal_stats.not_deleted_user_sets_count),
-            percent = personal_stats.better_than
+            percent = html_code(personal_stats.better_than.to_string() + "%")
         )
     }
 }

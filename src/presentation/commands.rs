@@ -144,6 +144,7 @@ impl PrivateRouterBuilder {
                     .filter(Command::one(command))
                     .filter(MessageType::one(MessageTypeEnum::Text)),
                 Handler::new(get_sticker_set_name::<MemoryStorage>)
+                    .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert())
                     .filter(MessageType::many([
                         MessageTypeEnum::Sticker,
                         MessageTypeEnum::Text,

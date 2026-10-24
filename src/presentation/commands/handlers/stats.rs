@@ -8,6 +8,7 @@ use telers::{
     methods::{AnswerCallbackQuery, EditMessageText, SendMessage},
     types::{CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message},
 };
+use tracing::debug;
 
 use crate::{
     application::{
@@ -136,12 +137,18 @@ where
         .await
         .map_err(HandlerError::new)?;
 
+    let all_count = all_counts.iter().count();
+
     let less = &all_counts
         .iter()
         .filter(|c| **c < total_user_sets_count)
         .count();
 
-    let better_than = less / all_counts.iter().count() * 100;
+    let better_than = if all_count > 0 {
+        less * 100 / all_count
+    } else {
+        0
+    };
 
     let buttons = [[
         InlineKeyboardButton::new("Global Statistics »").callback_data(
@@ -179,7 +186,7 @@ where
         .await
         .map_err(HandlerError::new)?;
 
-    let total_users = all_set_counts.len();
+    let total_users = all_set_counts.iter().count();
 
     let buttons = [[
         InlineKeyboardButton::new("« Personal Statistics").callback_data(

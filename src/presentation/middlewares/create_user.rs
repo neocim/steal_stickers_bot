@@ -32,7 +32,7 @@ where
     for<'a> <UoWF::UoW as UoWTrait>::UserRepo<'a>: Send + Sync,
 {
     async fn call(&mut self, request: Request) -> Result<MiddlewareResponse, EventErrorKind> {
-        let user_id = match request.update.user() {
+        let user_id = match request.update.from() {
             Some(user) => user.id,
             None => {
                 return Ok((request, EventReturn::Skip));
