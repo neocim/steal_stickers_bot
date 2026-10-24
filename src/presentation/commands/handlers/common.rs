@@ -90,6 +90,7 @@ pub async fn process_sticker_or_link<S: Storage>(
 
         bot.send(
             SendMessage::new(chat_id, pack_owned_by_user_and_bot(&set_name))
+                .parse_mode(ParseMode::HTML)
                 .reply_markup(yes_no_keyboard_markup())
                 .reply_parameters(
                     ReplyParameters::new()

@@ -95,7 +95,7 @@ impl PrivateRouterBuilder {
             .source_command(&["src", "source"])
             .cancel_command("cancel")
             .steal_sticker_set_command::<DB>("stealpack")
-            .sticker_pack_entrypoint()
+            .prcess_non_state_sticker_packs()
             .process_non_commands()
             .process_non_text_and_stickers()
             .process_non_text()
@@ -128,10 +128,9 @@ impl PrivateRouterBuilder {
         self
     }
 
-    ///
-    fn sticker_pack_entrypoint(mut self) -> Self {
+    fn prcess_non_state_sticker_packs(mut self) -> Self {
         self.router = self.router.on_message(|observer| {
-            observer.registers([
+            observer.register(
                 Handler::new(process_sticker_or_link::<MemoryStorage>)
                     .filter(StateFilter::none())
                     .filter(MessageType::many([
@@ -139,10 +138,7 @@ impl PrivateRouterBuilder {
                         MessageTypeEnum::Sticker,
                     ]))
                     .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
-                Handler::new(process_add_stickers_confirmation::<MemoryStorage>)
-                    .filter(StateFilter::one(AddStickerState::ConfirmAddStickers))
-                    .filter(MessageType::one(MessageTypeEnum::Text)),
-            ])
+            )
         });
         self
     }
@@ -192,6 +188,9 @@ impl PrivateRouterBuilder {
     {
         self.router = self.router.on_message(|observer| {
             observer.registers([
+                Handler::new(process_add_stickers_confirmation::<MemoryStorage>)
+                    .filter(StateFilter::one(AddStickerState::ConfirmAddStickers))
+                    .filter(MessageType::one(MessageTypeEnum::Text)),
                 Handler::new(add_stickers_handler::<MemoryStorage, UoWFactory<DB>>)
                     .filter(Command::one(command))
                     .filter(MessageType::one(MessageTypeEnum::Text)),
