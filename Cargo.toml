@@ -1,6 +1,6 @@
 [package]
 name = "steal_stickers_bot"
-version = "1.3.0"
+version = "1.3.2"
 edition = "2024"
 
 [dependencies]
