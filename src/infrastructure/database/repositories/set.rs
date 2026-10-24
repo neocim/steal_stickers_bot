@@ -11,7 +11,7 @@ use crate::{
                 count_by_tg_id::CountByTgID, create::Create,
                 delete_by_short_name::DeleteByShortName, get_all::GetAll,
                 get_by_short_name::GetByShortName, get_by_tg_id::GetByTgID,
-                set_deleted_col_by_short_name::SetDeletedColByShortName,
+                update_by_short_name::SetDeletedColByShortName,
             },
             exceptions::{SetShortNameAlreadyExist, SetShortNameNotExist, SetTgIdNotExist},
             repository::SetRepo,
