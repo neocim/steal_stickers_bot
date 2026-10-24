@@ -28,8 +28,8 @@ use crate::{
     },
     presentation::commands::{
         common::{
-            AddStickersError, InvalidSetLinkError, add_stickers, check_set_name,
-            parse_sticker_set_link, send_detailed_error_msg, send_invalid_set_msg,
+            AddStickersError, add_stickers, check_set_name, handle_parse_link_error,
+            parse_sticker_set_link, send_detailed_error_msg,
         },
         states::steal_sticker_set::StealStickerSetState,
     },
@@ -75,7 +75,7 @@ pub async fn get_sticker_set_name<S: Storage>(
         };
 
         if let Err(error) = check_set_name(&bot, set_name).await {
-            handle_error(error, &bot, chat_id, message_id).await?;
+            handle_parse_link_error(error, &bot, chat_id, message_id).await?;
             return Ok(EventReturn::Finish);
         }
         set_name.to_owned()
@@ -100,7 +100,7 @@ pub async fn get_sticker_set_name<S: Storage>(
         match parse_sticker_set_link(&bot, text).await {
             Ok(set_name) => set_name,
             Err(error) => {
-                handle_error(error, &bot, chat_id, message_id).await?;
+                handle_parse_link_error(error, &bot, chat_id, message_id).await?;
                 return Ok(EventReturn::Finish);
             }
         }
@@ -333,16 +333,4 @@ pub async fn process_steal_pack_confirmation<S: Storage>(
     fsm.finish().await.map_err(Into::into)?;
 
     return Ok(EventReturn::Finish);
-}
-
-async fn handle_error(
-    error: telers::errors::handler::Error,
-    bot: &Bot,
-    chat_id: i64,
-    message_id: i64,
-) -> HandlerResult {
-    match error.downcast_ref() {
-        Some(InvalidSetLinkError) => send_invalid_set_msg(&bot, chat_id, message_id).await,
-        None => send_detailed_error_msg(&bot, &error.to_string(), chat_id, message_id).await,
-    }
 }

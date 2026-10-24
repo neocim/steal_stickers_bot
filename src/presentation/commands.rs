@@ -5,7 +5,8 @@ use telers::{
     errors::HandlerError,
     event::telegram::Handler,
     filters::{
-        CallbackData as CallbackDataFilter, ChatType, Command, MessageType, State as StateFilter,
+        CallbackData as CallbackDataFilter, ChatType, Command, MessageType, SmartFilter,
+        State as StateFilter,
     },
     fsm::{MemoryStorage, Strategy},
     methods::SetMyCommands,

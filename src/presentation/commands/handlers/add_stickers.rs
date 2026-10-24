@@ -36,8 +36,8 @@ use crate::{
     presentation::{
         commands::{
             common::{
-                AddStickersError, InvalidSetLinkError, add_stickers, parse_sticker_set_link,
-                send_default_error_msg, send_detailed_error_msg, send_invalid_set_msg,
+                AddStickersError, add_stickers, check_set_name, handle_parse_link_error,
+                parse_sticker_set_link, send_default_error_msg, send_detailed_error_msg,
             },
             states::add_stickers::AddStickerState,
         },
@@ -104,48 +104,49 @@ where
     UoWFactory: UoWFactoryTrait,
     S: Storage,
 {
-    let sticker_set_name: String = if let Some(sticker) = message.sticker() {
-        match sticker.set_name() {
-            Some(name) => name.to_string(),
+    let chat_id = message.chat().id();
+    let message_id = message.message_id();
+
+    let sticker_set_name = if let Some(sticker) = message.sticker() {
+        let set_name = match sticker.set_name() {
+            Some(set_name) => set_name,
             None => {
-                bot.send(SendMessage::new(
-                    message.chat().id(),
-                    sticker_without_pack(),
-                ))
-                .await?;
+                bot.send(SendMessage::new(chat_id, sticker_without_pack()))
+                    .await?;
 
                 return Ok(EventReturn::Finish);
             }
-        }
-    } else {
-        let text = message.text().expect("Provided message is not a text");
+        };
 
-        if text.find(TELEGRAM_STICKER_SET_URL).is_none() {
-            bot.send(SendMessage::new(message.chat().id(), link_or_sticker()))
-                .await?;
+        if let Err(error) = check_set_name(&bot, set_name).await {
+            handle_parse_link_error(error, &bot, chat_id, message_id).await?;
+            return Ok(EventReturn::Finish);
+        }
+        set_name.to_owned()
+    } else {
+        let text = message
+            .text()
+            .expect("Message is not text. Check the filters");
+
+        if !text.contains(TELEGRAM_STICKER_SET_URL) {
+            bot.send(
+                SendMessage::new(chat_id, link_or_sticker()).reply_parameters(
+                    ReplyParameters::new()
+                        .chat_id(chat_id)
+                        .message_id(message_id),
+                ),
+            )
+            .await?;
 
             return Ok(EventReturn::Finish);
         }
 
         match parse_sticker_set_link(&bot, text).await {
-            Ok(name) => name.to_string(),
-            Err(err) => match err.downcast_ref() {
-                Some(InvalidSetLinkError) => {
-                    return send_invalid_set_msg(&bot, message.chat().id(), message.message_id())
-                        .await;
-                }
-                None => {
-                    send_detailed_error_msg(
-                        &bot,
-                        &err.to_string(),
-                        message.chat().id(),
-                        message.message_id(),
-                    )
-                    .await?;
-
-                    return Ok(EventReturn::Finish);
-                }
-            },
+            Ok(set_name) => set_name,
+            Err(error) => {
+                handle_parse_link_error(error, &bot, chat_id, message_id).await?;
+                return Ok(EventReturn::Finish);
+            }
         }
     };
 

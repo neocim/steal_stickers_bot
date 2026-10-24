@@ -61,6 +61,18 @@ pub async fn parse_sticker_set_link<'a>(bot: &Bot, text: &str) -> Result<String,
     Err(HandlerError::new(InvalidSetLinkError))
 }
 
+pub async fn handle_parse_link_error(
+    error: telers::errors::handler::Error,
+    bot: &Bot,
+    chat_id: i64,
+    message_id: i64,
+) -> HandlerResult {
+    match error.downcast_ref() {
+        Some(InvalidSetLinkError) => send_invalid_set_msg(&bot, chat_id, message_id).await,
+        None => send_detailed_error_msg(&bot, &error.to_string(), chat_id, message_id).await,
+    }
+}
+
 pub async fn check_set_name(bot: &Bot, set_name: &str) -> HandlerResult {
     match bot.send(GetStickerSet::new(&*set_name)).await {
         Ok(_) => Ok(EventReturn::Finish),
