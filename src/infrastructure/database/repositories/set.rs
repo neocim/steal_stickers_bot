@@ -8,13 +8,10 @@ use crate::{
         common::exceptions::{RepoError, RepoKind},
         set::{
             dto::{
-                count_by_tg_id::CountByTgID,
-                create::Create,
-                delete_by_short_name::DeleteByShortName,
-                get_all::GetAll,
-                get_by_short_name::GetByShortName,
-                get_by_tg_id::GetByTgID,
-                update_by_short_name::{SetDeletedColByShortName, UpdateSetByShortName},
+                count_by_tg_id::CountByTgID, create::Create,
+                delete_by_short_name::DeleteByShortName, get_all::GetAll,
+                get_by_short_name::GetByShortName, get_by_tg_id::GetByTgID,
+                update_by_short_name::UpdateSetByShortName,
             },
             exceptions::{SetShortNameAlreadyExist, SetShortNameNotExist, SetTgIdNotExist},
             repository::SetRepo,

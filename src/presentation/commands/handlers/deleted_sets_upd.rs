@@ -8,9 +8,9 @@ use telers::{Bot, event::simple::HandlerResult};
 use tracing::{debug, error};
 
 use crate::application::common::traits::uow::UoW as _;
-use crate::application::interactors::set_deleted_col::set_deleted_col;
+use crate::application::interactors::update_by_short_name::update_by_short_name;
 use crate::application::set::dto::get_all::GetAll;
-use crate::application::set::dto::update_by_short_name::SetDeletedColByShortName;
+use crate::application::set::dto::update_by_short_name::UpdateSetByShortName;
 use crate::application::{
     common::traits::uow::UoWFactory as UoWFactoryTrait, set::repository::SetRepo,
     user::repository::UserRepo,
@@ -71,9 +71,13 @@ where
                         if matches!(err,  SessionErrorKind::Telegram(TelegramErrorKind::BadRequest { ref message })
                         if message.as_ref() == "Bad Request: STICKERSET_INVALID")
                         {
-                            set_deleted_col(
+                            update_by_short_name(
                                 &mut uow,
-                                SetDeletedColByShortName::new(set.short_name.as_str(), true),
+                                UpdateSetByShortName::new(
+                                    set.short_name.as_str(),
+                                    None,
+                                    Some(true),
+                                ),
                             )
                             .await
                             .map_err(|err| {
