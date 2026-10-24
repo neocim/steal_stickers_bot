@@ -87,14 +87,14 @@ impl PrivateRouterBuilder {
         CreateUserMiddleware<UoWFactory<DB>>: OuterMiddleware,
     {
         let router = PrivateRouterBuilder { router }
-            .start_command("start", "help")
+            .start_commands("start", "help")
+            .steal_sticker_set_command::<DB>("stealpack")
             .add_stickers_command::<DB>("addstickers", "done", "undo")
             .my_stickers_command::<DB>("mystickers")
             .stats_command::<DB>("stats")
             .get_owner_command("getowner")
             .source_command(&["src", "source"])
             .cancel_command("cancel")
-            .steal_sticker_set_command::<DB>("stealpack")
             .process_non_state_sticker_packs()
             .process_non_commands()
             .process_non_text_and_stickers()
@@ -114,7 +114,7 @@ impl PrivateRouterBuilder {
     }
 
     /// Executes Telegram commands `/start` and `/help`
-    fn start_command(mut self, start: &'static str, help: &'static str) -> Self {
+    fn start_commands(mut self, start: &'static str, help: &'static str) -> Self {
         self.router = self.router.on_message(|observer| {
             observer.registers([
                 Handler::new(start_handler::<MemoryStorage>)
@@ -336,11 +336,7 @@ impl PrivateRouterBuilder {
                 Handler::new(process_non_sticker_handler)
                     .filter(MessageType::one(MessageTypeEnum::Sticker).invert())
                     .filter(
-                        StateFilter::one(StealStickerSetState::StealStickerSetName)
-                            .or(StateFilter::many([
-                                AddStickerState::GetStolenStickerSet,
-                                AddStickerState::GetStickersToAdd,
-                            ]))
+                        StateFilter::one(AddStickerState::GetStickersToAdd)
                             .or(StateFilter::one(GetOwnerState::GetStickers)),
                     ),
             )
