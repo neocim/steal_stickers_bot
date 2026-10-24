@@ -201,5 +201,7 @@ async fn add_sticker<'a>(
 
 pub fn yes_no_keyboard_markup() -> ReplyKeyboardMarkup {
     let buttons = [[KeyboardButton::new("Yes"), KeyboardButton::new("No")]];
-    ReplyKeyboardMarkup::new(buttons).one_time_keyboard(true)
+    ReplyKeyboardMarkup::new(buttons)
+        .one_time_keyboard(true)
+        .resize_keyboard(true)
 }

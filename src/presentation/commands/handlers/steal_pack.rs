@@ -67,8 +67,14 @@ pub async fn get_sticker_set_name<S: Storage>(
         let set_name = match sticker.set_name() {
             Some(set_name) => set_name,
             None => {
-                bot.send(SendMessage::new(chat_id, sticker_without_pack()))
-                    .await?;
+                bot.send(
+                    SendMessage::new(chat_id, sticker_without_pack()).reply_parameters(
+                        ReplyParameters::new()
+                            .chat_id(chat_id)
+                            .message_id(message_id),
+                    ),
+                )
+                .await?;
 
                 return Ok(EventReturn::Finish);
             }
