@@ -198,8 +198,14 @@ where
         Ok(id) => id,
         Err(TGError::InvocationError(InvocationError::Rpc(err))) => {
             if err.name == "STICKERSET_INVALID" {
-                bot.send(SendMessage::new(message.chat().id(), pack_deleted()))
-                    .await?;
+                bot.send(
+                    SendMessage::new(message.chat().id(), pack_deleted()).reply_parameters(
+                        ReplyParameters::new()
+                            .chat_id(chat_id)
+                            .message_id(message_id),
+                    ),
+                )
+                .await?;
             }
 
             return Ok(EventReturn::Finish);
@@ -499,9 +505,9 @@ pub async fn process_add_stickers_confirmation<S: Storage>(
     message: MessageText,
     fsm: Context<S>,
 ) -> HandlerResult {
-    let text = &*message.text;
+    let text = &*message.text.to_lowercase();
 
-    if text == "Yes" {
+    if text.eq("yes") {
         let pack_name: String = fsm
             .get_value("pending_pack_name")
             .await
@@ -519,12 +525,9 @@ pub async fn process_add_stickers_confirmation<S: Storage>(
             return Ok(EventReturn::Finish);
         }
 
-        fsm.set_value(
-            "get_stolen_sticker_set",
-            (pack_name.into_boxed_str(), set.title, set_length),
-        )
-        .await
-        .map_err(Into::into)?;
+        fsm.set_value("get_stolen_sticker_set", (pack_name, set.title, set_length))
+            .await
+            .map_err(Into::into)?;
 
         fsm.set_state(AddStickerState::GetStickersToAdd)
             .await
@@ -535,7 +538,7 @@ pub async fn process_add_stickers_confirmation<S: Storage>(
             ask_for_stickers_to_add(),
         ))
         .await?;
-    } else {
+    } else if text.eq("no") {
         bot.send(SendMessage::new(
             message.chat.id(),
             add_stickers_cancelled(),
@@ -543,6 +546,9 @@ pub async fn process_add_stickers_confirmation<S: Storage>(
         .await?;
 
         fsm.finish().await.map_err(Into::into)?;
+    } else {
+        fsm.finish().await.map_err(Into::into)?;
+        return Ok(EventReturn::Skip);
     }
 
     Ok(EventReturn::Finish)

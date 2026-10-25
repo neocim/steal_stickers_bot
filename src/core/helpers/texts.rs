@@ -32,7 +32,7 @@ pub fn default_error_message() -> &'static str {
 }
 
 pub fn now_enter_set_name() -> &'static str {
-    "Now enter a name for your new sticker pack (1-64 characters):"
+    "Now enter a name for your new sticker pack (1-64 characters). If you want, use /cancel to abort the command."
 }
 
 pub fn ask_for_sticker_or_link() -> &'static str {
@@ -127,12 +127,6 @@ pub fn pack_full() -> &'static str {
     Remove a few stickers and then try /addstickers again."
 }
 
-pub fn ask_for_stickers_to_add() -> &'static str {
-    "Now send me the stickers you want to add to your pack. \
-    When you're ready, use /done to add them all. \
-    You can remove the last sticker from the list with /undo."
-}
-
 pub fn sticker_without_emoji() -> &'static str {
     "This sticker has no emoji, so it can't be added. Try sending another one."
 }
@@ -150,25 +144,31 @@ pub fn sticker_processed() -> &'static str {
     "Sticker added to the list. Send another, or use /done or /undo."
 }
 
-pub fn nothing_to_remove() -> &'static str {
-    "Nothing to remove."
+pub fn ask_for_stickers_to_add() -> &'static str {
+    "Now send me the stickers you want to add to your pack. \
+    When you're ready, use /done to add them all. \
+    You can remove the last sticker with /undo, or cancel this command with /cancel."
 }
 
 pub fn sticker_removed_from_list() -> &'static str {
     "Sticker removed from the list. You can now use /done or /undo."
 }
 
+pub fn nothing_to_remove() -> &'static str {
+    "Nothing to remove. If you want, use /cancel to abort the command."
+}
+
 pub fn all_stickers_removed_undo() -> &'static str {
     "You've removed all stickers from the list. \
-    Send at least one sticker before using /done or /undo."
+    Send at least one sticker before using /undo, or use /cancel to abort the command."
 }
 
 pub fn all_stickers_removed_done() -> &'static str {
-    "You've removed all the stickers. Send some stickers, then use /done."
+    "You've removed all stickers. Send some stickers and then use /done, or use /cancel to abort the command."
 }
 
 pub fn no_stickers_sent_done() -> &'static str {
-    "You haven't sent any stickers yet. Send some, then use /done."
+    "You haven't sent any stickers yet. Send some, then use /done. If you want, use /cancel to abort the command."
 }
 
 pub fn adding_stickers(count: usize, sticker_set_name: &str) -> String {

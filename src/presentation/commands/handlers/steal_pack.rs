@@ -316,9 +316,9 @@ pub async fn process_steal_pack_confirmation<S: Storage>(
     message: MessageText,
     fsm: Context<S>,
 ) -> HandlerResult {
-    let text = &*message.text;
+    let text = &*message.text.to_lowercase();
 
-    if text == "Yes" {
+    if text.eq("yes") {
         bot.send(SendMessage::new(message.chat.id(), now_enter_set_name()))
             .await?;
 
@@ -327,14 +327,18 @@ pub async fn process_steal_pack_confirmation<S: Storage>(
             .map_err(Into::into)?;
 
         return Ok(EventReturn::Finish);
-    }
-    bot.send(SendMessage::new(
-        message.chat.id(),
-        you_can_steal_at_any_time(),
-    ))
-    .await?;
+    } else if text.eq("no") {
+        bot.send(SendMessage::new(
+            message.chat.id(),
+            you_can_steal_at_any_time(),
+        ))
+        .await?;
 
-    fsm.finish().await.map_err(Into::into)?;
+        fsm.finish().await.map_err(Into::into)?;
+    } else {
+        fsm.finish().await.map_err(Into::into)?;
+        return Ok(EventReturn::Skip);
+    }
 
     return Ok(EventReturn::Finish);
 }

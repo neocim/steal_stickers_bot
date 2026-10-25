@@ -5,7 +5,8 @@ use telers::{
     errors::HandlerError,
     event::telegram::Handler,
     filters::{
-        CallbackData as CallbackDataFilter, ChatType, Command, MessageType, State as StateFilter,
+        CallbackData as CallbackDataFilter, ChatType, Command, MessageType, SmartFilter,
+        State as StateFilter,
     },
     fsm::{MemoryStorage, Strategy},
     methods::SetMyCommands,
@@ -306,7 +307,6 @@ impl PrivateRouterBuilder {
             observer.register(
                 Handler::new(start_handler::<MemoryStorage>)
                     .filter(ChatType::one(Private))
-                    .filter(StateFilter::none())
                     .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
             )
         });
