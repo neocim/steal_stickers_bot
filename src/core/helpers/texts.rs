@@ -160,7 +160,7 @@ pub fn nothing_to_remove() -> &'static str {
 
 pub fn all_stickers_removed_undo() -> &'static str {
     "You've removed all stickers from the list. \
-    Send at least one sticker before using /undo, or use /cancel to abort the command."
+    Send at least one sticker before using /done or /undo. If you want, use /cancel to abort the command."
 }
 
 pub fn all_stickers_removed_done() -> &'static str {

@@ -405,18 +405,18 @@ pub async fn undo_last_sticker<S: Storage>(
         ))
         .await?;
 
-    bot.send(
-        SendMessage::new(message.chat.id(), sticker_removed_from_list())
-            .reply_parameters(ReplyParameters::new().message_id(sticker_message.message_id()))
-            .chat_id(sticker_message.chat().id()),
-    )
-    .await?;
-
     if user_removed_all_stickers {
-        bot.send(SendMessage::new(
-            message.chat.id(),
-            all_stickers_removed_undo(),
-        ))
+        bot.send(
+            SendMessage::new(message.chat.id(), all_stickers_removed_undo())
+                .reply_parameters(ReplyParameters::new().message_id(sticker_message.message_id())),
+        )
+        .await?;
+    } else {
+        bot.send(
+            SendMessage::new(message.chat.id(), sticker_removed_from_list())
+                .reply_parameters(ReplyParameters::new().message_id(sticker_message.message_id()))
+                .chat_id(sticker_message.chat().id()),
+        )
         .await?;
     }
 
