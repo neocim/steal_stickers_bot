@@ -151,7 +151,7 @@ pub fn ask_for_stickers_to_add() -> &'static str {
 }
 
 pub fn sticker_removed_from_list() -> &'static str {
-    "Sticker removed from the list. You can now use /done or /undo."
+    "Sticker removed from the list. You can now use /done or /undo again."
 }
 
 pub fn nothing_to_remove() -> &'static str {
