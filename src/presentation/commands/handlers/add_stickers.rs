@@ -502,10 +502,15 @@ pub async fn add_stickers_to_user_owned_sticker_set<S: Storage>(
 
 pub async fn process_add_stickers_confirmation<S: Storage>(
     bot: Bot,
-    message: MessageText,
+    message: Message,
     fsm: Context<S>,
 ) -> HandlerResult {
-    let text = &*message.text.to_lowercase();
+    let text = if let Some(text) = message.text() {
+        text.to_lowercase()
+    } else {
+        fsm.finish().await.map_err(Into::into)?;
+        return Ok(EventReturn::Skip);
+    };
 
     if text.eq("yes") {
         let pack_name: String = fsm
@@ -518,7 +523,7 @@ pub async fn process_add_stickers_confirmation<S: Storage>(
         let set_length = set.stickers.len();
 
         if set_length >= MAX_STICKER_SET_LENGTH {
-            bot.send(SendMessage::new(message.chat.id(), pack_full()))
+            bot.send(SendMessage::new(message.chat().id(), pack_full()))
                 .await?;
 
             fsm.finish().await.map_err(Into::into)?;
@@ -534,13 +539,13 @@ pub async fn process_add_stickers_confirmation<S: Storage>(
             .map_err(Into::into)?;
 
         bot.send(SendMessage::new(
-            message.chat.id(),
+            message.chat().id(),
             ask_for_stickers_to_add(),
         ))
         .await?;
     } else if text.eq("no") {
         bot.send(SendMessage::new(
-            message.chat.id(),
+            message.chat().id(),
             add_stickers_cancelled(),
         ))
         .await?;

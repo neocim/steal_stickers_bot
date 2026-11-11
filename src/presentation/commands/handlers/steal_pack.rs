@@ -313,13 +313,18 @@ where
 
 pub async fn process_steal_pack_confirmation<S: Storage>(
     bot: Bot,
-    message: MessageText,
+    message: Message,
     fsm: Context<S>,
 ) -> HandlerResult {
-    let text = &*message.text.to_lowercase();
+    let text = if let Some(text) = message.text() {
+        text.to_lowercase()
+    } else {
+        fsm.finish().await.map_err(Into::into)?;
+        return Ok(EventReturn::Skip);
+    };
 
     if text.eq("yes") {
-        bot.send(SendMessage::new(message.chat.id(), now_enter_set_name()))
+        bot.send(SendMessage::new(message.chat().id(), now_enter_set_name()))
             .await?;
 
         fsm.set_state(StealStickerSetState::CreateNewStickerSet)
@@ -329,7 +334,7 @@ pub async fn process_steal_pack_confirmation<S: Storage>(
         return Ok(EventReturn::Finish);
     } else if text.eq("no") {
         bot.send(SendMessage::new(
-            message.chat.id(),
+            message.chat().id(),
             you_can_steal_at_any_time(),
         ))
         .await?;

@@ -138,8 +138,7 @@ impl PrivateRouterBuilder {
         self.router = self.router.on_message(|observer| {
             observer.registers([
                 Handler::new(process_steal_pack_confirmation::<MemoryStorage>)
-                    .filter(StateFilter::one(StealStickerSetState::DoYouWantToSteal))
-                    .filter(MessageType::one(MessageTypeEnum::Text)),
+                    .filter(StateFilter::one(StealStickerSetState::DoYouWantToSteal)),
                 Handler::new(steal_sticker_set_handler::<MemoryStorage>)
                     .filter(Command::one(command))
                     .filter(MessageType::one(MessageTypeEnum::Text)),
@@ -175,8 +174,7 @@ impl PrivateRouterBuilder {
         self.router = self.router.on_message(|observer| {
             observer.registers([
                 Handler::new(process_add_stickers_confirmation::<MemoryStorage>)
-                    .filter(StateFilter::one(AddStickerState::ConfirmAddStickers))
-                    .filter(MessageType::one(MessageTypeEnum::Text)),
+                    .filter(StateFilter::one(AddStickerState::ConfirmAddStickers)),
                 Handler::new(add_stickers_handler::<MemoryStorage, UoWFactory<DB>>)
                     .filter(Command::one(command))
                     .filter(MessageType::one(MessageTypeEnum::Text)),
@@ -306,7 +304,11 @@ impl PrivateRouterBuilder {
             observer.register(
                 Handler::new(start_handler::<MemoryStorage>)
                     .filter(ChatType::one(Private))
-                    .filter(StateFilter::none())
+                    .filter(
+                        StateFilter::none()
+                            .or(StateFilter::one(StealStickerSetState::DoYouWantToSteal)
+                                .or(StateFilter::one(AddStickerState::ConfirmAddStickers))),
+                    )
                     .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
             )
         });
