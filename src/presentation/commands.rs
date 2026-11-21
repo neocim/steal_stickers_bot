@@ -5,7 +5,8 @@ use telers::{
     errors::HandlerError,
     event::telegram::Handler,
     filters::{
-        CallbackData as CallbackDataFilter, ChatType, Command, MessageType, State as StateFilter,
+        CallbackData as CallbackDataFilter, ChatType, Command, MessageType, SmartFilter,
+        State as StateFilter, Text,
     },
     fsm::{MemoryStorage, Strategy},
     methods::SetMyCommands,
@@ -30,7 +31,7 @@ use crate::{
                 common::process_sticker_or_link,
                 get_owner::{get_owner_handler, get_owner_id},
                 process_non::process_non_text_or_stickers_handler,
-                start::help_handler,
+                start::{help_callback_handler, help_handler},
                 steal_pack::process_steal_pack_confirmation,
             },
             states::{
@@ -115,16 +116,24 @@ impl PrivateRouterBuilder {
 
     /// Executes Telegram commands `/start` and `/help`
     fn start_commands(mut self, start: &'static str, help: &'static str) -> Self {
-        self.router = self.router.on_message(|observer| {
-            observer.registers([
-                Handler::new(start_handler::<MemoryStorage>)
-                    .filter(ChatType::one(Private))
-                    .filter(Command::one(start)),
-                Handler::new(help_handler::<MemoryStorage>)
-                    .filter(ChatType::one(Private))
-                    .filter(Command::one(help)),
-            ])
-        });
+        self.router = self
+            .router
+            .on_message(|observer| {
+                observer.registers([
+                    Handler::new(start_handler::<MemoryStorage>)
+                        .filter(ChatType::one(Private))
+                        .filter(Command::one(start)),
+                    Handler::new(help_handler::<MemoryStorage>).filter(Command::one(help)),
+                ])
+            })
+            .on_callback_query(
+                |observer: telers::event::telegram::Observer<telers::client::Reqwest>| {
+                    observer.register(
+                        Handler::new(help_callback_handler)
+                            .filter(SmartFilter::callback_query().data().eq("help".to_string())),
+                    )
+                },
+            );
         self
     }
 

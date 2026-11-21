@@ -219,14 +219,17 @@ pub fn start_message(username: &str) -> String {
     format!(
         "Hi, {username}! I can steal any sticker pack for you. \
         Just send me a sticker or a link to a sticker pack and I'll make it yours. \
-        Use /mystickers to see all your stolen packs. \
-        If you want to add new stickers to a pack you've stolen, use /addstickers. \
         Use /help to see the full list of commands.",
     )
 }
 
 pub fn help_message() -> &'static str {
-    "List of commands:\n\n\
+    "You can steal a sticker pack simply by sending me a sticker or a link to one — \
+    I'll offer to steal it for you.\n\n\
+    You may also want to add new stickers to a pack: just send me a pack you've already \
+    stolen and I'll offer to add stickers to it. \
+    To see all your stolen packs, use /mystickers.\n\n\
+    Here's the full list of available commands:\n\
     /stealpack — steal a sticker pack\n\
     /addstickers — add stickers to a pack you've stolen\n\
     /mystickers — list your stolen packs\n\
