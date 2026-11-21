@@ -508,8 +508,14 @@ pub async fn process_add_stickers_confirmation<S: Storage>(
     let text = if let Some(text) = message.text() {
         text.to_lowercase()
     } else {
+        bot.send(SendMessage::new(
+            message.chat().id(),
+            add_stickers_cancelled(),
+        ))
+        .await?;
+
         fsm.finish().await.map_err(Into::into)?;
-        return Ok(EventReturn::Skip);
+        return Ok(EventReturn::Finish);
     };
 
     if text.eq("yes") {
@@ -543,7 +549,7 @@ pub async fn process_add_stickers_confirmation<S: Storage>(
             ask_for_stickers_to_add(),
         ))
         .await?;
-    } else if text.eq("no") {
+    } else {
         bot.send(SendMessage::new(
             message.chat().id(),
             add_stickers_cancelled(),
@@ -551,9 +557,6 @@ pub async fn process_add_stickers_confirmation<S: Storage>(
         .await?;
 
         fsm.finish().await.map_err(Into::into)?;
-    } else {
-        fsm.finish().await.map_err(Into::into)?;
-        return Ok(EventReturn::Skip);
     }
 
     Ok(EventReturn::Finish)

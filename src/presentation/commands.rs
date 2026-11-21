@@ -304,11 +304,6 @@ impl PrivateRouterBuilder {
             observer.register(
                 Handler::new(start_handler::<MemoryStorage>)
                     .filter(ChatType::one(Private))
-                    .filter(
-                        StateFilter::none()
-                            .or(StateFilter::one(StealStickerSetState::DoYouWantToSteal)
-                                .or(StateFilter::one(AddStickerState::ConfirmAddStickers))),
-                    )
                     .filter(Command::many(ALL_COMMANDS.iter().map(ToOwned::to_owned)).invert()),
             )
         });

@@ -319,8 +319,14 @@ pub async fn process_steal_pack_confirmation<S: Storage>(
     let text = if let Some(text) = message.text() {
         text.to_lowercase()
     } else {
+        bot.send(SendMessage::new(
+            message.chat().id(),
+            you_can_steal_at_any_time(),
+        ))
+        .await?;
+
         fsm.finish().await.map_err(Into::into)?;
-        return Ok(EventReturn::Skip);
+        return Ok(EventReturn::Finish);
     };
 
     if text.eq("yes") {
@@ -332,7 +338,7 @@ pub async fn process_steal_pack_confirmation<S: Storage>(
             .map_err(Into::into)?;
 
         return Ok(EventReturn::Finish);
-    } else if text.eq("no") {
+    } else {
         bot.send(SendMessage::new(
             message.chat().id(),
             you_can_steal_at_any_time(),
@@ -340,9 +346,6 @@ pub async fn process_steal_pack_confirmation<S: Storage>(
         .await?;
 
         fsm.finish().await.map_err(Into::into)?;
-    } else {
-        fsm.finish().await.map_err(Into::into)?;
-        return Ok(EventReturn::Skip);
     }
 
     return Ok(EventReturn::Finish);
