@@ -16,7 +16,7 @@ pub async fn start_handler<S: Storage>(
 ) -> HandlerResult {
     fsm.finish().await.map_err(Into::into)?;
 
-    let buttons = [[InlineKeyboardButton::new("Help").callback_data("help")]];
+    let buttons = [[InlineKeyboardButton::new("Help »").callback_data("help")]];
     let keyboard = InlineKeyboardMarkup::new(buttons);
 
     bot.send(

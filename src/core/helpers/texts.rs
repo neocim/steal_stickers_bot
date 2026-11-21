@@ -218,8 +218,7 @@ pub fn stolen_set_message(
 pub fn start_message(username: &str) -> String {
     format!(
         "Hi, {username}! I can steal any sticker pack for you. \
-        Just send me a sticker or a link to a sticker pack and I'll make it yours. \
-        Use /help to see the full list of commands.",
+        Just send me a sticker or a link to a sticker pack and I'll make it yours.",
     )
 }
 
