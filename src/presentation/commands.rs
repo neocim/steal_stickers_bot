@@ -126,14 +126,12 @@ impl PrivateRouterBuilder {
                     Handler::new(help_handler::<MemoryStorage>).filter(Command::one(help)),
                 ])
             })
-            .on_callback_query(
-                |observer: telers::event::telegram::Observer<telers::client::Reqwest>| {
-                    observer.register(
-                        Handler::new(help_callback_handler)
-                            .filter(SmartFilter::callback_query().data().eq("help".to_string())),
-                    )
-                },
-            );
+            .on_callback_query(|observer| {
+                observer.register(
+                    Handler::new(help_callback_handler)
+                        .filter(SmartFilter::callback_query().data().eq("help".to_string())),
+                )
+            });
         self
     }
 

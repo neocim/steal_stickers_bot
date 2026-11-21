@@ -1,6 +1,5 @@
 use telers::{
     Bot,
-    enums::ParseMode,
     errors::{TelegramErrorKind, session::ErrorKind},
     event::{EventReturn, telegram::HandlerResult},
     fsm::{Context, Storage},
@@ -45,10 +44,9 @@ pub async fn help_callback_handler(bot: Bot, callback_query: CallbackQuery) -> H
     let edit_message = EditMessageText::new()
         .text(help_message())
         .chat_id(chat_id)
-        .message_id(message_id)
-        .parse_mode(ParseMode::HTML);
+        .message_id(message_id);
 
-    if let Err(error) = bot.send(edit_message.parse_mode(ParseMode::HTML)).await {
+    if let Err(error) = bot.send(edit_message).await {
         match &error {
             ErrorKind::Telegram(TelegramErrorKind::BadRequest { message }) => {
                 // we need to ignore this bad request error
